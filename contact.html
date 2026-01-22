@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Contact — Be More Amy</title>
+  <style>
+    :root{--bg:#0b0b0b;--panel:#121212;--text:#f2f2f2;--muted:#b7b7b7;--border:rgba(255,255,255,.10);--safeTop:env(safe-area-inset-top);--safeBottom:env(safe-area-inset-bottom);}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    header{position:sticky;top:0;z-index:10;padding:calc(14px + var(--safeTop)) 14px 12px;background:rgba(0,0,0,.85);border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:saturate(140%) blur(10px)}
+    .wrap{max-width:900px;margin:0 auto;padding:18px 14px calc(26px + var(--safeBottom))}
+    a{color:#9ad1ff;text-decoration:none} a:hover{text-decoration:underline}
+    .card{border:1px solid var(--border);border-radius:18px;background:rgba(255,255,255,.03);padding:16px}
+    nav{display:flex;gap:14px;flex-wrap:wrap}
+    .muted{color:var(--muted);line-height:1.4}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap" style="padding:0;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <strong>Be More Amy</strong>
+      <nav>
+        <a href="./index.html">Home</a>
+        <a href="./route.html">Route</a>
+        <a href="./signup.html">Sign up</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1 style="margin:0 0 12px;letter-spacing:-.02em;">Contact</h1>
+
+    <div class="card">
+      <p class="muted" style="margin-top:0;">
+        For now, this uses a mail link (no backend required).
+      </p>
+      <p style="margin:0;">
+        Email: <a href="mailto:hello@bemoreamy.com">hello@bemoreamy.com</a>
+      </p>
+    </div>
+  </main>
+</body>
+</html>
