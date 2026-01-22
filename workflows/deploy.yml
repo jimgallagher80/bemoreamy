@@ -1,0 +1,44 @@
+name: Deploy to bemoreamy.com (FTP)
+
+on:
+  push:
+    branches: [ "main" ]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stamp deploy.html with commit + time
+        shell: bash
+        run: |
+          SHA="${GITHUB_SHA}"
+          TS="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          # Replace placeholders in deploy.html
+          sed -i "s/__GITHUB_SHA__/${SHA}/g" deploy.html
+          sed -i "s/__DEPLOYED_AT_UTC__/${TS}/g" deploy.html
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ secrets.FTP_PROTOCOL }}   # ftp / ftps (optional)
+          port: ${{ secrets.FTP_PORT }}           # optional
+          local-dir: ./
+          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/node_modules/**
+            **/*.psd
+            **/*.ai
+            **/*.zip
