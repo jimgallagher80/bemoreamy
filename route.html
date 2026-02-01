@@ -27,7 +27,7 @@
       /* Main site header colour */
       --bmaHeader:#FAEBC8;
 
-      /* Route header total height so map fits under it */
+      /* Route header height */
       --routeHeaderH: 150px;
     }
 
@@ -41,7 +41,7 @@
       text-rendering:optimizeLegibility;
     }
 
-    /* Header (keeps original IDs/behaviour, but new layout + colour) */
+    /* Header */
     .topbar{
       position:sticky;
       top:0;
@@ -114,16 +114,22 @@
       outline:none;
     }
 
-    /* Centre brand (logo + title only; no "BE MORE AMY") */
+    /* Centre brand */
     .route-brand{
       display:flex;
       flex-direction:column;
       align-items:center;
       justify-content:center;
-      gap:8px;
+      gap:6px;
       text-align:center;
       color:#000;
-      padding: 0 170px; /* keeps space so it won't hit menu/leg select */
+
+      /* bring content down a touch (helps iPhone look) */
+      padding-top: 12px;
+
+      /* keeps it away from menu + select */
+      padding-left: 150px;
+      padding-right: 150px;
     }
 
     .route-brand img{
@@ -133,13 +139,17 @@
       display:block;
     }
 
+    /* Two-line title */
     h1{
       margin:0;
-      font-size:18px;
-      line-height:1.15;
       font-weight:800;
-      letter-spacing:0;
       color:#000;
+      line-height:1.12;
+      font-size: clamp(16px, 4.6vw, 20px);
+    }
+    .title-line{
+      display:block;
+      white-space:nowrap; /* never wrap beyond the intended 2 lines */
     }
 
     /* Right-side controls (leg select) */
@@ -152,29 +162,34 @@
       gap:10px;
       align-items:center;
       justify-content:flex-end;
-      flex-wrap:wrap;
       z-index:1200;
     }
 
-    /* Keep same size/shape, but new colours per request */
-    select{
+    /* Smaller select (same shape, new colours already requested) */
+    #legSelect{
       appearance:none;
-      border:2px solid #000;
+      border:1.5px solid #000;
       background: var(--bmaHeader);
       color:#000;
-      padding:10px 12px;
-      border-radius:14px;
+
+      padding: 8px 10px;
+      border-radius: 14px;
+
       font-weight:650;
-      font-size:16px;
-      min-width:140px;
+      font-size: 14px;
+      min-width: 128px;
     }
 
-    /* Compact header when panel expanded (preserve original behaviour) */
+    /* Compact header when panel expanded (preserve behaviour) */
     body.compact-header .topbar{
       padding: calc(8px + var(--safeTop)) 12px 8px;
     }
     body.compact-header .topbar-row{
       height: 70px;
+    }
+    body.compact-header .route-brand{
+      padding-top: 0;
+      gap: 4px;
     }
     body.compact-header .route-brand img{
       width:44px;
@@ -194,7 +209,7 @@
       width: 100%;
     }
 
-    /* Bottom panel (UNCHANGED) */
+    /* Bottom panel */
     .panel{
       position:fixed;
       left:10px;
@@ -232,7 +247,7 @@
       align-items:flex-start;
       justify-content:space-between;
       gap:10px;
-      margin-bottom:2px; /* tighter */
+      margin-bottom:2px;
     }
 
     .panel-title{
@@ -288,7 +303,7 @@
     a{ color:#9ad1ff; text-decoration:none; }
     a:hover{ text-decoration:underline; }
 
-    /* Diamond marker (UNCHANGED) */
+    /* Diamond marker */
     .diamond-wrap{
       width:30px;
       height:30px;
@@ -306,7 +321,6 @@
       line-height:1;
     }
 
-    /* Finish flag (UNCHANGED) */
     .finish-flag{
       font-size:18px;
       filter: drop-shadow(0 2px 6px rgba(0,0,0,.6));
@@ -321,13 +335,8 @@
     }
 
     @media (max-width: 420px){
-      .route-brand{
-        padding: 0 140px;
-      }
-      select{
-        min-width:130px;
-        font-size:15px;
-      }
+      .route-brand{ padding-left: 140px; padding-right: 140px; padding-top: 14px; }
+      #legSelect{ min-width: 118px; font-size: 13px; padding: 7px 9px; }
     }
   </style>
 </head>
@@ -348,9 +357,7 @@
           title="Menu"
         >
           <img src="menu.svg" alt="" width="22" height="22" aria-hidden="true" />
-          <span class="sr-only" style="
-            position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
-            clip:rect(0,0,0,0);white-space:nowrap;border:0;">Open menu</span>
+          <span class="sr-only">Open menu</span>
         </button>
 
         <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
@@ -363,12 +370,15 @@
         </nav>
       </div>
 
-      <!-- Centre logo + title -->
+      <!-- Centre logo + 2-line title -->
       <div class="route-brand">
         <a href="index.html" aria-label="Home" style="display:inline-block">
           <img src="BMAlogo.svg" alt="Be More Amy logo" width="100" height="100" />
         </a>
-        <h1 id="headerTitle">South West Coastal Path<br>Challenge</h1>
+        <h1 id="headerTitle">
+          <span class="title-line">South West Coastal Path</span>
+          <span class="title-line">Relay Challenge</span>
+        </h1>
       </div>
 
       <!-- Leg select (right) -->
