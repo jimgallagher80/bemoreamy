@@ -2,164 +2,124 @@
 <html lang="en-GB">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Be More Amy</title>
-  <style>
-    :root{
-      --bg:#0b0b0b;
-      --panel:#121212;
-      --text:#f2f2f2;
-      --muted:#b7b7b7;
-      --border:rgba(255,255,255,.10);
-      --btn:#1a1a1a;
-      --btnHover:#242424;
-      --safeTop: env(safe-area-inset-top);
-      --safeBottom: env(safe-area-inset-bottom);
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      -webkit-font-smoothing:antialiased;
-      text-rendering:optimizeLegibility;
-    }
-    header{
-      position:sticky;
-      top:0;
-      z-index:10;
-      padding: calc(14px + var(--safeTop)) 14px 12px;
-      background:linear-gradient(to bottom, rgba(0,0,0,.92), rgba(0,0,0,.78));
-      border-bottom:1px solid rgba(255,255,255,.06);
-      backdrop-filter:saturate(140%) blur(10px);
-    }
-    .wrap{
-      max-width:980px;
-      margin:0 auto;
-      padding: 18px 14px calc(26px + var(--safeBottom));
-    }
-    .hero{
-      border:1px solid var(--border);
-      border-radius:18px;
-      background:rgba(255,255,255,.03);
-      padding:18px;
-    }
-    .brand{
-      display:flex;
-      gap:14px;
-      align-items:center;
-    }
-    .logo{
-      width:64px;
-      height:64px;
-      border-radius:16px;
-      border:1px solid var(--border);
-      background:rgba(255,255,255,.06);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:900;
-      letter-spacing:-.02em;
-    }
-    h1{
-      margin:0;
-      font-size:28px;
-      line-height:1.1;
-      letter-spacing:-.02em;
-    }
-    .tag{
-      margin:6px 0 0;
-      color:var(--muted);
-      line-height:1.4;
-      font-size:15px;
-    }
-    .grid{
-      margin-top:16px;
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:12px;
-    }
-    @media (min-width: 720px){
-      .grid{ grid-template-columns: 1fr 1fr 1fr; }
-    }
-    a.card{
-      text-decoration:none;
-      color:inherit;
-      border:1px solid var(--border);
-      border-radius:18px;
-      background:var(--btn);
-      padding:16px;
-      display:block;
-      transition: transform .06s ease, background .12s ease;
-    }
-    a.card:hover{ background:var(--btnHover); }
-    a.card:active{ transform: translateY(1px); }
-    .card h2{
-      margin:0 0 6px;
-      font-size:18px;
-      letter-spacing:-.01em;
-    }
-    .card p{
-      margin:0;
-      color:var(--muted);
-      line-height:1.4;
-      font-size:14px;
-    }
-    footer{
-      margin-top:18px;
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.4;
-      text-align:center;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Be More Amy — South West Coast Path Relay Challenge</title>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <header>
-    <div class="wrap" style="padding:0;max-width:980px;margin:0 auto;">
-      <strong style="font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);">
-        Be More Amy
-      </strong>
+  <!-- Sticky Header -->
+  <header class="site-header">
+    <!-- Brand is centred as a whole; menu is pinned to the far right -->
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="Be More Amy Home">
+        <img
+          class="brand-logo"
+          src="BMAlogo.svg"
+          alt="Be More Amy logo"
+          width="100"
+          height="100"
+        />
+        <div class="brand-text">
+          <div class="brand-title">Be More Amy</div>
+          <div class="brand-subtitle">South West Coastal Path Relay</div>
+          <div class="brand-subtitle">Challenge</div>
+        </div>
+      </a>
+
+      <div class="menu-wrap">
+        <button
+          class="menu-button"
+          type="button"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-controls="site-menu"
+          id="menuBtn"
+          title="Menu"
+        >
+          <img src="menu.svg" alt="" width="28" height="28" aria-hidden="true" />
+          <span class="sr-only">Open menu</span>
+        </button>
+
+        <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
+          <a href="challenge.html">The Challenge</a>
+          <a href="about.html">About Amy</a>
+          <a href="route.html">The Route</a>
+          <a href="register.html">Register</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="hero">
-      <div class="brand">
-        <!-- Swap this for your real logo image later if you like -->
-        <div class="logo">BA</div>
-        <div>
-          <h1>Be More Amy</h1>
-          <p class="tag">South West Coastal Path — route map, leg sign-up, and updates.</p>
-        </div>
-      </div>
+  <!-- Page Content -->
+  <main class="page">
+    <section class="intro">
+      <p>
+        This challenge is about more than just miles—it’s a tribute.
+      </p>
 
-      <div class="grid">
-        <a class="card" href="./route.html">
-          <h2>View the route</h2>
-          <p>Explore all legs on an interactive map.</p>
-        </a>
+      <p>
+        We’re coming together to walk, run, and relay our way along the South West Coast Path in honour of our dear friend Amy, whose strength, humour, and boundless kindness left a mark on us all. Though she didn’t get the chance to complete the path herself, we’ll carry her spirit and her walking poles with us every step of the way, so that together, we finish what she started.
+      </p>
 
-        <a class="card" href="./signup.html">
-          <h2>Sign up for a leg</h2>
-          <p>Choose a section and register your details.</p>
-        </a>
+      <p>
+        We’re raising money for the charities that supported Amy and her loved ones throughout her illness, giving thanks for the care, compassion, and dignity they helped provide.
+      </p>
 
-        <a class="card" href="./contact.html">
-          <h2>Contact</h2>
-          <p>Questions, support, or partnership enquiries.</p>
-        </a>
-      </div>
+      <p>
+        But this is also about bringing people together, just as Amy always did. In her memory, this challenge celebrates inclusiveness, encouragement and joyful determination, no matter your background or ability. Whether you’re covering one mile or fifty, cheering from the sidelines or passing the poles along the trail, you are part of Amy’s team.
+      </p>
+
+      <p>
+        Join us in a journey powered by resilience, friendship, and love. Let’s ‘Be More Amy’ and finish the path together.
+      </p>
     </section>
 
-    <footer>
-      © <span id="year"></span> Be More Amy
-    </footer>
+    <section class="quick-links" aria-label="Quick links">
+      <a class="card-link" href="about.html">
+        <div class="card-title">About Amy</div>
+        <div class="card-body">Learn about Amy, her story, and why this challenge matters.</div>
+      </a>
+
+      <a class="card-link" href="route.html">
+        <div class="card-title">The Route</div>
+        <div class="card-body">Explore the South West Coast Path legs and how the relay works.</div>
+      </a>
+    </section>
   </main>
 
   <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
+    (function () {
+      const btn = document.getElementById("menuBtn");
+      const menu = document.getElementById("site-menu");
+
+      function closeMenu() {
+        menu.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+      }
+
+      function toggleMenu() {
+        const isOpen = menu.classList.toggle("open");
+        btn.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleMenu();
+      });
+
+      document.addEventListener("click", () => closeMenu());
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMenu();
+      });
+
+      // Prevent clicks inside the menu closing it immediately
+      menu.addEventListener("click", (e) => e.stopPropagation());
+    })();
   </script>
 </body>
 </html>
