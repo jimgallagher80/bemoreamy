@@ -2,64 +2,553 @@
 <html lang="en-GB">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Sign up — Be More Amy</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BE MORE AMY — Sign Up</title>
+
+  <link rel="stylesheet" href="style.css" />
+
   <style>
-    :root{--bg:#0b0b0b;--panel:#121212;--text:#f2f2f2;--muted:#b7b7b7;--border:rgba(255,255,255,.10);--safeTop:env(safe-area-inset-top);--safeBottom:env(safe-area-inset-bottom);}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-    header{position:sticky;top:0;z-index:10;padding:calc(14px + var(--safeTop)) 14px 12px;background:rgba(0,0,0,.85);border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:saturate(140%) blur(10px)}
-    .wrap{max-width:900px;margin:0 auto;padding:18px 14px calc(26px + var(--safeBottom))}
-    a{color:#9ad1ff;text-decoration:none} a:hover{text-decoration:underline}
-    .card{border:1px solid var(--border);border-radius:18px;background:rgba(255,255,255,.03);padding:16px}
-    label{display:block;margin:10px 0 6px;color:var(--muted);font-size:14px}
-    input, select, textarea{width:100%;padding:12px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--text);font-size:16px}
-    button{margin-top:12px;width:100%;padding:12px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.10);color:var(--text);font-size:16px;font-weight:700;cursor:pointer}
-    button:active{transform:translateY(1px)}
-    .muted{color:var(--muted);line-height:1.4}
-    nav{display:flex;gap:14px;flex-wrap:wrap}
+    /* Page-specific form styling (keeps overall site look, but makes forms usable) */
+    .signup-wrap {
+      margin-top: 10px;
+      border: 2px solid #000;
+      border-radius: 18px;
+      background: #fff;
+      padding: 16px;
+    }
+
+    .signup-wrap p {
+      margin: 0 0 14px 0;
+      font-size: 17px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-weight: 700;
+      margin: 0 0 6px 0;
+      font-size: 14px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: 12px 12px;
+      border: 2px solid #000;
+      border-radius: 14px;
+      background: #fff;
+      color: #111;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 110px;
+    }
+
+    .legs-block {
+      border: 2px solid rgba(0,0,0,0.12);
+      border-radius: 16px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .legs-title {
+      font-weight: 800;
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+
+    .leg-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .radio-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding-top: 8px;
+      border-top: 1px solid rgba(0,0,0,0.12);
+      margin-top: 8px;
+    }
+
+    .radio-row label {
+      font-weight: 700;
+      margin: 0;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .radio-row input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #111;
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px 14px;
+      border-radius: 16px;
+      border: 2px solid #000;
+      background: #FAEBC8;
+      color: #111;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .hint {
+      color: rgba(0,0,0,0.65);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .small-note {
+      font-size: 14px;
+      color: rgba(0,0,0,0.70);
+      margin: 0 0 12px 0;
+    }
+
+    .page h1 {
+      margin: 0 0 10px 0;
+      letter-spacing: -0.02em;
+      font-size: 28px;
+    }
+
+    @media (max-width: 420px) {
+      .signup-wrap { padding: 14px; }
+      .page h1 { font-size: 26px; }
+    }
   </style>
 </head>
+
 <body>
-  <header>
-    <div class="wrap" style="padding:0;display:flex;justify-content:space-between;align-items:center;gap:12px;">
-      <strong>Be More Amy</strong>
-      <nav>
-        <a href="./index.html">Home</a>
-        <a href="./route.html">Route</a>
-        <a href="./contact.html">Contact</a>
-      </nav>
+  <!-- Sticky Header -->
+  <header class="site-header">
+    <div class="header-inner">
+
+      <!-- Menu pinned to the far left -->
+      <div class="menu-wrap">
+        <button
+          class="menu-button"
+          type="button"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-controls="site-menu"
+          id="menuBtn"
+          title="Menu"
+        >
+          <img src="menu.svg" alt="" width="22" height="22" aria-hidden="true" />
+          <span class="sr-only">Open menu</span>
+        </button>
+
+        <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
+          <a href="index.html">The Challenge</a>
+          <a href="amy.html">About Amy</a>
+          <a href="route.html">The Route</a>
+          <a href="signup.html">Sign Up</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+
+      <!-- Brand block (not clickable as a whole) -->
+      <div class="brand" aria-label="Be More Amy header">
+
+        <!-- Only logo is clickable -->
+        <a class="logo-link" href="index.html" aria-label="Home">
+          <img
+            class="brand-logo"
+            src="BMAlogo.svg"
+            alt="Be More Amy logo"
+            width="100"
+            height="100"
+          />
+        </a>
+
+        <div class="brand-text">
+          <div class="brand-line brand-title">BE MORE AMY</div>
+          <div class="brand-line brand-subtitle">South West Coastal</div>
+          <div class="brand-line brand-subtitle">Path Relay Challenge</div>
+          <div class="brand-line brand-date">16th to 25th May 2026</div>
+        </div>
+
+      </div>
     </div>
   </header>
 
-  <main class="wrap">
-    <h1 style="margin:0 0 12px;letter-spacing:-.02em;">Sign up for a leg</h1>
+  <!-- Page Content -->
+  <main class="page">
+    <h1>Sign Up</h1>
 
-    <div class="card">
-      <p class="muted" style="margin-top:0;">
-        This page can be wired to a proper database later. For now, it’s a clean front-end stub you can replace with a Google Form/Airtable embed if you want it live immediately.
+    <div class="signup-wrap">
+      <p><strong>Note: This page will be wired up to a proper database shortly.</strong></p>
+      <p class="small-note">
+        For now, submit simply confirms your choices on screen. We will replace this with a proper sign-up flow once the database is connected.
       </p>
 
-      <form onsubmit="event.preventDefault(); alert('Thanks — form wiring coming next.');">
-        <label for="leg">Leg</label>
-        <select id="leg" required>
-          <option value="">Choose a leg…</option>
-          <option>Leg 1</option><option>Leg 2</option><option>Leg 3</option>
-          <option>Leg 4</option><option>Leg 5</option><option>Leg 6</option>
-        </select>
+      <form id="signupForm" class="form-grid" novalidate>
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" name="name" autocomplete="name" required placeholder="Your name" />
+        </div>
 
-        <label for="name">Name</label>
-        <input id="name" required placeholder="Your name" />
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required placeholder="name@example.com" />
+        </div>
 
-        <label for="email">Email</label>
-        <input id="email" type="email" required placeholder="name@example.com" />
+        <div class="legs-block" aria-label="Leg selection">
+          <p class="legs-title">Choose your leg or legs</p>
 
-        <label for="notes">Notes (optional)</label>
-        <textarea id="notes" rows="4" placeholder="Anything we should know?"></textarea>
+          <div id="legsContainer" aria-live="polite"></div>
 
-        <button type="submit">Submit</button>
+          <div id="addMoreBlock" class="radio-row" style="display:none;">
+            <div style="font-weight:800;">Add another leg?</div>
+
+            <label for="addMoreYes">
+              <input type="radio" id="addMoreYes" name="addMore" value="yes" />
+              Yes
+            </label>
+
+            <label for="addMoreNo">
+              <input type="radio" id="addMoreNo" name="addMore" value="no" />
+              No
+            </label>
+          </div>
+
+          <p id="submitHint" class="hint" style="margin-top:10px;">
+            Select a leg to begin. After each selection, choose whether you want to add another. You can only submit once you select “No”.
+          </p>
+        </div>
+
+        <div class="field">
+          <label for="notes">Notes (optional)</label>
+          <textarea id="notes" name="notes" rows="4" placeholder="Anything we should know?"></textarea>
+        </div>
+
+        <div class="actions">
+          <button id="submitBtn" class="btn" type="submit" disabled>Submit</button>
+        </div>
       </form>
     </div>
+
+    <section class="quick-links" aria-label="Quick links">
+      <a class="card-link" href="route.html">The Route</a>
+      <a class="card-link" href="contact.html">Contact</a>
+    </section>
   </main>
+
+  <!-- Menu behaviour + Signup behaviour -->
+  <script>
+    (function () {
+      // Header menu
+      const btn = document.getElementById("menuBtn");
+      const menu = document.getElementById("site-menu");
+
+      function closeMenu() {
+        menu.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+      }
+
+      function toggleMenu() {
+        const isOpen = menu.classList.toggle("open");
+        btn.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleMenu();
+      });
+
+      document.addEventListener("click", () => closeMenu());
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMenu();
+      });
+      menu.addEventListener("click", (e) => e.stopPropagation());
+
+      // Signup multi-leg logic
+      const GEOJSON_URL = "ALL_COASTAL_LEGS_ENRICHED.geojson";
+
+      const form = document.getElementById("signupForm");
+      const legsContainer = document.getElementById("legsContainer");
+      const addMoreBlock = document.getElementById("addMoreBlock");
+      const submitBtn = document.getElementById("submitBtn");
+      const submitHint = document.getElementById("submitHint");
+
+      let legOptions = []; // {value, label}
+
+      function escapeHtml(s) {
+        return String(s)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function parseLegsFromGeoJSON(data) {
+        const feats = Array.isArray(data?.features) ? data.features : [];
+        const rows = feats.map((f) => {
+          const p = f?.properties || {};
+          const leg = p.leg ?? "";
+          const start = p.start ?? "";
+          const end = p.end ?? "";
+          const km = p.distance_km;
+
+          const legNum = Number(leg);
+          const legLabel = Number.isFinite(legNum) ? legNum : String(leg);
+
+          const kmTxt = (Number.isFinite(Number(km))) ? ` · ${Number(km).toFixed(1)} km` : "";
+          const startEnd = (start && end) ? `${start} to ${end}` : "";
+
+          return {
+            sortKey: Number.isFinite(legNum) ? legNum : 999999,
+            value: String(legLabel),
+            label: startEnd ? `Leg ${legLabel}: ${startEnd}${kmTxt}` : `Leg ${legLabel}${kmTxt}`
+          };
+        });
+
+        rows.sort((a, b) => a.sortKey - b.sortKey);
+        return rows;
+      }
+
+      function buildSelect(rowIndex) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "leg-row";
+        wrapper.dataset.row = String(rowIndex);
+
+        const label = document.createElement("label");
+        label.setAttribute("for", `leg_${rowIndex}`);
+        label.style.fontWeight = "700";
+        label.style.fontSize = "14px";
+        label.textContent = (rowIndex === 1) ? "Leg" : `Leg ${rowIndex}`;
+
+        const select = document.createElement("select");
+        select.id = `leg_${rowIndex}`;
+        select.name = `leg_${rowIndex}`;
+        select.required = true;
+
+        const opt0 = document.createElement("option");
+        opt0.value = "";
+        opt0.textContent = "Choose a leg…";
+        select.appendChild(opt0);
+
+        for (const o of legOptions) {
+          const opt = document.createElement("option");
+          opt.value = o.value;
+          opt.textContent = o.label;
+          select.appendChild(opt);
+        }
+
+        select.addEventListener("change", () => {
+          // Any change means we need a fresh decision on "add another?"
+          clearAddMoreChoice();
+          refreshDisabledOptions();
+          updateState();
+        });
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(select);
+
+        return wrapper;
+      }
+
+      function getSelectedLegValues() {
+        const selects = legsContainer.querySelectorAll("select");
+        const values = [];
+        selects.forEach((s) => {
+          if (s.value) values.push(s.value);
+        });
+        return values;
+      }
+
+      function refreshDisabledOptions() {
+        const selected = new Set(getSelectedLegValues());
+        const selects = legsContainer.querySelectorAll("select");
+
+        selects.forEach((s) => {
+          const current = s.value;
+          Array.from(s.options).forEach((opt) => {
+            if (!opt.value) return;
+            // Disable if chosen elsewhere, but keep the current selection enabled
+            opt.disabled = selected.has(opt.value) && opt.value !== current;
+          });
+        });
+      }
+
+      function addLegRow() {
+        const idx = legsContainer.querySelectorAll(".leg-row").length + 1;
+        const row = buildSelect(idx);
+        legsContainer.appendChild(row);
+        refreshDisabledOptions();
+
+        const select = row.querySelector("select");
+        if (select) select.focus();
+      }
+
+      function allLegRowsFilled() {
+        const selects = legsContainer.querySelectorAll("select");
+        if (!selects.length) return false;
+        for (const s of selects) {
+          if (!s.value) return false;
+        }
+        return true;
+      }
+
+      function anyLegChosen() {
+        return getSelectedLegValues().length > 0;
+      }
+
+      function getAddMoreChoice() {
+        const chosen = form.querySelector('input[name="addMore"]:checked');
+        return chosen ? chosen.value : "";
+      }
+
+      function clearAddMoreChoice() {
+        const chosen = form.querySelector('input[name="addMore"]:checked');
+        if (chosen) chosen.checked = false;
+      }
+
+      function updateState() {
+        // Show the add-more question only once we have at least one selected leg
+        if (anyLegChosen() && allLegRowsFilled()) {
+          addMoreBlock.style.display = "flex";
+        } else {
+          addMoreBlock.style.display = "none";
+          submitBtn.disabled = true;
+          submitHint.textContent = "Select a leg to begin. After each selection, choose whether you want to add another. You can only submit once you select “No”.";
+          return;
+        }
+
+        const choice = getAddMoreChoice();
+        if (choice === "yes") {
+          // Add a new row, then user must pick a leg, then answer again
+          addLegRow();
+          clearAddMoreChoice();
+          addMoreBlock.style.display = "none";
+          submitBtn.disabled = true;
+          submitHint.textContent = "Choose your next leg, then decide whether to add another. You can only submit once you select “No”.";
+          return;
+        }
+
+        if (choice === "no") {
+          submitBtn.disabled = false;
+          submitHint.textContent = "Ready to submit. If you want to add more legs, select “Yes” instead.";
+          return;
+        }
+
+        // No choice yet
+        submitBtn.disabled = true;
+        submitHint.textContent = "Now choose whether you want to add another leg. You can only submit once you select “No”.";
+      }
+
+      // Hook radio buttons
+      form.addEventListener("change", (e) => {
+        if (e.target && e.target.name === "addMore") {
+          updateState();
+        }
+      });
+
+      // Submit stub
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        // Basic validity check for required fields
+        const name = document.getElementById("name");
+        const email = document.getElementById("email");
+        if (!name.value.trim() || !email.value.trim()) {
+          alert("Please complete your name and email.");
+          return;
+        }
+
+        if (!anyLegChosen() || !allLegRowsFilled()) {
+          alert("Please choose your leg or legs.");
+          return;
+        }
+
+        const choice = getAddMoreChoice();
+        if (choice !== "no") {
+          alert("Please select “No” to confirm you are finished adding legs before submitting.");
+          return;
+        }
+
+        const legs = [];
+        legsContainer.querySelectorAll("select").forEach((s) => {
+          const label = s.options[s.selectedIndex]?.textContent || s.value;
+          if (s.value) legs.push(label);
+        });
+
+        alert(
+          "Thanks. Your sign-up has been captured as a placeholder.\n\n" +
+          "Name: " + name.value.trim() + "\n" +
+          "Email: " + email.value.trim() + "\n" +
+          "Legs:\n- " + legs.join("\n- ")
+        );
+
+        // Reset
+        form.reset();
+        legsContainer.innerHTML = "";
+        addLegRow();
+        addMoreBlock.style.display = "none";
+        submitBtn.disabled = true;
+        submitHint.textContent = "Select a leg to begin. After each selection, choose whether you want to add another. You can only submit once you select “No”.";
+      });
+
+      // Load legs list
+      async function initLegOptions() {
+        try {
+          const res = await fetch(GEOJSON_URL, { cache: "no-cache" });
+          if (!res.ok) throw new Error("GeoJSON fetch failed");
+          const data = await res.json();
+          legOptions = parseLegsFromGeoJSON(data);
+
+          // If something went wrong with parsing, fall back to simple list
+          if (!legOptions.length) {
+            legOptions = Array.from({ length: 10 }).map((_, i) => ({
+              value: String(i + 1),
+              label: `Leg ${i + 1}`
+            }));
+          }
+        } catch (err) {
+          // Fallback list for safety
+          legOptions = Array.from({ length: 10 }).map((_, i) => ({
+            value: String(i + 1),
+            label: `Leg ${i + 1}`
+          }));
+        }
+
+        legsContainer.innerHTML = "";
+        addLegRow();
+        updateState();
+      }
+
+      initLegOptions();
+    })();
+  </script>
+
 </body>
 </html>
