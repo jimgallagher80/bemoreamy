@@ -33,7 +33,7 @@ body {
 
 .header-inner {
   position: relative;
-  min-height: 170px;
+  min-height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -104,13 +104,14 @@ body {
   text-decoration: none;
   color: inherit;
 
-  /* Keep clear space so centred brand never overlaps the left menu */
+  /* keep clear space so it never overlaps the left menu */
   padding-left: 56px;
   padding-right: 16px;
 
-  /* Slightly left shift (as requested) */
+  /* slight left nudge */
   transform: translateX(-10px);
 
+  /* limit width so text doesn't "wander" into space */
   max-width: 100%;
 }
 
@@ -125,42 +126,41 @@ body {
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
+
+  /* prevents the text block getting too wide and causing weird wraps */
+  max-width: min(420px, calc(100vw - 260px));
 }
 
-/* MUST NEVER WRAP */
+/* Every header line: never wrap */
+.brand-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* last-resort on ultra-narrow screens */
+  line-height: 1.12;
+}
+
+/* Line 1 */
 .brand-title {
   font-weight: 800;
-  letter-spacing: 0.3px;
-  line-height: 1.1;
+  letter-spacing: 0.4px;
   color: #000;
-
-  /* Responsive size: not too big on wide screens, shrinks on small screens */
-  font-size: clamp(18px, 4.6vw, 28px);
-
-  white-space: nowrap; /* critical */
-  overflow: hidden;
-  text-overflow: ellipsis; /* safety for extremely tiny widths */
+  font-size: clamp(16px, 4.2vw, 26px);
 }
 
-/* Subtitle: always exactly 2 lines (3 words + 3 words); never re-wrap */
-.brand-subtitle-block {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.brand-subtitle-line {
+/* Lines 2–3 */
+.brand-subtitle {
   font-weight: 800;
   color: #222;
-  line-height: 1.15;
-
   font-size: clamp(12px, 2.9vw, 16px);
+}
 
-  white-space: nowrap; /* prevents extra wrapping */
-  overflow: hidden;
-  text-overflow: ellipsis; /* only if someone’s on a very narrow screen */
+/* Line 4 (date) */
+.brand-date {
+  font-weight: 700;
+  color: #222;
+  font-size: clamp(11px, 2.6vw, 15px);
 }
 
 /* Page layout */
@@ -194,7 +194,7 @@ body {
   font-weight: 800;
   font-size: 18px;
 
-  background: #FAEBC8; /* same as header */
+  background: #FAEBC8;
   border: 2px solid #000;
   border-radius: 16px;
 
@@ -208,6 +208,6 @@ body {
 
 /* Mobile tweaks */
 @media (max-width: 640px) {
-  .header-inner { min-height: 178px; }
+  .header-inner { min-height: 190px; }
   .brand { transform: translateX(-6px); }
 }
