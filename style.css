@@ -100,13 +100,17 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   text-decoration: none;
   color: inherit;
 
-  /* Keep clear space so the centred brand never overlaps the left menu */
+  /* Keep clear space so centred brand never overlaps the left menu */
   padding-left: 56px;
   padding-right: 16px;
+
+  /* Slightly left shift (as requested) */
+  transform: translateX(-10px);
+
   max-width: 100%;
 }
 
@@ -121,21 +125,42 @@ body {
   text-align: left;
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* MUST NEVER WRAP */
+.brand-title {
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  line-height: 1.1;
+  color: #000;
+
+  /* Responsive size: not too big on wide screens, shrinks on small screens */
+  font-size: clamp(18px, 4.6vw, 28px);
+
+  white-space: nowrap; /* critical */
+  overflow: hidden;
+  text-overflow: ellipsis; /* safety for extremely tiny widths */
+}
+
+/* Subtitle: always exactly 2 lines (3 words + 3 words); never re-wrap */
+.brand-subtitle-block {
+  display: flex;
+  flex-direction: column;
   gap: 3px;
 }
 
-.brand-title {
+.brand-subtitle-line {
   font-weight: 800;
-  font-size: 24px;
-  letter-spacing: 0.3px;
-  line-height: 1.15;
-  color: #000;
-}
-
-.brand-subtitle {
-  font-size: 14px;
-  line-height: 1.2;
   color: #222;
+  line-height: 1.15;
+
+  font-size: clamp(12px, 2.9vw, 16px);
+
+  white-space: nowrap; /* prevents extra wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* only if someone’s on a very narrow screen */
 }
 
 /* Page layout */
@@ -173,8 +198,8 @@ body {
   border: 2px solid #000;
   border-radius: 16px;
 
-  padding: 14px 18px; /* controls “button” size */
-  width: auto;        /* only as wide as text */
+  padding: 14px 18px;
+  width: auto;
 }
 
 .card-link:hover {
@@ -184,6 +209,5 @@ body {
 /* Mobile tweaks */
 @media (max-width: 640px) {
   .header-inner { min-height: 178px; }
-  .brand-title { font-size: 22px; }
-  .brand-subtitle { font-size: 13px; }
+  .brand { transform: translateX(-6px); }
 }
