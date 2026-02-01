@@ -2,19 +2,208 @@
 <html lang="en-GB">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>The Route — Be More Amy</title>
 
+  <!-- Shared site styles (header/menu) -->
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --text:#f2f2f2;
+      --muted:#b7b7b7;
+      --panel:rgba(18,18,18,.94);
+      --border:rgba(255,255,255,.10);
+      --shadow:0 16px 44px rgba(0,0,0,.55);
+      --safeTop: env(safe-area-inset-top);
+      --safeBottom: env(safe-area-inset-bottom);
+
+      /* Route page header height (logo is 100px) */
+      --routeHeaderH: 126px;
+    }
+
+    *{ box-sizing:border-box; }
+
+    /* Keep your existing dark map look */
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+    }
+
+    /* Override shared header sizing just for route page */
+    .header-inner{
+      min-height: var(--routeHeaderH);
+      padding-top: calc(10px + var(--safeTop));
+      padding-bottom: 10px;
+    }
+
+    /* Put the leg select on the right of the header */
+    .route-controls{
+      position:absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      z-index: 1001;
+    }
+
+    /* Ensure centred brand doesn’t collide with right controls */
+    .brand{
+      padding-right: 92px; /* space for the select on the right */
+      padding-left: 56px;  /* space for menu on the left (matches style.css) */
+    }
+
+    /* Leg dropdown styling (kept similar to your previous look, but readable on pale header) */
+    #legSelect{
+      appearance:none;
+      border:1px solid rgba(0,0,0,.18);
+      background: rgba(255,255,255,.70);
+      color:#111;
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:650;
+      font-size:16px;
+      min-width: 150px;
+    }
+
+    /* Map height accounts for the sticky header */
+    #map{
+      height: calc(100vh - var(--routeHeaderH));
+      width: 100%;
+    }
+
+    /* Bottom panel (your existing design retained) */
+    .panel{
+      position:fixed;
+      left:10px;
+      right:10px;
+      bottom: calc(10px + var(--safeBottom));
+      z-index:1100;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      transition: max-height 180ms ease, padding 180ms ease;
+    }
+
+    .panel.collapsed{
+      padding: 10px 12px;
+      max-height: 52px;
+    }
+
+    .panel.expanded{
+      padding: 10px 12px 10px;
+      max-height: 26vh;
+      overflow:auto;
+    }
+
+    .panel-tip{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.25;
+      margin:0;
+    }
+
+    .panel-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:2px;
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:14px;
+      font-weight:800;
+      letter-spacing:0;
+      line-height:1.2;
+    }
+
+    .closeBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      width:30px;
+      height:30px;
+      border-radius:10px;
+      font-size:18px;
+      line-height:1;
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+
+    .subtitle{
+      margin:0 0 8px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.15;
+      font-weight:800;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:6px;
+      font-size:13px;
+      line-height:1.15;
+    }
+
+    .row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px dashed rgba(255,255,255,.10);
+      padding-bottom:6px;
+    }
+    .row:last-child{ border-bottom:none; padding-bottom:0; }
+
+    .label{ color:var(--muted); min-width:45%; }
+    .value{ text-align:right; word-break:break-word; }
+
+    a{ color:#9ad1ff; text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+
+    /* Leaflet popup rounding */
+    .leaflet-popup-content-wrapper{ border-radius:14px; }
+
+    @media (min-width: 820px){
+      #map{ height: calc(100vh - var(--routeHeaderH)); }
+      .panel{ left:14px; right:14px; max-width:720px; }
+      .panel.expanded{ max-height: 240px; }
+    }
+
+    @media (max-width: 420px){
+      #legSelect{ min-width: 130px; font-size: 15px; }
+      .brand-logo{ width: 100px; height: 100px; }
+    }
+  </style>
 </head>
 
 <body>
 
-  <!-- Sticky Header -->
+  <!-- Sticky Header (matching index styling/colour via style.css) -->
   <header class="site-header">
     <div class="header-inner">
 
-      <!-- Menu button (left) -->
+      <!-- Menu pinned to the far left -->
       <div class="menu-wrap">
         <button
           class="menu-button"
@@ -39,8 +228,8 @@
         </nav>
       </div>
 
-      <!-- Logo + title -->
-      <a class="brand" href="index.html">
+      <!-- Brand centred -->
+      <a class="brand" href="index.html" aria-label="Be More Amy Home">
         <img
           class="brand-logo"
           src="BMAlogo.svg"
@@ -55,33 +244,45 @@
         </div>
       </a>
 
+      <!-- Leg dropdown retained (right side of header) -->
+      <div class="route-controls">
+        <select id="legSelect" aria-label="Select leg">
+          <option value="">Select leg…</option>
+        </select>
+      </div>
+
     </div>
   </header>
 
-  <!-- Page Content -->
-  <main class="page">
+  <!-- Map (restored) -->
+  <div id="map" aria-label="Route map"></div>
 
-    <h1>The Route</h1>
+  <!-- Info panel (restored) -->
+  <section class="panel collapsed" id="panel" aria-live="polite">
+    <p class="panel-tip" id="panelTip">Zoom with pinch/scroll, drag to pan. Tap a leg to view details.</p>
 
-    <!-- Existing leg selector retained -->
-    <section>
-      <label for="legSelect"><strong>Select a leg:</strong></label><br><br>
+    <div id="panelExpanded" style="display:none">
+      <div class="panel-head">
+        <h2 class="panel-title" id="panelLegTitle">Leg</h2>
+        <button class="closeBtn" id="closeBtn" type="button" aria-label="Close">×</button>
+      </div>
 
-      <!-- Keep your existing leg dropdown options -->
-      <select id="legSelect">
-        <option>Select a leg...</option>
-        <!-- existing options remain here -->
-      </select>
-    </section>
+      <p class="subtitle" id="panelSubtitle"></p>
+      <div class="grid" id="detailsGrid"></div>
+    </div>
+  </section>
 
-    <!-- Existing route/map content continues below -->
-    <section id="routeContent">
-      <!-- Your current route or map content remains here -->
-    </section>
+  <!-- Leaflet -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
 
-  </main>
+  <!-- Your existing app logic (restored) -->
+  <script src="./app.js"></script>
 
-  <!-- Menu script -->
+  <!-- Menu behaviour (same as index) -->
   <script>
     (function () {
       const btn = document.getElementById("menuBtn");
