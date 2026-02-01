@@ -27,16 +27,16 @@ body {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: #FAEBC8; /* HSB(42,20,98) -> approx hex */
+  background: #FAEBC8; /* HSB(42,20,98) approx */
   border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
 .header-inner {
   position: relative;
-  height: 112px;
+  min-height: 170px; /* allows for 150px logo plus breathing room */
   display: flex;
   align-items: center;
-  justify-content: center; /* centres the logo+text group overall */
+  justify-content: center; /* centre logo+text overall */
   padding: 10px 16px;
 }
 
@@ -44,29 +44,34 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   text-decoration: none;
   color: inherit;
+
+  /* Reserve space on both sides so text never runs into the menu area */
+  padding-left: 56px;  /* space for left menu button */
+  padding-right: 16px;
+  max-width: 100%;
 }
 
 .brand-logo {
-  width: 100px;
-  height: 100px;
+  width: 150px;
+  height: 150px;
   object-fit: contain;
-  flex: 0 0 100px;
+  flex: 0 0 150px;
 }
 
 .brand-text {
-  text-align: left; /* left-justified text next to logo */
+  text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .brand-title {
   font-weight: 800;
-  font-size: 22px;
-  letter-spacing: 0.2px;
+  font-size: 24px;
+  letter-spacing: 0.3px;
   line-height: 1.15;
   color: #000;
 }
@@ -77,20 +82,19 @@ body {
   color: #222;
 }
 
-/* Menu on far right */
+/* Menu on far left */
 .menu-wrap {
   position: absolute;
-  right: 16px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
 }
 
+/* Borderless menu button */
 .menu-button {
   appearance: none;
   border: none;
-  background: rgba(255,255,255,0.65);
-  border: 1px solid rgba(0,0,0,0.10);
-  border-radius: 10px;
+  background: transparent;
   padding: 10px;
   display: inline-flex;
   align-items: center;
@@ -100,15 +104,16 @@ body {
 
 .menu-button:focus {
   outline: 2px solid rgba(0,0,0,0.25);
-  outline-offset: 2px;
+  outline-offset: 3px;
+  border-radius: 10px;
 }
 
 /* Dropdown */
 .menu-dropdown {
   position: absolute;
-  right: 0;
+  left: 0;
   top: calc(100% + 10px);
-  min-width: 200px;
+  min-width: 210px;
   background: #ffffff;
   border: 1px solid rgba(0,0,0,0.10);
   border-radius: 14px;
@@ -155,37 +160,29 @@ body {
 }
 
 .card-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   text-decoration: none;
-  color: inherit;
-  border: 1px solid rgba(0,0,0,0.10);
+  color: #111;
+  font-weight: 800;
+  font-size: 18px;
+
+  background: #FAEBC8; /* same as header */
+  border: 2px solid #000;
   border-radius: 16px;
-  padding: 16px;
-  background: #fff;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  padding: 18px 14px;
 }
 
 .card-link:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
-}
-
-.card-title {
-  font-weight: 800;
-  font-size: 18px;
-  margin-bottom: 6px;
-}
-
-.card-body {
-  font-size: 15px;
-  color: #333;
+  filter: brightness(0.98);
 }
 
 /* Mobile adjustments */
 @media (max-width: 640px) {
-  .header-inner { height: 118px; }
-  .brand-title { font-size: 20px; }
+  .header-inner { min-height: 178px; }
+  .brand-title { font-size: 22px; }
   .brand-subtitle { font-size: 13px; }
   .quick-links { grid-template-columns: 1fr; }
 }
