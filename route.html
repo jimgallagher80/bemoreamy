@@ -24,10 +24,7 @@
       --safeTop: env(safe-area-inset-top);
       --safeBottom: env(safe-area-inset-bottom);
 
-      /* Main site header colour */
       --bmaHeader:#FAEBC8;
-
-      /* Route header height */
       --routeHeaderH: 150px;
     }
 
@@ -39,6 +36,19 @@
       color:var(--text);
       -webkit-font-smoothing:antialiased;
       text-rendering:optimizeLegibility;
+    }
+
+    /* Properly hide SR-only text (fixes the blue "Open menu") */
+    .sr-only{
+      position:absolute !important;
+      width:1px !important;
+      height:1px !important;
+      padding:0 !important;
+      margin:-1px !important;
+      overflow:hidden !important;
+      clip:rect(0,0,0,0) !important;
+      white-space:nowrap !important;
+      border:0 !important;
     }
 
     /* Header */
@@ -120,14 +130,13 @@
       flex-direction:column;
       align-items:center;
       justify-content:center;
-      gap:6px;
       text-align:center;
       color:#000;
 
-      /* bring content down a touch (helps iPhone look) */
-      padding-top: 12px;
+      /* bring content down slightly */
+      padding-top: 14px;
 
-      /* keeps it away from menu + select */
+      /* keep clear of menu + select */
       padding-left: 150px;
       padding-right: 150px;
     }
@@ -139,17 +148,32 @@
       display:block;
     }
 
-    /* Two-line title */
-    h1{
+    /* Reduce vertical gap between logo and title */
+    .route-title{
+      margin-top: 4px; /* tighter */
+    }
+
+    /* Slightly smaller title, still bold */
+    .route-title h1{
       margin:0;
       font-weight:800;
       color:#000;
       line-height:1.12;
-      font-size: clamp(16px, 4.6vw, 20px);
+      font-size: clamp(15px, 4.2vw, 19px);
     }
+
     .title-line{
       display:block;
-      white-space:nowrap; /* never wrap beyond the intended 2 lines */
+      white-space:nowrap; /* never wrap beyond intended lines */
+    }
+
+    /* Date line: smaller, not bold, never wraps */
+    .route-date{
+      margin-top: 4px;
+      font-size: clamp(12px, 3.4vw, 15px);
+      font-weight: 400;
+      color:#000;
+      white-space: nowrap;
     }
 
     /* Right-side controls (leg select) */
@@ -159,28 +183,27 @@
       top:50%;
       transform:translateY(-50%);
       display:flex;
-      gap:10px;
       align-items:center;
       justify-content:flex-end;
       z-index:1200;
     }
 
-    /* Smaller select (same shape, new colours already requested) */
+    /* Smaller select (still right-justified) */
     #legSelect{
       appearance:none;
       border:1.5px solid #000;
       background: var(--bmaHeader);
       color:#000;
 
-      padding: 8px 10px;
+      padding: 7px 9px;
       border-radius: 14px;
 
       font-weight:650;
-      font-size: 14px;
-      min-width: 128px;
+      font-size: 13px;
+      min-width: 112px;
     }
 
-    /* Compact header when panel expanded (preserve behaviour) */
+    /* Compact header when panel expanded */
     body.compact-header .topbar{
       padding: calc(8px + var(--safeTop)) 12px 8px;
     }
@@ -189,18 +212,20 @@
     }
     body.compact-header .route-brand{
       padding-top: 0;
-      gap: 4px;
+      padding-left: 120px;
+      padding-right: 120px;
     }
     body.compact-header .route-brand img{
       width:44px;
       height:44px;
     }
-    body.compact-header h1{
+    body.compact-header .route-title h1{
       font-size:14px;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
+    body.compact-header .route-date{ display:none; }
     body.compact-header .controls{ display:none; }
 
     /* Map */
@@ -328,15 +353,18 @@
 
     .leaflet-popup-content-wrapper{ border-radius:14px; }
 
-    @media (min-width: 820px){
-      #map{ height: calc(100vh - var(--routeHeaderH)); }
-      .panel{ left:14px; right:14px; max-width:720px; }
-      .panel.expanded{ max-height: 240px; }
-    }
-
     @media (max-width: 420px){
-      .route-brand{ padding-left: 140px; padding-right: 140px; padding-top: 14px; }
-      #legSelect{ min-width: 118px; font-size: 13px; padding: 7px 9px; }
+      .route-brand{
+        padding-left: 130px;
+        padding-right: 130px;
+        padding-top: 16px;
+      }
+      #legSelect{
+        min-width: 104px;
+        font-size: 12px;
+        padding: 6px 8px;
+        border-radius: 13px;
+      }
     }
   </style>
 </head>
@@ -370,15 +398,20 @@
         </nav>
       </div>
 
-      <!-- Centre logo + 2-line title -->
+      <!-- Centre logo + title + date -->
       <div class="route-brand">
         <a href="index.html" aria-label="Home" style="display:inline-block">
           <img src="BMAlogo.svg" alt="Be More Amy logo" width="100" height="100" />
         </a>
-        <h1 id="headerTitle">
-          <span class="title-line">South West Coastal Path</span>
-          <span class="title-line">Relay Challenge</span>
-        </h1>
+
+        <div class="route-title">
+          <h1 id="headerTitle">
+            <span class="title-line">South West Coastal Path</span>
+            <span class="title-line">Relay Challenge</span>
+          </h1>
+        </div>
+
+        <div class="route-date">15th May to 24th May 2026</div>
       </div>
 
       <!-- Leg select (right) -->
