@@ -33,7 +33,7 @@ body {
 
 .header-inner {
   position: relative;
-  min-height: 180px;
+  min-height: 120px;              /* reduced now logo is 100px */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -108,37 +108,36 @@ body {
   padding-left: 56px;
   padding-right: 16px;
 
-  /* slight left nudge */
-  transform: translateX(-10px);
+  /* small left nudge */
+  transform: translateX(-6px);
 
-  /* limit width so text doesn't "wander" into space */
   max-width: 100%;
 }
 
 .brand-logo {
-  width: 150px;
-  height: 150px;
+  width: 100px;
+  height: 100px;
   object-fit: contain;
-  flex: 0 0 150px;
+  flex: 0 0 100px;
 }
 
 .brand-text {
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px; /* overall tighter */
   min-width: 0;
 
-  /* prevents the text block getting too wide and causing weird wraps */
-  max-width: min(420px, calc(100vw - 260px));
+  /* keeps text from sprawling weirdly */
+  max-width: min(460px, calc(100vw - 190px));
 }
 
 /* Every header line: never wrap */
 .brand-line {
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis; /* last-resort on ultra-narrow screens */
-  line-height: 1.12;
+  text-overflow: ellipsis; /* last-resort */
+  line-height: 1.1;
 }
 
 /* Line 1 */
@@ -146,21 +145,23 @@ body {
   font-weight: 800;
   letter-spacing: 0.4px;
   color: #000;
-  font-size: clamp(16px, 4.2vw, 26px);
+  font-size: clamp(18px, 4.8vw, 30px);
 }
 
-/* Lines 2–3 */
+/* Lines 2–3 (BOLD as requested, and tighter line-height) */
 .brand-subtitle {
-  font-weight: 800;
+  font-weight: 800;           /* bold */
   color: #222;
-  font-size: clamp(12px, 2.9vw, 16px);
+  line-height: 1.05;          /* tighter between the two subtitle lines */
+  font-size: clamp(14px, 3.2vw, 18px);
 }
 
-/* Line 4 (date) */
+/* Line 4 (date): same size as subtitle, NOT bold */
 .brand-date {
-  font-weight: 700;
+  font-weight: 400;           /* not bold */
   color: #222;
-  font-size: clamp(11px, 2.6vw, 15px);
+  line-height: 1.05;
+  font-size: clamp(14px, 3.2vw, 18px); /* same as subtitle */
 }
 
 /* Page layout */
@@ -207,7 +208,8 @@ body {
 }
 
 /* Mobile tweaks */
-@media (max-width: 640px) {
-  .header-inner { min-height: 190px; }
-  .brand { transform: translateX(-6px); }
+@media (max-width: 420px) {
+  .header-inner { padding: 10px 12px; }
+  .brand { transform: translateX(-4px); }
+  .brand-text { max-width: calc(100vw - 180px); }
 }
