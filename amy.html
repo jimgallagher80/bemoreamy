@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BE MORE AMY — About Amy</title>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Sticky Header -->
+  <header class="site-header">
+    <div class="header-inner">
+
+      <!-- Menu pinned to the far left -->
+      <div class="menu-wrap">
+        <button
+          class="menu-button"
+          type="button"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-controls="site-menu"
+          id="menuBtn"
+          title="Menu"
+        >
+          <img src="menu.svg" alt="" width="22" height="22" aria-hidden="true" />
+          <span class="sr-only">Open menu</span>
+        </button>
+
+        <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
+          <a href="index.html">The Challenge</a>
+          <a href="amy.html">About Amy</a>
+          <a href="route.html">The Route</a>
+          <a href="signup.html">Sign Up</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+
+      <!-- Brand block (not clickable as a whole) -->
+      <div class="brand" aria-label="Be More Amy header">
+
+        <!-- Only logo is clickable -->
+        <a class="logo-link" href="index.html" aria-label="Home">
+          <img
+            class="brand-logo"
+            src="BMAlogo.svg"
+            alt="Be More Amy logo"
+            width="100"
+            height="100"
+          />
+        </a>
+
+        <div class="brand-text">
+          <div class="brand-line brand-title">BE MORE AMY</div>
+          <div class="brand-line brand-subtitle">South West Coastal</div>
+          <div class="brand-line brand-subtitle">Path Relay Challenge</div>
+          <div class="brand-line brand-date">16th to 25th May 2026</div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Content -->
+  <main class="page">
+    <section class="intro" aria-label="About Amy">
+
+      <p><strong>Cdr Amy Gilmore MBE RN</strong></p>
+
+      <figure style="margin: 12px 0 18px 0;">
+        <img
+          src="amy1.PNG"
+          alt="Commander Amy Gilmore MBE RN"
+          style="display:block;width:100%;max-width:560px;margin:0 auto;border-radius:16px;border:1px solid rgba(0,0,0,0.10);"
+        />
+      </figure>
+
+      <p>
+        Amy was the kind of person who made things feel lighter, even on the hard days. She had a rare mix of warmth and drive:
+        the sort of friend who would send a voice note to check in, organise the plan, and then make you laugh until you forgot why
+        you were stressed in the first place.
+      </p>
+
+      <p>
+        As a Royal Navy officer, Amy led with quiet confidence. She set high standards, but never by talking down to anyone.
+        She made people feel capable. She noticed the person who was being overlooked, brought them into the fold, and made sure
+        they left stronger than they arrived. The “MBE” after her name speaks to her service — but the real measure of Amy was
+        the number of people who felt supported, encouraged, and seen because she was in their corner.
+      </p>
+
+      <p>
+        She loved being outdoors, loved a challenge, and loved the feeling of earning something step by step. The South West Coast
+        Path captured that spirit perfectly: big horizons, honest effort, and moments of joy tucked between the tough sections.
+        Amy didn’t just want to complete it — she wanted to bring people with her, to turn a personal goal into a shared adventure.
+      </p>
+
+      <p>
+        “Be More Amy” is our way of keeping that spirit alive. It’s not about being the fastest, the fittest, or the most experienced.
+        It’s about showing up, doing what you can, and lifting others as you go — with humour, kindness, and determination.
+        That’s what Amy did, every day.
+      </p>
+
+      <p>
+        This relay carries her with us: in the stories we tell, the friends we make along the way, and the care we raise for the
+        charities that mattered to her and her loved ones. However far you go, you’re part of Amy’s team.
+      </p>
+
+    </section>
+
+    <section class="quick-links" aria-label="Quick links">
+      <a class="card-link" href="route.html">The Route</a>
+      <a class="card-link" href="signup.html">Sign Up</a>
+    </section>
+  </main>
+
+  <!-- Menu behaviour -->
+  <script>
+    (function () {
+      const btn = document.getElementById("menuBtn");
+      const menu = document.getElementById("site-menu");
+
+      function closeMenu() {
+        menu.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+      }
+
+      function toggleMenu() {
+        const isOpen = menu.classList.toggle("open");
+        btn.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleMenu();
+      });
+
+      document.addEventListener("click", () => closeMenu());
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMenu();
+      });
+
+      menu.addEventListener("click", (e) => e.stopPropagation());
+    })();
+  </script>
+
+</body>
+</html>
