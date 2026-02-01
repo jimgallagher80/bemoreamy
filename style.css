@@ -33,11 +33,67 @@ body {
 
 .header-inner {
   position: relative;
-  min-height: 170px; /* allows for 150px logo plus breathing room */
+  min-height: 170px;
   display: flex;
   align-items: center;
-  justify-content: center; /* centre logo+text overall */
+  justify-content: center;
   padding: 10px 16px;
+}
+
+/* Menu pinned to the left */
+.menu-wrap {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.menu-button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.menu-button:focus {
+  outline: 2px solid rgba(0,0,0,0.25);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+/* Dropdown opens from the left */
+.menu-dropdown {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 10px);
+  min-width: 210px;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+  padding: 8px;
+  display: none;
+}
+
+.menu-dropdown.open { display: block; }
+
+.menu-dropdown a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #111;
+  font-size: 15px;
+}
+
+.menu-dropdown a:hover,
+.menu-dropdown a:focus {
+  background: rgba(250, 235, 200, 0.55);
+  outline: none;
 }
 
 /* Brand group (logo + text) */
@@ -48,8 +104,8 @@ body {
   text-decoration: none;
   color: inherit;
 
-  /* Reserve space on both sides so text never runs into the menu area */
-  padding-left: 56px;  /* space for left menu button */
+  /* Keep clear space so the centred brand never overlaps the left menu */
+  padding-left: 56px;
   padding-right: 16px;
   max-width: 100%;
 }
@@ -82,63 +138,6 @@ body {
   color: #222;
 }
 
-/* Menu on far left */
-.menu-wrap {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-/* Borderless menu button */
-.menu-button {
-  appearance: none;
-  border: none;
-  background: transparent;
-  padding: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.menu-button:focus {
-  outline: 2px solid rgba(0,0,0,0.25);
-  outline-offset: 3px;
-  border-radius: 10px;
-}
-
-/* Dropdown */
-.menu-dropdown {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 10px);
-  min-width: 210px;
-  background: #ffffff;
-  border: 1px solid rgba(0,0,0,0.10);
-  border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-  padding: 8px;
-  display: none;
-}
-
-.menu-dropdown.open { display: block; }
-
-.menu-dropdown a {
-  display: block;
-  padding: 10px 12px;
-  border-radius: 10px;
-  text-decoration: none;
-  color: #111;
-  font-size: 15px;
-}
-
-.menu-dropdown a:hover,
-.menu-dropdown a:focus {
-  background: rgba(250, 235, 200, 0.55);
-  outline: none;
-}
-
 /* Page layout */
 .page {
   max-width: 860px;
@@ -151,16 +150,17 @@ body {
   margin: 0 0 14px 0;
 }
 
-/* Quick link cards */
+/* Quick link buttons: auto-width, centred side-by-side */
 .quick-links {
   margin-top: 24px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  justify-content: center;
   gap: 14px;
+  flex-wrap: wrap;
 }
 
 .card-link {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 
@@ -172,17 +172,18 @@ body {
   background: #FAEBC8; /* same as header */
   border: 2px solid #000;
   border-radius: 16px;
-  padding: 18px 14px;
+
+  padding: 14px 18px; /* controls “button” size */
+  width: auto;        /* only as wide as text */
 }
 
 .card-link:hover {
   filter: brightness(0.98);
 }
 
-/* Mobile adjustments */
+/* Mobile tweaks */
 @media (max-width: 640px) {
   .header-inner { min-height: 178px; }
   .brand-title { font-size: 22px; }
   .brand-subtitle { font-size: 13px; }
-  .quick-links { grid-template-columns: 1fr; }
 }
