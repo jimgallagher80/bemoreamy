@@ -12,6 +12,7 @@
   <!-- Sticky Header -->
   <header class="site-header">
     <div class="header-inner">
+
       <!-- Menu pinned to the far left -->
       <div class="menu-wrap">
         <button
@@ -37,15 +38,19 @@
         </nav>
       </div>
 
-      <!-- Brand -->
-      <a class="brand" href="index.html" aria-label="Be More Amy Home">
-        <img
-          class="brand-logo"
-          src="BMAlogo.svg"
-          alt="Be More Amy logo"
-          width="100"
-          height="100"
-        />
+      <!-- Brand block (not clickable as a whole) -->
+      <div class="brand" aria-label="Be More Amy header">
+
+        <!-- Only logo is clickable -->
+        <a class="logo-link" href="index.html" aria-label="Home">
+          <img
+            class="brand-logo"
+            src="BMAlogo.svg"
+            alt="Be More Amy logo"
+            width="100"
+            height="100"
+          />
+        </a>
 
         <div class="brand-text">
           <div class="brand-line brand-title">BE MORE AMY</div>
@@ -53,7 +58,8 @@
           <div class="brand-line brand-subtitle">Path Relay Challenge</div>
           <div class="brand-line brand-date">16th to 25th May 2026</div>
         </div>
-      </a>
+
+      </div>
     </div>
   </header>
 
@@ -85,6 +91,7 @@
     </section>
   </main>
 
+  <!-- Menu behaviour -->
   <script>
     (function () {
       const btn = document.getElementById("menuBtn");
@@ -114,5 +121,6 @@
       menu.addEventListener("click", (e) => e.stopPropagation());
     })();
   </script>
+
 </body>
 </html>
