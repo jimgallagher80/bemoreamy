@@ -37,7 +37,7 @@
         </nav>
       </div>
 
-      <!-- Brand centred overall -->
+      <!-- Brand (slightly left-shifted via CSS) -->
       <a class="brand" href="index.html" aria-label="Be More Amy Home">
         <img
           class="brand-logo"
@@ -48,8 +48,12 @@
         />
         <div class="brand-text">
           <div class="brand-title">BE MORE AMY</div>
-          <div class="brand-subtitle">South West Coastal</div>
-          <div class="brand-subtitle">Path Relay Challenge</div>
+
+          <!-- Always 3 words + 3 words (manual lines), CSS prevents extra wrapping -->
+          <div class="brand-subtitle-block" aria-label="South West Coastal Path Relay Challenge">
+            <div class="brand-subtitle-line">South West Coastal</div>
+            <div class="brand-subtitle-line">Path Relay Challenge</div>
+          </div>
         </div>
       </a>
     </div>
@@ -58,9 +62,7 @@
   <!-- Page Content -->
   <main class="page">
     <section class="intro">
-      <p>
-        This challenge is about more than just miles—it’s a tribute.
-      </p>
+      <p>This challenge is about more than just miles—it’s a tribute.</p>
 
       <p>
         We’re coming together to walk, run, and relay our way along the South West Coast Path in honour of our dear friend Amy, whose strength, humour, and boundless kindness left a mark on us all. Though she didn’t get the chance to complete the path herself, we’ll carry her spirit and her walking poles with us every step of the way, so that together, we finish what she started.
