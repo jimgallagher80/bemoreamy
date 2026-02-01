@@ -3,12 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>The Route — Be More Amy</title>
+  <title>South West Coastal Path — Route Map</title>
 
-  <!-- Shared site styles (header/menu) -->
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Leaflet -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -23,17 +19,19 @@
       --muted:#b7b7b7;
       --panel:rgba(18,18,18,.94);
       --border:rgba(255,255,255,.10);
+      --orange:#ff7a00;
       --shadow:0 16px 44px rgba(0,0,0,.55);
       --safeTop: env(safe-area-inset-top);
       --safeBottom: env(safe-area-inset-bottom);
 
-      /* Route page header height (logo is 100px) */
-      --routeHeaderH: 126px;
+      /* Main site header colour */
+      --bmaHeader:#FAEBC8;
+
+      /* Route header total height so map fits under it */
+      --routeHeaderH: 150px;
     }
 
     *{ box-sizing:border-box; }
-
-    /* Keep your existing dark map look */
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
@@ -43,51 +41,160 @@
       text-rendering:optimizeLegibility;
     }
 
-    /* Override shared header sizing just for route page */
-    .header-inner{
-      min-height: var(--routeHeaderH);
-      padding-top: calc(10px + var(--safeTop));
-      padding-bottom: 10px;
+    /* Header (keeps original IDs/behaviour, but new layout + colour) */
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:1000;
+      padding: calc(10px + var(--safeTop)) 14px 10px;
+      background: var(--bmaHeader);
+      border-bottom:1px solid rgba(0,0,0,.10);
+      transition: padding 180ms ease;
     }
 
-    /* Put the leg select on the right of the header */
-    .route-controls{
-      position:absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
+    .topbar-row{
+      position:relative;
+      height: var(--routeHeaderH);
       display:flex;
       align-items:center;
-      gap:10px;
-      z-index: 1001;
+      justify-content:center;
     }
 
-    /* Ensure centred brand doesn’t collide with right controls */
-    .brand{
-      padding-right: 92px; /* space for the select on the right */
-      padding-left: 56px;  /* space for menu on the left (matches style.css) */
+    /* Left menu button */
+    .menu-wrap{
+      position:absolute;
+      left:0;
+      top:50%;
+      transform:translateY(-50%);
+      z-index:1200;
     }
 
-    /* Leg dropdown styling (kept similar to your previous look, but readable on pale header) */
-    #legSelect{
+    .menu-button{
       appearance:none;
-      border:1px solid rgba(0,0,0,.18);
-      background: rgba(255,255,255,.70);
+      border:none;
+      background:transparent;
+      padding:10px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+    }
+    .menu-button:focus{
+      outline:2px solid rgba(0,0,0,.30);
+      outline-offset:3px;
+      border-radius:10px;
+    }
+
+    .menu-dropdown{
+      position:absolute;
+      left:0;
+      top: calc(100% + 8px);
+      min-width: 210px;
+      background:#ffffff;
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+      padding:8px;
+      display:none;
+    }
+    .menu-dropdown.open{ display:block; }
+
+    .menu-dropdown a{
+      display:block;
+      padding:10px 12px;
+      border-radius:10px;
+      text-decoration:none;
       color:#111;
+      font-size:15px;
+      font-weight:650;
+    }
+    .menu-dropdown a:hover,
+    .menu-dropdown a:focus{
+      background: rgba(250,235,200,.60);
+      outline:none;
+    }
+
+    /* Centre brand (logo + title only; no "BE MORE AMY") */
+    .route-brand{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      text-align:center;
+      color:#000;
+      padding: 0 170px; /* keeps space so it won't hit menu/leg select */
+    }
+
+    .route-brand img{
+      width:100px;
+      height:100px;
+      object-fit:contain;
+      display:block;
+    }
+
+    h1{
+      margin:0;
+      font-size:18px;
+      line-height:1.15;
+      font-weight:800;
+      letter-spacing:0;
+      color:#000;
+    }
+
+    /* Right-side controls (leg select) */
+    .controls{
+      position:absolute;
+      right:0;
+      top:50%;
+      transform:translateY(-50%);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      z-index:1200;
+    }
+
+    /* Keep same size/shape, but new colours per request */
+    select{
+      appearance:none;
+      border:2px solid #000;
+      background: var(--bmaHeader);
+      color:#000;
       padding:10px 12px;
       border-radius:14px;
       font-weight:650;
       font-size:16px;
-      min-width: 150px;
+      min-width:140px;
     }
 
-    /* Map height accounts for the sticky header */
+    /* Compact header when panel expanded (preserve original behaviour) */
+    body.compact-header .topbar{
+      padding: calc(8px + var(--safeTop)) 12px 8px;
+    }
+    body.compact-header .topbar-row{
+      height: 70px;
+    }
+    body.compact-header .route-brand img{
+      width:44px;
+      height:44px;
+    }
+    body.compact-header h1{
+      font-size:14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.compact-header .controls{ display:none; }
+
+    /* Map */
     #map{
       height: calc(100vh - var(--routeHeaderH));
       width: 100%;
     }
 
-    /* Bottom panel (your existing design retained) */
+    /* Bottom panel (UNCHANGED) */
     .panel{
       position:fixed;
       left:10px;
@@ -125,7 +232,7 @@
       align-items:flex-start;
       justify-content:space-between;
       gap:10px;
-      margin-bottom:2px;
+      margin-bottom:2px; /* tighter */
     }
 
     .panel-title{
@@ -181,7 +288,30 @@
     a{ color:#9ad1ff; text-decoration:none; }
     a:hover{ text-decoration:underline; }
 
-    /* Leaflet popup rounding */
+    /* Diamond marker (UNCHANGED) */
+    .diamond-wrap{
+      width:30px;
+      height:30px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transform: rotate(45deg);
+      border: 2px solid rgba(0,0,0,.65);
+      box-shadow: 0 0 0 4px rgba(0,0,0,.35);
+    }
+    .diamond-num{
+      transform: rotate(-45deg);
+      font-weight:900;
+      font-size:13px;
+      line-height:1;
+    }
+
+    /* Finish flag (UNCHANGED) */
+    .finish-flag{
+      font-size:18px;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.6));
+    }
+
     .leaflet-popup-content-wrapper{ border-radius:14px; }
 
     @media (min-width: 820px){
@@ -191,19 +321,22 @@
     }
 
     @media (max-width: 420px){
-      #legSelect{ min-width: 130px; font-size: 15px; }
-      .brand-logo{ width: 100px; height: 100px; }
+      .route-brand{
+        padding: 0 140px;
+      }
+      select{
+        min-width:130px;
+        font-size:15px;
+      }
     }
   </style>
 </head>
 
 <body>
+  <header class="topbar" id="topbar">
+    <div class="topbar-row">
 
-  <!-- Sticky Header (matching index styling/colour via style.css) -->
-  <header class="site-header">
-    <div class="header-inner">
-
-      <!-- Menu pinned to the far left -->
+      <!-- Menu (left) -->
       <div class="menu-wrap">
         <button
           class="menu-button"
@@ -215,7 +348,9 @@
           title="Menu"
         >
           <img src="menu.svg" alt="" width="22" height="22" aria-hidden="true" />
-          <span class="sr-only">Open menu</span>
+          <span class="sr-only" style="
+            position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+            clip:rect(0,0,0,0);white-space:nowrap;border:0;">Open menu</span>
         </button>
 
         <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
@@ -228,24 +363,16 @@
         </nav>
       </div>
 
-      <!-- Brand centred -->
-      <a class="brand" href="index.html" aria-label="Be More Amy Home">
-        <img
-          class="brand-logo"
-          src="BMAlogo.svg"
-          alt="Be More Amy logo"
-          width="100"
-          height="100"
-        />
-        <div class="brand-text">
-          <div class="brand-title">BE MORE AMY</div>
-          <div class="brand-subtitle">South West Coastal</div>
-          <div class="brand-subtitle">Path Relay Challenge</div>
-        </div>
-      </a>
+      <!-- Centre logo + title -->
+      <div class="route-brand">
+        <a href="index.html" aria-label="Home" style="display:inline-block">
+          <img src="BMAlogo.svg" alt="Be More Amy logo" width="100" height="100" />
+        </a>
+        <h1 id="headerTitle">South West Coastal Path<br>Challenge</h1>
+      </div>
 
-      <!-- Leg dropdown retained (right side of header) -->
-      <div class="route-controls">
+      <!-- Leg select (right) -->
+      <div class="controls" id="controls">
         <select id="legSelect" aria-label="Select leg">
           <option value="">Select leg…</option>
         </select>
@@ -254,10 +381,8 @@
     </div>
   </header>
 
-  <!-- Map (restored) -->
   <div id="map" aria-label="Route map"></div>
 
-  <!-- Info panel (restored) -->
   <section class="panel collapsed" id="panel" aria-live="polite">
     <p class="panel-tip" id="panelTip">Zoom with pinch/scroll, drag to pan. Tap a leg to view details.</p>
 
@@ -272,17 +397,15 @@
     </div>
   </section>
 
-  <!-- Leaflet -->
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
   ></script>
 
-  <!-- Your existing app logic (restored) -->
   <script src="./app.js"></script>
 
-  <!-- Menu behaviour (same as index) -->
+  <!-- Menu behaviour -->
   <script>
     (function () {
       const btn = document.getElementById("menuBtn");
@@ -312,6 +435,5 @@
       menu.addEventListener("click", (e) => e.stopPropagation());
     })();
   </script>
-
 </body>
 </html>
