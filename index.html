@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Be More Amy — South West Coast Path Relay Challenge</title>
+  <title>BE MORE AMY — South West Coastal Path Relay Challenge</title>
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -11,23 +11,8 @@
 <body>
   <!-- Sticky Header -->
   <header class="site-header">
-    <!-- Brand is centred as a whole; menu is pinned to the far right -->
     <div class="header-inner">
-      <a class="brand" href="index.html" aria-label="Be More Amy Home">
-        <img
-          class="brand-logo"
-          src="BMAlogo.svg"
-          alt="Be More Amy logo"
-          width="100"
-          height="100"
-        />
-        <div class="brand-text">
-          <div class="brand-title">Be More Amy</div>
-          <div class="brand-subtitle">South West Coastal Path Relay</div>
-          <div class="brand-subtitle">Challenge</div>
-        </div>
-      </a>
-
+      <!-- Menu pinned to the far left -->
       <div class="menu-wrap">
         <button
           class="menu-button"
@@ -38,7 +23,7 @@
           id="menuBtn"
           title="Menu"
         >
-          <img src="menu.svg" alt="" width="28" height="28" aria-hidden="true" />
+          <img src="menu.svg" alt="" width="22" height="22" aria-hidden="true" />
           <span class="sr-only">Open menu</span>
         </button>
 
@@ -51,6 +36,22 @@
           <a href="contact.html">Contact</a>
         </nav>
       </div>
+
+      <!-- Brand centred overall -->
+      <a class="brand" href="index.html" aria-label="Be More Amy Home">
+        <img
+          class="brand-logo"
+          src="BMAlogo.svg"
+          alt="Be More Amy logo"
+          width="150"
+          height="150"
+        />
+        <div class="brand-text">
+          <div class="brand-title">BE MORE AMY</div>
+          <div class="brand-subtitle">South West Coastal</div>
+          <div class="brand-subtitle">Path Relay Challenge</div>
+        </div>
+      </a>
     </div>
   </header>
 
@@ -79,15 +80,8 @@
     </section>
 
     <section class="quick-links" aria-label="Quick links">
-      <a class="card-link" href="about.html">
-        <div class="card-title">About Amy</div>
-        <div class="card-body">Learn about Amy, her story, and why this challenge matters.</div>
-      </a>
-
-      <a class="card-link" href="route.html">
-        <div class="card-title">The Route</div>
-        <div class="card-body">Explore the South West Coast Path legs and how the relay works.</div>
-      </a>
+      <a class="card-link" href="about.html">About Amy</a>
+      <a class="card-link" href="route.html">The Route</a>
     </section>
   </main>
 
@@ -117,7 +111,6 @@
         if (e.key === "Escape") closeMenu();
       });
 
-      // Prevent clicks inside the menu closing it immediately
       menu.addEventListener("click", (e) => e.stopPropagation());
     })();
   </script>
