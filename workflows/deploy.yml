@@ -2,7 +2,8 @@ name: Deploy to bemoreamy.com (FTP)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+  workflow_dispatch:
 
 concurrency:
   group: deploy-production
@@ -21,7 +22,12 @@ jobs:
         run: |
           SHA="${GITHUB_SHA}"
           TS="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-          # Replace placeholders in deploy.html
+
+          if [ ! -f "deploy.html" ]; then
+            echo "deploy.html not found at repo root. Add it (recommended) or remove the stamp step."
+            exit 1
+          fi
+
           sed -i "s/__GITHUB_SHA__/${SHA}/g" deploy.html
           sed -i "s/__DEPLOYED_AT_UTC__/${TS}/g" deploy.html
 
@@ -31,8 +37,8 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ${{ secrets.FTP_PROTOCOL }}   # ftp / ftps (optional)
-          port: ${{ secrets.FTP_PORT }}           # optional
+          protocol: ${{ secrets.FTP_PROTOCOL }}
+          port: ${{ secrets.FTP_PORT }}
           local-dir: ./
           server-dir: ${{ secrets.FTP_REMOTE_DIR }}
           exclude: |
