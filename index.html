@@ -8,6 +8,12 @@
   <link rel="stylesheet" href="style.css" />
 
   <style>
+    /* Match sticky header background */
+    body {
+      background: #FAEBC8;
+      margin: 0;
+    }
+
     /* Home-only layout */
     .home {
       min-height: 100vh;
@@ -86,7 +92,7 @@
       transform: translateY(1px);
     }
 
-    /* Make the logo feel dominant on iPhone, then scale down on bigger screens */
+    /* Make logo dominant on iPhone, scale down on larger screens */
     @media (min-width: 768px) {
       .home { padding-top: 26px; }
       .home-title { font-size: 22px; }
@@ -115,13 +121,13 @@
     </div>
 
     <nav class="home-nav" aria-label="Primary navigation">
-      <a href="index.html">The Challenge</a>
+      <a href="challenge.html">The Challenge</a>
       <a href="amy.html">About Amy</a>
 
       <a href="route.html">The Route</a>
       <a href="signup.html">Sign Up</a>
 
-      <a href="gallagher.html">Gallagher</a>
+      <a href="gallery.html">Gallery</a>
       <a href="contact.html">Contact</a>
     </nav>
 
