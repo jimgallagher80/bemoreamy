@@ -41,19 +41,20 @@
     }
 
     .home-dates {
-      margin: 0 0 14px 0;
+      margin: 0 0 10px 0;
       font-weight: 800;
       font-size: 16px;
       line-height: 1.2;
       opacity: 0.9;
     }
 
+    /* Reduce gaps */
     .home-logo {
       width: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 6px 0 18px 0;
+      margin: 4px 0 12px 0; /* smaller than before */
     }
 
     .home-logo img {
@@ -68,9 +69,10 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-top: 4px;
+      margin-top: 0; /* smaller than before */
     }
 
+    /* Button fill slightly darker than page background */
     .home-nav a {
       display: flex;
       align-items: center;
@@ -79,7 +81,7 @@
       padding: 14px 10px;
       border: 2px solid #000;
       border-radius: 18px;
-      background: #fff;
+      background: #E6D2A6; /* darker than #FAEBC8 */
       font-weight: 800;
       text-decoration: none;
       color: #111;
@@ -92,14 +94,25 @@
       transform: translateY(1px);
     }
 
-    /* Make logo dominant on iPhone, scale down on larger screens */
+    /* Contact: single button centred on its own row */
+    .home-nav a.is-centre {
+      grid-column: 1 / -1;
+      justify-self: center;
+      width: min(360px, calc(100% - 24px));
+    }
+
+    /* Make logo dominant on iPhone, then scale down on bigger screens */
     @media (min-width: 768px) {
       .home { padding-top: 26px; }
       .home-title { font-size: 22px; }
       .home-dates { font-size: 16px; }
+
+      .home-logo { margin: 6px 0 14px 0; }
       .home-logo img { width: min(52vw, 360px); }
+
       .home-nav { gap: 14px; }
       .home-nav a { min-height: 60px; }
+      .home-nav a.is-centre { width: min(420px, calc(100% - 28px)); }
     }
 
     @media (min-width: 1024px) {
@@ -112,7 +125,10 @@
   <main class="home" aria-label="Be More Amy home">
 
     <div class="home-top">
-      <p class="home-title">South West Coastal Path Relay Challenge</p>
+      <p class="home-title">
+        South West Coastal<br />
+        Path Relay Challenge
+      </p>
       <p class="home-dates">16th to 25th May 2026</p>
     </div>
 
@@ -122,13 +138,15 @@
 
     <nav class="home-nav" aria-label="Primary navigation">
       <a href="challenge.html">The Challenge</a>
+      <a href="route.html">The Route</a>
+
+      <a href="charities.html">Charities</a>
       <a href="amy.html">About Amy</a>
 
-      <a href="route.html">The Route</a>
       <a href="signup.html">Sign Up</a>
-
       <a href="gallery.html">Gallery</a>
-      <a href="contact.html">Contact</a>
+
+      <a class="is-centre" href="contact.html">Contact</a>
     </nav>
 
   </main>
