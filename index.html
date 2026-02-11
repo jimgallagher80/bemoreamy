@@ -8,13 +8,11 @@
   <link rel="stylesheet" href="style.css" />
 
   <style>
-    /* Match sticky header background */
     body {
       background: #FAEBC8;
       margin: 0;
     }
 
-    /* Home-only layout */
     .home {
       min-height: 100vh;
       display: flex;
@@ -48,13 +46,12 @@
       opacity: 0.9;
     }
 
-    /* Reduce gaps */
     .home-logo {
       width: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 4px 0 12px 0; /* smaller than before */
+      margin: 4px 0 12px 0;
     }
 
     .home-logo img {
@@ -69,10 +66,9 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-top: 0; /* smaller than before */
+      margin-top: 0;
     }
 
-    /* Button fill slightly darker than page background */
     .home-nav a {
       display: flex;
       align-items: center;
@@ -81,7 +77,7 @@
       padding: 14px 10px;
       border: 2px solid #000;
       border-radius: 18px;
-      background: #E6D2A6; /* darker than #FAEBC8 */
+      background: #E6D2A6;
       font-weight: 800;
       text-decoration: none;
       color: #111;
@@ -94,14 +90,13 @@
       transform: translateY(1px);
     }
 
-    /* Contact: single button centred on its own row */
+    /* Contact centred but normal width */
     .home-nav a.is-centre {
       grid-column: 1 / -1;
       justify-self: center;
-      width: min(360px, calc(100% - 24px));
+      width: calc((100% - 12px) / 2);
     }
 
-    /* Make logo dominant on iPhone, then scale down on bigger screens */
     @media (min-width: 768px) {
       .home { padding-top: 26px; }
       .home-title { font-size: 22px; }
@@ -112,7 +107,10 @@
 
       .home-nav { gap: 14px; }
       .home-nav a { min-height: 60px; }
-      .home-nav a.is-centre { width: min(420px, calc(100% - 28px)); }
+
+      .home-nav a.is-centre {
+        width: calc((100% - 14px) / 2);
+      }
     }
 
     @media (min-width: 1024px) {
