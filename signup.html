@@ -10,11 +10,16 @@
 .signup-wrap { margin-top: 10px; border:2px solid #000; border-radius:18px; background:#fff; padding:16px; }
 .form-grid { display:grid; gap:14px; }
 .field label { display:block; font-weight:700; margin-bottom:6px; }
-.field input { width:100%; padding:12px; border:2px solid #000; border-radius:14px; font-size:16px; }
+.field input, .field select {
+    width:100%;
+    padding:12px;
+    border:2px solid #000;
+    border-radius:14px;
+    font-size:16px;
+}
 
 .legs-block { border:2px solid rgba(0,0,0,0.12); border-radius:16px; padding:12px; }
 .legs-title { font-weight:800; margin-bottom:10px; }
-.leg-row { margin-bottom:10px; }
 
 .btn {
     width:100%;
@@ -26,8 +31,6 @@
     font-size:16px;
     cursor:pointer;
 }
-.btn:disabled { opacity:.5; cursor:not-allowed; }
-
 .status { margin-top:10px; padding:10px; border:2px solid #000; border-radius:14px; display:none; font-weight:700; }
 
 .modal-backdrop {
@@ -64,7 +67,7 @@
   <div class="header-inner">
     <div class="menu-wrap">
       <button class="menu-button" id="menuBtn">
-        <img src="menu.svg" width="22" height="22">
+        <img src="menu.svg" width="22">
       </button>
       <nav class="menu-dropdown" id="site-menu">
         <a href="index.html">The Challenge</a>
@@ -80,10 +83,9 @@
         <img class="brand-logo" src="BMAlogo.svg" width="100">
       </a>
       <div class="brand-text">
-        <div class="brand-line brand-title">BE MORE AMY</div>
-        <div class="brand-line brand-subtitle">South West Coastal</div>
-        <div class="brand-line brand-subtitle">Path Relay Challenge</div>
-        <div class="brand-line brand-date">16th to 25th May 2026</div>
+        <div class="brand-title">BE MORE AMY</div>
+        <div>South West Coastal Path Relay Challenge</div>
+        <div>16th to 25th May 2026</div>
       </div>
     </div>
   </div>
@@ -93,10 +95,9 @@
 <h1>Sign Up</h1>
 
 <div class="signup-wrap">
-
 <div id="statusBox" class="status"></div>
 
-<form id="signupForm" class="form-grid">
+<form id="signupForm" class="form-grid" novalidate>
 
 <div class="field">
 <label>First Name</label>
@@ -131,7 +132,7 @@
 <div class="legs-block">
 <div class="legs-title">Choose your legs</div>
 <div id="legsContainer"></div>
-<button type="button" id="addLegBtn" class="btn" style="margin-top:10px;">Add Another Leg</button>
+<button type="button" id="addLegBtn" class="btn">Add Another Leg</button>
 </div>
 
 <div>
@@ -152,12 +153,10 @@ I confirm I have read and agree to the
 <div class="modal">
 <h2>Safety Information</h2>
 <p>
-This is a self-led relay challenge. Participants are responsible for their own planning,
-safety, navigation, equipment and wellbeing. By signing up you confirm that you and any
-team members take full responsibility for your participation.
-</p>
-<p>
-Nothing excludes liability where it would be unlawful to do so.
+Participants are responsible for their own safety, navigation, equipment and wellbeing.
+By signing up you confirm you understand participation is at your own risk and that
+you and any team members take full responsibility for your involvement.
+Nothing excludes liability where unlawful.
 </p>
 <button id="closeSafety">Close</button>
 </div>
@@ -169,37 +168,41 @@ const legsContainer = document.getElementById('legsContainer');
 const statusBox = document.getElementById('statusBox');
 const addLegBtn = document.getElementById('addLegBtn');
 
-function addLegRow(){
-    const input = document.createElement('input');
-    input.placeholder = "Leg number";
-    input.type = "number";
-    input.required = true;
-    input.style.marginBottom = "8px";
-    legsContainer.appendChild(input);
-}
-addLegRow();
+const TOTAL_LEGS = 50; // change to your actual number
 
-addLegBtn.addEventListener('click', addLegRow);
+function createLegDropdown() {
+    const select = document.createElement('select');
+    select.required = true;
+    select.innerHTML = '<option value="">Select a leg</option>';
+    for (let i = 1; i <= TOTAL_LEGS; i++) {
+        select.innerHTML += `<option value="${i}">Leg ${i}</option>`;
+    }
+    select.style.marginBottom = "10px";
+    legsContainer.appendChild(select);
+}
+
+createLegDropdown();
+
+addLegBtn.addEventListener('click', createLegDropdown);
 
 form.addEventListener('submit', async (e)=>{
     e.preventDefault();
 
-    if(!document.getElementById('safetyAccepted').checked){
-        showStatus("You must accept the safety information.");
-        return;
-    }
+    const legs = Array.from(legsContainer.querySelectorAll('select'))
+        .map(s => parseInt(s.value))
+        .filter(n => !isNaN(n));
 
-    const legs = Array.from(legsContainer.querySelectorAll('input'))
-        .map(i=>parseInt(i.value))
-        .filter(n=>!isNaN(n));
+    if (!legs.length) return showStatus("Please select at least one leg.");
+    if (!document.getElementById('safetyAccepted').checked)
+        return showStatus("You must accept the safety information.");
 
     const payload = {
-        first_name: firstName.value,
-        last_name: lastName.value,
-        email: email.value,
-        mobile: mobile.value,
-        emergency_name: emergencyName.value,
-        emergency_phone: emergencyPhone.value,
+        first_name: firstName.value.trim(),
+        last_name: lastName.value.trim(),
+        email: email.value.trim(),
+        mobile: mobile.value.trim(),
+        emergency_name: emergencyName.value.trim(),
+        emergency_phone: emergencyPhone.value.trim(),
         safety_accepted: 1,
         legs: legs
     };
@@ -213,12 +216,12 @@ form.addEventListener('submit', async (e)=>{
     const out = await res.json();
 
     if(out.ok){
-        showStatus(out.message);
+        showStatus("Signup received. Pending approval.");
         form.reset();
-        legsContainer.innerHTML='';
-        addLegRow();
+        legsContainer.innerHTML = '';
+        createLegDropdown();
     } else {
-        showStatus(out.error);
+        showStatus(out.error || "Submission failed.");
     }
 });
 
