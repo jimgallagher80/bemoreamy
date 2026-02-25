@@ -1,5 +1,7 @@
 <?php
 
+echo "SETUP VERSION: IP HOST TEST<br>";
+
 $host = "213.171.200.13";
 $db   = "signup";
 $user = "bma_api";
