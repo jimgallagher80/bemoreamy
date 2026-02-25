@@ -3,7 +3,7 @@
 $host = "mysql-200-l48.mysql.prositehosting.net";
 $db   = "signup";
 $user = "bma_api";
-$pass = "YOUR_DATABASE_PASSWORD"; // put your real password here
+$pass = "Shibboleth2025!"; // put your real password here
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
