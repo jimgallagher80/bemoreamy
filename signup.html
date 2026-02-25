@@ -168,7 +168,15 @@ const legsContainer = document.getElementById('legsContainer');
 const statusBox = document.getElementById('statusBox');
 const addLegBtn = document.getElementById('addLegBtn');
 
-const TOTAL_LEGS = 50; // change to your actual number
+const firstName = document.getElementById('firstName');
+const lastName = document.getElementById('lastName');
+const email = document.getElementById('email');
+const mobile = document.getElementById('mobile');
+const emergencyName = document.getElementById('emergencyName');
+const emergencyPhone = document.getElementById('emergencyPhone');
+const safetyAccepted = document.getElementById('safetyAccepted');
+
+const TOTAL_LEGS = 50; // adjust if needed
 
 function createLegDropdown() {
     const select = document.createElement('select');
@@ -193,7 +201,7 @@ form.addEventListener('submit', async (e)=>{
         .filter(n => !isNaN(n));
 
     if (!legs.length) return showStatus("Please select at least one leg.");
-    if (!document.getElementById('safetyAccepted').checked)
+    if (!safetyAccepted.checked)
         return showStatus("You must accept the safety information.");
 
     const payload = {
@@ -207,21 +215,26 @@ form.addEventListener('submit', async (e)=>{
         legs: legs
     };
 
-    const res = await fetch('/submit_signup.php', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
-    });
+    try {
+        const res = await fetch('/submit_signup.php', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+        });
 
-    const out = await res.json();
+        const out = await res.json();
 
-    if(out.ok){
-        showStatus("Signup received. Pending approval.");
-        form.reset();
-        legsContainer.innerHTML = '';
-        createLegDropdown();
-    } else {
-        showStatus(out.error || "Submission failed.");
+        if(out.ok){
+            showStatus("Signup received. Pending approval.");
+            form.reset();
+            legsContainer.innerHTML = '';
+            createLegDropdown();
+        } else {
+            showStatus(out.error || "Submission failed.");
+        }
+
+    } catch (err) {
+        showStatus("Network error. Please try again.");
     }
 });
 
