@@ -225,7 +225,7 @@ form.addEventListener('submit', async (e)=>{
         const out = await res.json();
 
         if(out.ok){
-            showStatus("Signup received. Pending approval.");
+            window.location.href = "/signup-status.html";
             form.reset();
             legsContainer.innerHTML = '';
             createLegDropdown();
