@@ -1,32 +1,25 @@
 <?php
-echo "SETUP VERSION: HOST DIAG 2<br>";
+echo "SETUP VERSION: FINAL CONNECT TEST<br>";
 
+$host = "mysql-200-148.mysql.prositehosting.net";
 $db   = "signup";
 $user = "bma_api";
-$pass = "YOUR_PASSWORD_HERE"; // replace
+$pass = "WestCoast2025!"; // replace
 
-$hostsToTry = [
-  "localhost",
-  "127.0.0.1",
-  "mysql",                 // common internal alias
-  "mysql8",                // sometimes used
-  "mysql.prositehosting.net",
-  "mysql-200-l48.mysql.prositehosting.net",
-  "213.171.200.13"
-];
+try {
+    $pdo = new PDO(
+        "mysql:host=$host;dbname=$db;charset=utf8mb4",
+        $user,
+        $pass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_TIMEOUT => 8,
+        ]
+    );
 
-foreach ($hostsToTry as $host) {
-  echo "<br>Trying host: <strong>" . htmlspecialchars($host) . "</strong><br>";
-  try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
-      PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-      PDO::ATTR_TIMEOUT => 6,
-    ]);
-    echo "✅ Connected OK on " . htmlspecialchars($host) . "<br>";
-    exit;
-  } catch (PDOException $e) {
-    echo "❌ Failed on " . htmlspecialchars($host) . ": " . htmlspecialchars($e->getMessage()) . "<br>";
-  }
+    echo "✅ Connected successfully to $host<br>";
+    echo "All good.";
+
+} catch (PDOException $e) {
+    echo "❌ Database error: " . htmlspecialchars($e->getMessage());
 }
-
-echo "<br>Done.";
