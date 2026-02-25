@@ -1,32 +1,27 @@
 <?php
 // setup_database.php
-// TEMPORARY DIAGNOSTIC FILE — delete it once we've confirmed the correct DB host.
+// Temporary test file — delete after confirming connection
 
-echo "SETUP VERSION: HOST DIAG<br>";
+echo "SETUP VERSION: FINAL TEST<br>";
 
+$host = "mysql-200-l48.mysql.prositehosting.net";
 $db   = "signup";
 $user = "bma_api";
-$pass = "Shibboleth2025!"; // <-- replace with your real password
+$pass = "WestCoast2025!";  // <-- put your real password here
 
-$hostsToTry = [
-  "localhost",
-  "127.0.0.1",
-  "mysql-200-l48.mysql.prositehosting.net",
-  "213.171.200.13"
-];
+try {
+    $pdo = new PDO(
+        "mysql:host=$host;dbname=$db;charset=utf8mb4",
+        $user,
+        $pass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_TIMEOUT => 5
+        ]
+    );
 
-foreach ($hostsToTry as $host) {
-  echo "<br>Trying host: <strong>" . htmlspecialchars($host) . "</strong><br>";
-  try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
-      PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-      PDO::ATTR_TIMEOUT => 5,
-    ]);
-    echo "✅ Connected OK on " . htmlspecialchars($host) . "<br>";
-    exit;
-  } catch (PDOException $e) {
-    echo "❌ Failed on " . htmlspecialchars($host) . ": " . htmlspecialchars($e->getMessage()) . "<br>";
-  }
+    echo "✅ Connection successful!";
+
+} catch (PDOException $e) {
+    echo "❌ Database error: " . $e->getMessage();
 }
-
-echo "<br>Done.";
