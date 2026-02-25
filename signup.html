@@ -11,52 +11,55 @@
 .form-grid { display:grid; gap:14px; }
 .field label { display:block; font-weight:700; margin-bottom:6px; }
 .field input, .field select {
-    width:100%;
-    padding:12px;
-    border:2px solid #000;
-    border-radius:14px;
-    font-size:16px;
+  width:100%;
+  padding:12px;
+  border:2px solid #000;
+  border-radius:14px;
+  font-size:16px;
 }
 
 .legs-block { border:2px solid rgba(0,0,0,0.12); border-radius:16px; padding:12px; }
 .legs-title { font-weight:800; margin-bottom:10px; }
 
 .btn {
-    width:100%;
-    padding:14px;
-    border-radius:16px;
-    border:2px solid #000;
-    background:#FAEBC8;
-    font-weight:800;
-    font-size:16px;
-    cursor:pointer;
+  width:100%;
+  padding:14px;
+  border-radius:16px;
+  border:2px solid #000;
+  background:#FAEBC8;
+  font-weight:800;
+  font-size:16px;
+  cursor:pointer;
 }
-.status { margin-top:10px; padding:10px; border:2px solid #000; border-radius:14px; display:none; font-weight:700; }
 
 .modal-backdrop {
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.6);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index: 9999;
 }
 .modal {
-    background:#fff;
-    border:2px solid #000;
-    border-radius:18px;
-    padding:16px;
-    max-width:600px;
+  background:#fff;
+  border:2px solid #000;
+  border-radius:18px;
+  padding:16px;
+  max-width:600px;
+  width:100%;
 }
 .modal button {
-    margin-top:10px;
-    padding:10px 14px;
-    border-radius:14px;
-    border:2px solid #000;
-    background:#FAEBC8;
-    font-weight:800;
+  margin-top:10px;
+  padding:10px 14px;
+  border-radius:14px;
+  border:2px solid #000;
+  background:#FAEBC8;
+  font-weight:800;
+  width:100%;
 }
+
 .linkish { text-decoration:underline; font-weight:800; cursor:pointer; }
 </style>
 </head>
@@ -67,7 +70,7 @@
   <div class="header-inner">
     <div class="menu-wrap">
       <button class="menu-button" id="menuBtn">
-        <img src="menu.svg" width="22">
+        <img src="menu.svg" width="22" height="22" alt="Menu">
       </button>
       <nav class="menu-dropdown" id="site-menu">
         <a href="index.html">The Challenge</a>
@@ -78,14 +81,16 @@
         <a href="contact.html">Contact</a>
       </nav>
     </div>
+
     <div class="brand">
       <a href="index.html">
-        <img class="brand-logo" src="BMAlogo.svg" width="100">
+        <img class="brand-logo" src="BMAlogo.svg" width="100" alt="Be More Amy">
       </a>
       <div class="brand-text">
-        <div class="brand-title">BE MORE AMY</div>
-        <div>South West Coastal Path Relay Challenge</div>
-        <div>16th to 25th May 2026</div>
+        <div class="brand-line brand-title">BE MORE AMY</div>
+        <div class="brand-line brand-subtitle">South West Coastal</div>
+        <div class="brand-line brand-subtitle">Path Relay Challenge</div>
+        <div class="brand-line brand-date">16th to 25th May 2026</div>
       </div>
     </div>
   </div>
@@ -95,77 +100,92 @@
 <h1>Sign Up</h1>
 
 <div class="signup-wrap">
-<div id="statusBox" class="status"></div>
-
 <form id="signupForm" class="form-grid" novalidate>
 
-<div class="field">
-<label>First Name</label>
-<input id="firstName" required>
-</div>
+  <div class="field">
+    <label for="firstName">First Name</label>
+    <input id="firstName" required>
+  </div>
 
-<div class="field">
-<label>Last Name</label>
-<input id="lastName" required>
-</div>
+  <div class="field">
+    <label for="lastName">Last Name</label>
+    <input id="lastName" required>
+  </div>
 
-<div class="field">
-<label>Email</label>
-<input id="email" type="email" required>
-</div>
+  <div class="field">
+    <label for="email">Email</label>
+    <input id="email" type="email" required>
+  </div>
 
-<div class="field">
-<label>Mobile</label>
-<input id="mobile" required>
-</div>
+  <div class="field">
+    <label for="mobile">Mobile</label>
+    <input id="mobile" required>
+  </div>
 
-<div class="field">
-<label>Emergency Contact Name</label>
-<input id="emergencyName" required>
-</div>
+  <div class="field">
+    <label for="emergencyName">Emergency Contact Name</label>
+    <input id="emergencyName" required>
+  </div>
 
-<div class="field">
-<label>Emergency Contact Phone</label>
-<input id="emergencyPhone" required>
-</div>
+  <div class="field">
+    <label for="emergencyPhone">Emergency Contact Phone</label>
+    <input id="emergencyPhone" required>
+  </div>
 
-<div class="legs-block">
-<div class="legs-title">Choose your legs</div>
-<div id="legsContainer"></div>
-<button type="button" id="addLegBtn" class="btn">Add Another Leg</button>
-</div>
+  <div class="legs-block">
+    <div class="legs-title">Choose your legs</div>
+    <div id="legsContainer"></div>
+    <button type="button" id="addLegBtn" class="btn">Add Another Leg</button>
+  </div>
 
-<div>
-<input type="checkbox" id="safetyAccepted">
-<label for="safetyAccepted">
-I confirm I have read and agree to the
-<span class="linkish" id="openSafety">safety information</span>.
-</label>
-</div>
+  <div>
+    <input type="checkbox" id="safetyAccepted">
+    <label for="safetyAccepted">
+      I confirm I have read and agree to the
+      <span class="linkish" id="openSafety">safety information</span>.
+    </label>
+  </div>
 
-<button type="submit" class="btn">Submit</button>
+  <button type="submit" class="btn" id="submitBtn">Submit</button>
 
 </form>
 </div>
 </main>
 
+<!-- Safety modal -->
 <div class="modal-backdrop" id="safetyModal">
-<div class="modal">
-<h2>Safety Information</h2>
-<p>
-Participants are responsible for their own safety, navigation, equipment and wellbeing.
-By signing up you confirm you understand participation is at your own risk and that
-you and any team members take full responsibility for your involvement.
-Nothing excludes liability where unlawful.
-</p>
-<button id="closeSafety">Close</button>
+  <div class="modal">
+    <h2>Safety Information</h2>
+    <p>
+      This is a self-led relay challenge. By signing up, you confirm that you and any team members are responsible
+      for your own safety, planning, navigation, equipment, fitness to take part, and wellbeing throughout your leg(s).
+      You should take appropriate precautions for coastal path conditions, weather, tides, and terrain, and you are
+      responsible for following relevant laws and guidance, including road safety where applicable.
+    </p>
+    <p>
+      The organisers and associated volunteers do not provide supervision, medical cover, or safety support on the route.
+      Participation is voluntary and undertaken at your own risk.
+    </p>
+    <p>
+      Nothing in this notice excludes or limits liability where it would be unlawful to do so.
+    </p>
+    <button type="button" id="closeSafety">Close</button>
+  </div>
 </div>
+
+<!-- Success modal -->
+<div class="modal-backdrop" id="successModal">
+  <div class="modal">
+    <h2>Thank You</h2>
+    <p>Your signup has been received and is now pending approval.</p>
+    <p>Click continue to view the current signups.</p>
+    <button type="button" id="closeSuccess">Continue</button>
+  </div>
 </div>
 
 <script>
 const form = document.getElementById('signupForm');
 const legsContainer = document.getElementById('legsContainer');
-const statusBox = document.getElementById('statusBox');
 const addLegBtn = document.getElementById('addLegBtn');
 
 const firstName = document.getElementById('firstName');
@@ -176,83 +196,90 @@ const emergencyName = document.getElementById('emergencyName');
 const emergencyPhone = document.getElementById('emergencyPhone');
 const safetyAccepted = document.getElementById('safetyAccepted');
 
-const TOTAL_LEGS = 50; // adjust if needed
+const TOTAL_LEGS = 68; // change to match your real total number of legs
 
 function createLegDropdown() {
-    const select = document.createElement('select');
-    select.required = true;
-    select.innerHTML = '<option value="">Select a leg</option>';
-    for (let i = 1; i <= TOTAL_LEGS; i++) {
-        select.innerHTML += `<option value="${i}">Leg ${i}</option>`;
-    }
-    select.style.marginBottom = "10px";
-    legsContainer.appendChild(select);
+  const select = document.createElement('select');
+  select.required = true;
+  select.innerHTML = '<option value="">Select a leg</option>';
+  for (let i = 1; i <= TOTAL_LEGS; i++) {
+    select.innerHTML += `<option value="${i}">Leg ${i}</option>`;
+  }
+  select.style.marginBottom = "10px";
+  legsContainer.appendChild(select);
 }
 
 createLegDropdown();
 
 addLegBtn.addEventListener('click', createLegDropdown);
 
-form.addEventListener('submit', async (e)=>{
-    e.preventDefault();
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-    const legs = Array.from(legsContainer.querySelectorAll('select'))
-        .map(s => parseInt(s.value))
-        .filter(n => !isNaN(n));
+  const legs = Array.from(legsContainer.querySelectorAll('select'))
+    .map(s => parseInt(s.value, 10))
+    .filter(n => !isNaN(n));
 
-    if (!legs.length) return showStatus("Please select at least one leg.");
-    if (!safetyAccepted.checked)
-        return showStatus("You must accept the safety information.");
+  if (!firstName.value.trim() || !lastName.value.trim() || !email.value.trim() || !mobile.value.trim()
+      || !emergencyName.value.trim() || !emergencyPhone.value.trim()) {
+    alert("Please complete all fields.");
+    return;
+  }
 
-    const payload = {
-        first_name: firstName.value.trim(),
-        last_name: lastName.value.trim(),
-        email: email.value.trim(),
-        mobile: mobile.value.trim(),
-        emergency_name: emergencyName.value.trim(),
-        emergency_phone: emergencyPhone.value.trim(),
-        safety_accepted: 1,
-        legs: legs
-    };
+  if (!legs.length) {
+    alert("Please select at least one leg.");
+    return;
+  }
 
-    try {
-        const res = await fetch('/submit_signup.php', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify(payload)
-        });
+  if (!safetyAccepted.checked) {
+    alert("You must accept the safety information.");
+    return;
+  }
 
-        const out = await res.json();
+  const payload = {
+    first_name: firstName.value.trim(),
+    last_name: lastName.value.trim(),
+    email: email.value.trim(),
+    mobile: mobile.value.trim(),
+    emergency_name: emergencyName.value.trim(),
+    emergency_phone: emergencyPhone.value.trim(),
+    safety_accepted: 1,
+    legs: legs
+  };
 
-        if(out.ok){
-            window.location.href = "/signup-status.html";
-            form.reset();
-            legsContainer.innerHTML = '';
-            createLegDropdown();
-        } else {
-            showStatus(out.error || "Submission failed.");
-        }
+  try {
+    const res = await fetch('/submit_signup.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-    } catch (err) {
-        showStatus("Network error. Please try again.");
+    const out = await res.json();
+
+    if (out.ok) {
+      document.getElementById('successModal').style.display = 'flex';
+    } else {
+      alert(out.error || "Submission failed.");
     }
+  } catch (err) {
+    alert("Network error. Please try again.");
+  }
 });
 
-function showStatus(msg){
-    statusBox.textContent = msg;
-    statusBox.style.display = "block";
-}
+document.getElementById('closeSuccess').addEventListener('click', () => {
+  window.location.href = "/signup-status.html";
+});
 
-document.getElementById('openSafety').onclick = ()=>{
-    document.getElementById('safetyModal').style.display='flex';
-};
-document.getElementById('closeSafety').onclick = ()=>{
-    document.getElementById('safetyModal').style.display='none';
-};
+document.getElementById('openSafety').addEventListener('click', () => {
+  document.getElementById('safetyModal').style.display = 'flex';
+});
+document.getElementById('closeSafety').addEventListener('click', () => {
+  document.getElementById('safetyModal').style.display = 'none';
+});
 
-document.getElementById("menuBtn").onclick = function(){
-    document.getElementById("site-menu").classList.toggle("open");
-};
+document.getElementById("menuBtn").addEventListener('click', () => {
+  document.getElementById("site-menu").classList.toggle("open");
+});
 </script>
 
 </body>
