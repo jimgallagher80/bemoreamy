@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BE MORE AMY — Current Signups</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.signup-list {
+    margin-top:20px;
+    border:2px solid #000;
+    border-radius:18px;
+    background:#fff;
+    padding:16px;
+}
+.signup-entry {
+    border-bottom:1px solid #ccc;
+    padding:10px 0;
+}
+.status-pending { color:orange; font-weight:700; }
+.status-approved { color:green; font-weight:700; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <a href="index.html">
+        <img class="brand-logo" src="BMAlogo.svg" width="100">
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+<h1>Current Signups</h1>
+
+<div class="signup-list" id="signupList">
+Loading…
+</div>
+
+<div style="margin-top:20px;">
+<button onclick="window.location.href='index.html'" class="btn">Return to Home</button>
+</div>
+
+</main>
+
+<script>
+async function loadSignups() {
+    const res = await fetch('/get_signups.php');
+    const data = await res.json();
+
+    const container = document.getElementById('signupList');
+    container.innerHTML = '';
+
+    if (!data.length) {
+        container.innerHTML = 'No signups yet.';
+        return;
+    }
+
+    data.forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'signup-entry';
+
+        const statusClass = entry.status === 'approved'
+            ? 'status-approved'
+            : 'status-pending';
+
+        div.innerHTML = `
+            <strong>${entry.first_name} ${entry.last_name}</strong><br>
+            Legs: ${entry.legs.join(', ')}<br>
+            <span class="${statusClass}">
+                ${entry.status === 'approved' ? 'Confirmed' : 'Pending approval'}
+            </span>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+loadSignups();
+</script>
+
+</body>
+</html>
