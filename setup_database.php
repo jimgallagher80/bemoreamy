@@ -1,6 +1,6 @@
 <?php
 
-$host = "mysql-200-l48.mysql.prositehosting.net";
+$host = "213.171.200.13";
 $db   = "signup";
 $user = "bma_api";
 $pass = "Shibboleth2025!"; // put your real password here
