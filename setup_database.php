@@ -7,7 +7,7 @@ echo "SETUP VERSION: DB CONNECT + TABLE CREATE<br>";
 $host = "213.171.200.13";
 $db   = "signup";
 $user = "bma_api";
-$pass = "WestCoast2025!"; // <-- replace with your real DB password
+$pass = "YOUR_PASSWORD_HERE"; // <-- replace with your real DB password
 
 try {
     $pdo = new PDO(
