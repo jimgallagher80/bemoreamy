@@ -202,6 +202,10 @@ textarea { width:100%; margin-top:6px; }
     <a href="export_signups.php?<?= htmlspecialchars($current_qs) ?>" style="display:inline-block; margin-left:10px; padding:6px 10px; border:1px solid #000; text-decoration:none; background:#fff; color:#000;">
   Export CSV
 </a>
+
+    <a href="admin_full_table.php?<?= htmlspecialchars($current_qs) ?>" style="display:inline-block; margin-left:10px; padding:6px 10px; border:1px solid #000; text-decoration:none; background:#fff; color:#000;">
+  Display full table
+</a>
     
 </form>
 
