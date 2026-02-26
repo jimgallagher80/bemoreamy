@@ -11,18 +11,19 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 .signup-wrap { margin-top: 10px; border:2px solid #000; border-radius:18px; background:#fff; padding:16px; overflow:hidden; }
-.form-grid { display:grid; gap:14px; }
+.form-grid { display:grid; gap:14px; min-width:0; }
 .field label { display:block; font-weight:700; margin-bottom:6px; }
+.field { min-width:0; }
 .field input, .field select {
   width:100%;
+  max-width:100%;
   display:block;
   min-width:0;
-  max-width:100%;
   padding:12px;
   border:2px solid #000;
   border-radius:14px;
   font-size:16px;
-  line-height: 1.2;
+  box-sizing: border-box; /* extra safety */
 }
 
 .legs-block { border:2px solid rgba(0,0,0,0.12); border-radius:16px; padding:12px; }
@@ -222,131 +223,141 @@ const LEG_INFO = {
   "6":{"start":"Chesil Beach","end":"Portland Bill","setoff":"Sat 16 May 2026 20:01","finish":"Sat 16 May 2026 21:51"},
   "7":{"start":"Portland Bill","end":"Wyke Regis","setoff":"Sat 16 May 2026 21:51","finish":"Sat 16 May 2026 23:41"},
   "8":{"start":"Wyke Regis","end":"Abbotsbury","setoff":"Sat 16 May 2026 23:41","finish":"Sun 17 May 2026 02:14"},
-  "9":{"start":"Abbotsbury","end":"Seatown","setoff":"Sun 17 May 2026 02:14","finish":"Sun 17 May 2026 04:48"},
-  "10":{"start":"Seatown","end":"Lyme Regis","setoff":"Sun 17 May 2026 04:48","finish":"Sun 17 May 2026 07:00"},
-  "11":{"start":"Lyme Regis","end":"Beer","setoff":"Sun 17 May 2026 07:00","finish":"Sun 17 May 2026 09:19"},
-  "12":{"start":"Beer","end":"Sidmouth","setoff":"Sun 17 May 2026 09:19","finish":"Sun 17 May 2026 11:53"},
-  "13":{"start":"Sidmouth","end":"Exmouth","setoff":"Sun 17 May 2026 11:53","finish":"Sun 17 May 2026 15:03"},
-  "14":{"start":"Dawlish Warren","end":"Teignmouth","setoff":"Sun 17 May 2026 15:03","finish":"Sun 17 May 2026 16:45"},
-  "15":{"start":"Shaldon","end":"Hopes Nose","setoff":"Sun 17 May 2026 16:45","finish":"Sun 17 May 2026 19:26"},
-  "16":{"start":"Hopes Nose","end":"Broadsands","setoff":"Sun 17 May 2026 19:26","finish":"Sun 17 May 2026 21:31"},
-  "17":{"start":"Broadsands","end":"Sharkham Point","setoff":"Sun 17 May 2026 21:31","finish":"Sun 17 May 2026 23:06"},
-  "18":{"start":"Sharkham Point","end":"Kingswear","setoff":"Sun 17 May 2026 23:06","finish":"Mon 18 May 2026 01:39"},
-  "19":{"start":"Dartmouth","end":"Beesands","setoff":"Mon 18 May 2026 01:39","finish":"Mon 18 May 2026 04:35"},
-  "20":{"start":"Beesands","end":"East Portlemouth","setoff":"Mon 18 May 2026 04:35","finish":"Mon 18 May 2026 07:42"},
-  "21":{"start":"Salcombe","end":"Bantham","setoff":"Mon 18 May 2026 07:42","finish":"Mon 18 May 2026 10:48"},
-  "22":{"start":"Bigbury","end":"Wonwell","setoff":"Mon 18 May 2026 10:48","finish":"Mon 18 May 2026 12:31"},
-  "23":{"start":"Mothecombe","end":"Moss Mayo","setoff":"Mon 18 May 2026 12:31","finish":"Mon 18 May 2026 14:50"},
-  "24":{"start":"Wembury","end":"Laira Bridge","setoff":"Mon 18 May 2026 14:50","finish":"Mon 18 May 2026 17:45"},
-  "25":{"start":"Laira Bridge","end":"Stonehouse","setoff":"Mon 18 May 2026 17:45","finish":"Mon 18 May 2026 19:02"},
-  "26":{"start":"Cremyll","end":"Tregantle","setoff":"Mon 18 May 2026 19:02","finish":"Mon 18 May 2026 21:47"},
-  "27":{"start":"Tregantle","end":"Looe","setoff":"Mon 18 May 2026 21:47","finish":"Tue 19 May 2026 00:35"},
-  "28":{"start":"Looe","end":"Polruan / Fowey","setoff":"Tue 19 May 2026 00:35","finish":"Tue 19 May 2026 04:15"},
-  "29":{"start":"Fowey","end":"Carlyon Bay","setoff":"Tue 19 May 2026 04:15","finish":"Tue 19 May 2026 06:37"},
-  "30":{"start":"Carlyon Bay","end":"Mevagissey","setoff":"Tue 19 May 2026 06:37","finish":"Tue 19 May 2026 09:13"},
-  "31":{"start":"Mevagissey","end":"Portloe","setoff":"Tue 19 May 2026 09:13","finish":"Tue 19 May 2026 12:41"},
-  "32":{"start":"Portloe","end":"Porthcurnick","setoff":"Tue 19 May 2026 12:41","finish":"Tue 19 May 2026 14:53"},
-  "33":{"start":"Porthcurnick","end":"Bohortha","setoff":"Tue 19 May 2026 14:53","finish":"Tue 19 May 2026 16:28"},
-  "34":{"start":"Falmouth","end":"Helford Passage","setoff":"Tue 19 May 2026 16:28","finish":"Tue 19 May 2026 19:02"},
-  "35":{"start":"Helford Passage","end":"Porthoustock","setoff":"Tue 19 May 2026 19:02","finish":"Tue 19 May 2026 21:28"},
-  "36":{"start":"Porthoustock","end":"Cadgwith","setoff":"Tue 19 May 2026 21:28","finish":"Wed 20 May 2026 00:24"},
-  "37":{"start":"Cadgwith","end":"Mullion","setoff":"Wed 20 May 2026 00:24","finish":"Wed 20 May 2026 03:12"},
-  "38":{"start":"Mullion","end":"Rinsey","setoff":"Wed 20 May 2026 03:12","finish":"Wed 20 May 2026 06:15"},
-  "39":{"start":"Rinsey","end":"Penzance","setoff":"Wed 20 May 2026 06:15","finish":"Wed 20 May 2026 08:56"},
-  "40":{"start":"Penzance","end":"Penberth","setoff":"Wed 20 May 2026 08:56","finish":"Wed 20 May 2026 11:51"},
-  "41":{"start":"Penberth","end":"Gwynver","setoff":"Wed 20 May 2026 11:51","finish":"Wed 20 May 2026 14:25"},
-  "42":{"start":"Gwynver","end":"Portheras","setoff":"Wed 20 May 2026 14:25","finish":"Wed 20 May 2026 16:51"},
-  "43":{"start":"Portheras","end":"St Ives","setoff":"Wed 20 May 2026 16:51","finish":"Wed 20 May 2026 20:31"},
-  "44":{"start":"St Ives","end":"Sandy Acres Beach","setoff":"Wed 20 May 2026 20:31","finish":"Wed 20 May 2026 22:57"},
-  "45":{"start":"Sandy Acres Beach","end":"Portreath","setoff":"Wed 20 May 2026 22:57","finish":"Thu 21 May 2026 01:31"},
-  "46":{"start":"Portreath","end":"Trevellas Cove","setoff":"Thu 21 May 2026 01:31","finish":"Thu 21 May 2026 04:05"},
-  "47":{"start":"Trevellas Cove","end":"Crantock","setoff":"Thu 21 May 2026 04:05","finish":"Thu 21 May 2026 07:00"},
-  "48":{"start":"Crantock","end":"Watergate Bay","setoff":"Thu 21 May 2026 07:00","finish":"Thu 21 May 2026 09:34"},
-  "49":{"start":"Watergate Bay","end":"Trevose Head","setoff":"Thu 21 May 2026 09:34","finish":"Thu 21 May 2026 12:30"},
-  "50":{"start":"Trevose Head","end":"Padstow","setoff":"Thu 21 May 2026 12:30","finish":"Thu 21 May 2026 14:56"},
-  "51":{"start":"Rock","end":"Port Quin","setoff":"Thu 21 May 2026 14:56","finish":"Thu 21 May 2026 17:19"},
-  "52":{"start":"Port Quin","end":"Trebarwith","setoff":"Thu 21 May 2026 17:19","finish":"Thu 21 May 2026 20:36"},
-  "53":{"start":"Trebarwith","end":"Boscastle","setoff":"Thu 21 May 2026 20:36","finish":"Thu 21 May 2026 22:33"},
-  "54":{"start":"Boscastle","end":"Crackington Haven","setoff":"Thu 21 May 2026 22:33","finish":"Fri 22 May 2026 00:52"},
-  "55":{"start":"Crackington Haven","end":"Bude","setoff":"Fri 22 May 2026 00:52","finish":"Fri 22 May 2026 03:55"},
-  "56":{"start":"Bude","end":"Welcombe Mouth","setoff":"Fri 22 May 2026 03:55","finish":"Fri 22 May 2026 07:13"},
-  "57":{"start":"Welcombe Mouth","end":"Hartland Point","setoff":"Fri 22 May 2026 07:13","finish":"Fri 22 May 2026 09:39"},
-  "58":{"start":"Hartland Point","end":"Bucks Mill","setoff":"Fri 22 May 2026 09:39","finish":"Fri 22 May 2026 12:57"},
-  "59":{"start":"Bucks Mill","end":"Westward Ho!","setoff":"Fri 22 May 2026 12:57","finish":"Fri 22 May 2026 15:38"},
-  "60":{"start":"Westward Ho!","end":"Instow","setoff":"Fri 22 May 2026 15:38","finish":"Fri 22 May 2026 17:49"},
-  "61":{"start":"Instow","end":"Chivenor","setoff":"Fri 22 May 2026 17:49","finish":"Fri 22 May 2026 20:08"},
-  "62":{"start":"Chivenor","end":"Croyde","setoff":"Fri 22 May 2026 20:08","finish":"Fri 22 May 2026 22:35"},
-  "63":{"start":"Croyde","end":"Bull Point","setoff":"Fri 22 May 2026 22:35","finish":"Sat 23 May 2026 01:16"},
-  "64":{"start":"Bull Point","end":"Combe Martin","setoff":"Sat 23 May 2026 01:16","finish":"Sat 23 May 2026 04:19"},
-  "65":{"start":"Combe Martin","end":"Lee Abbey","setoff":"Sat 23 May 2026 04:19","finish":"Sat 23 May 2026 07:36"},
-  "66":{"start":"Lee Abbey","end":"County Gate","setoff":"Sat 23 May 2026 07:36","finish":"Sat 23 May 2026 10:10"},
-  "67":{"start":"County Gate","end":"Bossington","setoff":"Sat 23 May 2026 10:10","finish":"Sat 23 May 2026 12:11"},
-  "68":{"start":"Bossington","end":"Minehead","setoff":"Sat 23 May 2026 12:11","finish":"Sat 23 May 2026 14:00"}
+  "9":{"start":"Abbotsbury","end":"West Bay","setoff":"Sun 17 May 2026 02:14","finish":"Sun 17 May 2026 04:48"},
+  "10":{"start":"West Bay","end":"Seatown","setoff":"Sun 17 May 2026 04:48","finish":"Sun 17 May 2026 07:00"},
+  "11":{"start":"Seatown","end":"Lyme Regis","setoff":"Sun 17 May 2026 07:00","finish":"Sun 17 May 2026 09:19"},
+  "12":{"start":"Lyme Regis","end":"Seaton","setoff":"Sun 17 May 2026 09:19","finish":"Sun 17 May 2026 11:53"},
+  "13":{"start":"Seaton","end":"Budleigh Salterton","setoff":"Sun 17 May 2026 11:53","finish":"Sun 17 May 2026 15:03"},
+  "14":{"start":"Budleigh Salterton","end":"Exmouth","setoff":"Sun 17 May 2026 15:03","finish":"Sun 17 May 2026 16:45"},
+  "15":{"start":"Exmouth","end":"Dawlish","setoff":"Sun 17 May 2026 16:45","finish":"Sun 17 May 2026 19:26"},
+  "16":{"start":"Dawlish","end":"Teignmouth","setoff":"Sun 17 May 2026 19:26","finish":"Sun 17 May 2026 21:31"},
+  "17":{"start":"Teignmouth","end":"Torquay","setoff":"Sun 17 May 2026 21:31","finish":"Sun 17 May 2026 23:06"},
+  "18":{"start":"Torquay","end":"Brixham","setoff":"Sun 17 May 2026 23:06","finish":"Mon 18 May 2026 01:39"},
+  "19":{"start":"Brixham","end":"Berry Head","setoff":"Mon 18 May 2026 01:39","finish":"Mon 18 May 2026 04:35"},
+  "20":{"start":"Berry Head","end":"Dartmouth","setoff":"Mon 18 May 2026 04:35","finish":"Mon 18 May 2026 07:42"},
+  "21":{"start":"Dartmouth","end":"Slapton Sands","setoff":"Mon 18 May 2026 07:42","finish":"Mon 18 May 2026 10:48"},
+  "22":{"start":"Slapton Sands","end":"Kingsbridge","setoff":"Mon 18 May 2026 10:48","finish":"Mon 18 May 2026 12:31"},
+  "23":{"start":"Kingsbridge","end":"Hope Cove","setoff":"Mon 18 May 2026 12:31","finish":"Mon 18 May 2026 14:50"},
+  "24":{"start":"Hope Cove","end":"Bantham","setoff":"Mon 18 May 2026 14:50","finish":"Mon 18 May 2026 17:45"},
+  "25":{"start":"Bantham","end":"Bigbury-on-Sea","setoff":"Mon 18 May 2026 17:45","finish":"Mon 18 May 2026 19:02"},
+  "26":{"start":"Bigbury-on-Sea","end":"Wembury","setoff":"Mon 18 May 2026 19:02","finish":"Mon 18 May 2026 21:47"},
+  "27":{"start":"Wembury","end":"Plymouth","setoff":"Mon 18 May 2026 21:47","finish":"Tue 19 May 2026 00:35"},
+  "28":{"start":"Plymouth","end":"Bovisand","setoff":"Tue 19 May 2026 00:35","finish":"Tue 19 May 2026 04:15"},
+  "29":{"start":"Bovisand","end":"Rame Head","setoff":"Tue 19 May 2026 04:15","finish":"Tue 19 May 2026 06:37"},
+  "30":{"start":"Rame Head","end":"Kingsand","setoff":"Tue 19 May 2026 06:37","finish":"Tue 19 May 2026 09:13"},
+  "31":{"start":"Kingsand","end":"Looe","setoff":"Tue 19 May 2026 09:13","finish":"Tue 19 May 2026 12:41"},
+  "32":{"start":"Looe","end":"Polperro","setoff":"Tue 19 May 2026 12:41","finish":"Tue 19 May 2026 14:53"},
+  "33":{"start":"Polperro","end":"Fowey","setoff":"Tue 19 May 2026 14:53","finish":"Tue 19 May 2026 16:28"},
+  "34":{"start":"Fowey","end":"Charlestown","setoff":"Tue 19 May 2026 16:28","finish":"Tue 19 May 2026 19:02"},
+  "35":{"start":"Charlestown","end":"Mevagissey","setoff":"Tue 19 May 2026 19:02","finish":"Tue 19 May 2026 21:28"},
+  "36":{"start":"Mevagissey","end":"Gorran Haven","setoff":"Tue 19 May 2026 21:28","finish":"Wed 20 May 2026 00:24"},
+  "37":{"start":"Gorran Haven","end":"Caerhays","setoff":"Wed 20 May 2026 00:24","finish":"Wed 20 May 2026 03:12"},
+  "38":{"start":"Caerhays","end":"Portscatho","setoff":"Wed 20 May 2026 03:12","finish":"Wed 20 May 2026 06:15"},
+  "39":{"start":"Portscatho","end":"St Mawes","setoff":"Wed 20 May 2026 06:15","finish":"Wed 20 May 2026 08:56"},
+  "40":{"start":"St Mawes","end":"Falmouth","setoff":"Wed 20 May 2026 08:56","finish":"Wed 20 May 2026 11:51"},
+  "41":{"start":"Falmouth","end":"Maenporth","setoff":"Wed 20 May 2026 11:51","finish":"Wed 20 May 2026 14:25"},
+  "42":{"start":"Maenporth","end":"Porthleven","setoff":"Wed 20 May 2026 14:25","finish":"Wed 20 May 2026 16:51"},
+  "43":{"start":"Porthleven","end":"Marazion","setoff":"Wed 20 May 2026 16:51","finish":"Wed 20 May 2026 20:31"},
+  "44":{"start":"Marazion","end":"Penzance","setoff":"Wed 20 May 2026 20:31","finish":"Wed 20 May 2026 22:57"},
+  "45":{"start":"Penzance","end":"Sennen Cove","setoff":"Wed 20 May 2026 22:57","finish":"Thu 21 May 2026 01:31"},
+  "46":{"start":"Sennen Cove","end":"St Just","setoff":"Thu 21 May 2026 01:31","finish":"Thu 21 May 2026 04:05"},
+  "47":{"start":"St Just","end":"Pendeen","setoff":"Thu 21 May 2026 04:05","finish":"Thu 21 May 2026 07:00"},
+  "48":{"start":"Pendeen","end":"St Ives","setoff":"Thu 21 May 2026 07:00","finish":"Thu 21 May 2026 09:34"},
+  "49":{"start":"St Ives","end":"Portreath","setoff":"Thu 21 May 2026 09:34","finish":"Thu 21 May 2026 12:30"},
+  "50":{"start":"Portreath","end":"Porthtowan","setoff":"Thu 21 May 2026 12:30","finish":"Thu 21 May 2026 14:56"},
+  "51":{"start":"Porthtowan","end":"Perranporth","setoff":"Thu 21 May 2026 14:56","finish":"Thu 21 May 2026 17:19"},
+  "52":{"start":"Perranporth","end":"Newquay","setoff":"Thu 21 May 2026 17:19","finish":"Thu 21 May 2026 20:36"},
+  "53":{"start":"Newquay","end":"Padstow","setoff":"Thu 21 May 2026 20:36","finish":"Thu 21 May 2026 22:33"},
+  "54":{"start":"Padstow","end":"Port Isaac","setoff":"Thu 21 May 2026 22:33","finish":"Fri 22 May 2026 00:52"},
+  "55":{"start":"Port Isaac","end":"Tintagel","setoff":"Fri 22 May 2026 00:52","finish":"Fri 22 May 2026 03:55"},
+  "56":{"start":"Tintagel","end":"Boscastle","setoff":"Fri 22 May 2026 03:55","finish":"Fri 22 May 2026 07:13"},
+  "57":{"start":"Boscastle","end":"Bude","setoff":"Fri 22 May 2026 07:13","finish":"Fri 22 May 2026 09:39"},
+  "58":{"start":"Bude","end":"Westward Ho!","setoff":"Fri 22 May 2026 09:39","finish":"Fri 22 May 2026 12:57"},
+  "59":{"start":"Westward Ho!","end":"Clovelly","setoff":"Fri 22 May 2026 12:57","finish":"Fri 22 May 2026 15:38"},
+  "60":{"start":"Clovelly","end":"Hartland Quay","setoff":"Fri 22 May 2026 15:38","finish":"Fri 22 May 2026 17:49"},
+  "61":{"start":"Hartland Quay","end":"Bucks Mills","setoff":"Fri 22 May 2026 17:49","finish":"Fri 22 May 2026 20:08"},
+  "62":{"start":"Bucks Mills","end":"Westward Ho!","setoff":"Fri 22 May 2026 20:08","finish":"Fri 22 May 2026 22:35"},
+  "63":{"start":"Westward Ho!","end":"Appledore","setoff":"Fri 22 May 2026 22:35","finish":"Sat 23 May 2026 01:16"},
+  "64":{"start":"Appledore","end":"Instow","setoff":"Sat 23 May 2026 01:16","finish":"Sat 23 May 2026 04:19"},
+  "65":{"start":"Instow","end":"Croyde","setoff":"Sat 23 May 2026 04:19","finish":"Sat 23 May 2026 07:36"},
+  "66":{"start":"Croyde","end":"Woolacombe","setoff":"Sat 23 May 2026 07:36","finish":"Sat 23 May 2026 10:10"},
+  "67":{"start":"Woolacombe","end":"Ilfracombe","setoff":"Sat 23 May 2026 10:10","finish":"Sat 23 May 2026 12:11"},
+  "68":{"start":"Ilfracombe","end":"Combe Martin","setoff":"Sat 23 May 2026 12:11","finish":"Sat 23 May 2026 14:00"}
 };
 
-function formatLegTimeShort(dateTimeStr) {
-  // "Sat 16 May 2026 08:00" -> "0800 Sat 16 May"
-  if (!dateTimeStr) return "";
-  const parts = String(dateTimeStr).trim().split(/\s+/);
-  if (parts.length < 5) return String(dateTimeStr).trim();
-  const day = parts[0];
-  const dd = parts[1];
-  const mon = parts[2];
-  const time = parts[4];
-  const hhmm = String(time).replace(":", "");
-  return `${hhmm} ${day} ${dd} ${mon}`;
+function fmtShort(str){
+  const s = String(str || "");
+  const m = s.match(/^([A-Za-z]{3})\s+(\d{1,2})\s+([A-Za-z]{3})\s+\d{4}\s+(\d{2}):(\d{2})$/);
+  if (!m) return s;
+  return `${m[4]}${m[5]} ${m[1]} ${m[2]} ${m[3]}`;
 }
 
-function createLegDropdown() {
-  const select = document.createElement('select');
-  select.required = true;
-  select.innerHTML = '<option value="">Select a leg</option>';
+function makeLegLabel(n){
+  const info = LEG_INFO[String(n)];
+  if (!info) return `Leg ${n}`;
+  const setoff = fmtShort(info.setoff);
+  const finish = fmtShort(info.finish);
+  return `Leg ${n}: ${info.start} to ${info.end} (${setoff} - ${finish})`;
+}
 
-  for (let i = 1; i <= TOTAL_LEGS; i++) {
-    const info = LEG_INFO[String(i)];
-    const title = info ? `${info.start} to ${info.end}` : `Leg ${i}`;
+function createLegSelect(){
+  const wrap = document.createElement('div');
+  wrap.className = 'field';
 
-    const setoff = info ? formatLegTimeShort(info.setoff) : "";
-    const finish = info ? formatLegTimeShort(info.finish) : "";
-    const timePart = (setoff && finish) ? `${setoff} to ${finish}` : "";
+  const sel = document.createElement('select');
+  sel.required = true;
 
-    const label = timePart
-      ? `Leg ${i}: ${title}, ${timePart}`
-      : `Leg ${i}: ${title}`;
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Select a leg';
+  placeholder.selected = true;
+  placeholder.disabled = true;
+  sel.appendChild(placeholder);
 
-    select.innerHTML += `<option value="${i}">${label}</option>`;
+  for (let i=1;i<=TOTAL_LEGS;i++){
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = makeLegLabel(i);
+    sel.appendChild(opt);
   }
 
-  select.style.marginBottom = "10px";
-  legsContainer.appendChild(select);
+  wrap.appendChild(sel);
+  return { wrap, sel };
 }
 
-createLegDropdown();
+const legSelects = [];
 
-addLegBtn.addEventListener('click', createLegDropdown);
+function addLeg(){
+  const { wrap, sel } = createLegSelect();
+  legsContainer.appendChild(wrap);
+  legSelects.push(sel);
+}
 
+addLeg();
+
+addLegBtn.addEventListener('click', addLeg);
+
+/* modals */
+const safetyModal = document.getElementById('safetyModal');
+const successModal = document.getElementById('successModal');
+document.getElementById('openSafety').addEventListener('click', () => { safetyModal.style.display='flex'; });
+document.getElementById('closeSafety').addEventListener('click', () => { safetyModal.style.display='none'; });
+
+document.getElementById('closeSuccess').addEventListener('click', () => {
+  successModal.style.display='none';
+  window.location.href = 'signup-status.html';
+});
+
+/* submit */
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const legs = Array.from(legsContainer.querySelectorAll('select'))
-    .map(s => parseInt(s.value, 10))
-    .filter(n => !isNaN(n));
-
-  if (!firstName.value.trim() || !lastName.value.trim() || !email.value.trim() || !mobile.value.trim()
-      || !emergencyName.value.trim() || !emergencyPhone.value.trim()) {
-    alert("Please complete all fields.");
-    return;
-  }
-
-  if (!legs.length) {
-    alert("Please select at least one leg.");
-    return;
-  }
-
   if (!safetyAccepted.checked) {
-    alert("You must accept the safety information.");
+    safetyModal.style.display = 'flex';
     return;
   }
+
+  const legs = legSelects.map(s => s.value).filter(Boolean);
 
   const payload = {
     first_name: firstName.value.trim(),
@@ -355,42 +366,45 @@ form.addEventListener('submit', async (e) => {
     mobile: mobile.value.trim(),
     emergency_name: emergencyName.value.trim(),
     emergency_phone: emergencyPhone.value.trim(),
-    safety_accepted: 1,
+    safety_accepted: safetyAccepted.checked ? 1 : 0,
     legs: legs
   };
 
   try {
-    const res = await fetch('/submit_signup.php', {
+    const res = await fetch('submit_signup.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
-    const out = await res.json();
+    const data = await res.json();
 
-    if (out.ok) {
-      document.getElementById('successModal').style.display = 'flex';
+    if (data && data.success) {
+      successModal.style.display = 'flex';
+      form.reset();
+      legsContainer.innerHTML = '';
+      legSelects.length = 0;
+      addLeg();
     } else {
-      alert(out.error || "Submission failed.");
+      alert((data && data.error) ? data.error : 'There was a problem submitting your signup.');
     }
   } catch (err) {
-    alert("Network error. Please try again.");
+    alert('There was a problem submitting your signup.');
   }
 });
 
-document.getElementById('closeSuccess').addEventListener('click', () => {
-  window.location.href = "/signup-status.html";
+/* menu toggle */
+const menuBtn = document.getElementById("menuBtn");
+const menu = document.getElementById("site-menu");
+
+menuBtn.addEventListener("click", () => {
+  menu.classList.toggle("open");
 });
 
-document.getElementById('openSafety').addEventListener('click', () => {
-  document.getElementById('safetyModal').style.display = 'flex';
-});
-document.getElementById('closeSafety').addEventListener('click', () => {
-  document.getElementById('safetyModal').style.display = 'none';
-});
-
-document.getElementById("menuBtn").addEventListener('click', () => {
-  document.getElementById("site-menu").classList.toggle("open");
+document.addEventListener("click", (e) => {
+  if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
+    menu.classList.remove("open");
+  }
 });
 </script>
 
