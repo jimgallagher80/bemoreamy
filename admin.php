@@ -97,16 +97,58 @@ if (isset($_POST['reject'])) {
     }
 }
 
-/* -------- LOAD ALL -------- */
+/* -------- LOAD ALL (WITH FILTERS) -------- */
 
-$stmt = $pdo->query("
+$filter_status = $_GET['status'] ?? 'all';
+$filter_leg = $_GET['leg'] ?? 'all';
+
+$allowed_status = ['all','pending','approved','rejected'];
+if (!in_array($filter_status, $allowed_status, true)) {
+    $filter_status = 'all';
+}
+
+if ($filter_leg !== 'all') {
+    $filter_leg = (string)(int)$filter_leg;
+    if ($filter_leg === '0') {
+        $filter_leg = 'all';
+    }
+}
+
+$where = [];
+$params = [];
+
+if ($filter_status !== 'all') {
+    $where[] = "s.status = ?";
+    $params[] = $filter_status;
+}
+
+if ($filter_leg !== 'all') {
+    $where[] = "EXISTS (SELECT 1 FROM signup_legs sl2 WHERE sl2.signup_id = s.id AND sl2.leg_number = ?)";
+    $params[] = (int)$filter_leg;
+}
+
+$where_sql = '';
+if (count($where) > 0) {
+    $where_sql = 'WHERE ' . implode(' AND ', $where);
+}
+
+$sql = "
     SELECT s.*, GROUP_CONCAT(sl.leg_number ORDER BY sl.leg_number) as legs
     FROM signups s
     LEFT JOIN signup_legs sl ON s.id = sl.signup_id
+    $where_sql
     GROUP BY s.id
     ORDER BY s.created_at DESC
-");
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $signups = $stmt->fetchAll();
+
+/* -------- LOAD LEG OPTIONS -------- */
+
+$legs_stmt = $pdo->query("SELECT DISTINCT leg_number FROM signup_legs ORDER BY leg_number ASC");
+$leg_numbers = $legs_stmt->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
 <!doctype html>
@@ -122,12 +164,41 @@ textarea { width:100%; margin-top:6px; }
 .status-approved { color:green; font-weight:700; }
 .status-pending { color:orange; font-weight:700; }
 .status-rejected { color:red; font-weight:700; }
+
+.filters { border:1px solid #ddd; padding:10px; margin:12px 0 18px; background:#f7f7f7; }
+.filters label { margin-right:10px; font-weight:700; }
+.filters select { padding:6px 8px; margin-right:10px; }
+.filters button { padding:6px 10px; }
 </style>
 </head>
 <body>
 
 <h1>Admin Panel</h1>
 <p><a href="admin.php?logout=1">Logout</a></p>
+
+<?php $current_qs = http_build_query(['status' => $filter_status, 'leg' => $filter_leg]); ?>
+
+<form method="get" class="filters">
+  <label for="status">Status</label>
+  <select id="status" name="status">
+    <option value="all" <?= $filter_status === 'all' ? 'selected' : '' ?>>All</option>
+    <option value="pending" <?= $filter_status === 'pending' ? 'selected' : '' ?>>Pending</option>
+    <option value="approved" <?= $filter_status === 'approved' ? 'selected' : '' ?>>Approved</option>
+    <option value="rejected" <?= $filter_status === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+  </select>
+
+  <label for="leg">Leg</label>
+  <select id="leg" name="leg">
+    <option value="all" <?= $filter_leg === 'all' ? 'selected' : '' ?>>All</option>
+    <?php foreach ($leg_numbers as $ln): ?>
+      <option value="<?= (int)$ln ?>" <?= $filter_leg !== 'all' && (int)$filter_leg === (int)$ln ? 'selected' : '' ?>>
+        <?= (int)$ln ?>
+      </option>
+    <?php endforeach; ?>
+  </select>
+
+  <button type="submit">Apply</button>
+</form>
 
 <?php foreach ($signups as $s): ?>
 <div class="signup">
@@ -137,7 +208,7 @@ Legs: <?= htmlspecialchars($s['legs']) ?><br>
 Status: <span class="status-<?= $s['status'] ?>"><?= ucfirst($s['status']) ?></span>
 
 <?php if ($s['status'] === 'pending'): ?>
-<form method="post" style="margin-top:8px;">
+<form method="post" action="admin.php?<?= htmlspecialchars($current_qs) ?>" style="margin-top:8px;">
 <button name="approve" value="<?= $s['id'] ?>">Approve</button>
 <br><br>
 <textarea name="reason" placeholder="Reason for rejection (optional)"></textarea>
