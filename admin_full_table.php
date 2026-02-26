@@ -11,7 +11,7 @@ if (!isset($_SESSION['admin_logged_in'])) {
 $filter_status = $_GET['status'] ?? 'all';
 $filter_leg = $_GET['leg'] ?? 'all';
 
-$allowed_status = ['all','pending','approved','rejected'];
+$allowed_status = ['all','pending','confirmed','waitlist','rejected'];
 if (!in_array($filter_status, $allowed_status, true)) {
   $filter_status = 'all';
 }
@@ -27,12 +27,12 @@ $where = [];
 $params = [];
 
 if ($filter_status !== 'all') {
-  $where[] = "s.status = ?";
+  $where[] = "sl.status = ?";
   $params[] = $filter_status;
 }
 
 if ($filter_leg !== 'all') {
-  $where[] = "EXISTS (SELECT 1 FROM signup_legs sl2 WHERE sl2.signup_id = s.id AND sl2.leg_number = ?)";
+  $where[] = "sl.leg_number = ?";
   $params[] = (int)$filter_leg;
 }
 
@@ -43,107 +43,91 @@ if (count($where) > 0) {
 
 $sql = "
   SELECT
-    s.id,
+    s.id AS signup_id,
     s.created_at,
-    s.first_name,
-    s.last_name,
+    s.team_leader_first_name,
+    s.team_leader_surname,
+    s.group_size,
     s.email,
-    s.mobile,
-    s.emergency_name,
-    s.emergency_phone,
+    s.phone,
     s.safety_accepted,
-    s.status,
-    s.approved_at,
-    s.rejected_at,
-    s.rejection_reason,
-    GROUP_CONCAT(sl.leg_number ORDER BY sl.leg_number) AS legs
+    sl.leg_number,
+    sl.status AS leg_status,
+    sl.was_taken,
+    sl.approved_at,
+    sl.rejected_at,
+    sl.rejection_reason
   FROM signups s
-  LEFT JOIN signup_legs sl ON s.id = sl.signup_id
+  JOIN signup_legs sl ON s.id = sl.signup_id
   $where_sql
-  GROUP BY s.id
-  ORDER BY s.created_at DESC
+  ORDER BY s.created_at DESC, sl.leg_number ASC
 ";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-function h($v) {
-  return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
-}
-
-$current_qs = http_build_query(['status' => $filter_status, 'leg' => $filter_leg]);
 ?>
 <!doctype html>
-<html lang="en-GB">
+<html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Admin — Full Table</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .topbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
-    .btnlink { display:inline-block; padding:8px 10px; border:1px solid #000; text-decoration:none; background:#fff; color:#000; }
-    .meta { color: rgba(0,0,0,0.7); font-size: 14px; }
-    .tablewrap { overflow:auto; border:1px solid #ddd; }
-    table { border-collapse: collapse; width: 100%; min-width: 1200px; }
-    th, td { border:1px solid #ddd; padding:8px; text-align:left; vertical-align:top; }
-    th { background:#f4f4f4; position: sticky; top: 0; z-index: 1; }
-    .nowrap { white-space: nowrap; }
-  </style>
+<meta charset="utf-8">
+<title>Admin — Full Table</title>
+<style>
+body { font-family:sans-serif; padding:20px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border:1px solid #ddd; padding:8px; vertical-align: top; }
+th { background:#f5f5f5; position: sticky; top: 0; }
+.small { font-size:12px; color:#444; }
+</style>
 </head>
 <body>
 
-  <div class="topbar">
-    <a class="btnlink" href="admin.php?<?= h($current_qs) ?>">Back to admin</a>
-    <a class="btnlink" href="export_signups.php?<?= h($current_qs) ?>">Export CSV</a>
-    <span class="meta">
-      Showing: status=<?= h($filter_status) ?>, leg=<?= h($filter_leg) ?>, rows=<?= count($rows) ?>
-    </span>
-  </div>
+<h2>Full Table</h2>
+<p><a href="admin.php">Back to Admin</a></p>
 
-  <div class="tablewrap">
-    <table>
-      <thead>
-        <tr>
-          <th class="nowrap">ID</th>
-          <th class="nowrap">Submitted At</th>
-          <th>First</th>
-          <th>Last</th>
-          <th>Email</th>
-          <th>Telephone</th>
-          <th>Emergency Contact</th>
-          <th>Emergency Number</th>
-          <th class="nowrap">Safety Accepted</th>
-          <th>Legs</th>
-          <th>Status</th>
-          <th class="nowrap">Approved At</th>
-          <th class="nowrap">Rejected At</th>
-          <th>Rejection Reason</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($rows as $r): ?>
-          <tr>
-            <td class="nowrap"><?= h($r['id'] ?? '') ?></td>
-            <td class="nowrap"><?= h($r['created_at'] ?? '') ?></td>
-            <td><?= h($r['first_name'] ?? '') ?></td>
-            <td><?= h($r['last_name'] ?? '') ?></td>
-            <td><?= h($r['email'] ?? '') ?></td>
-            <td><?= h($r['mobile'] ?? '') ?></td>
-            <td><?= h($r['emergency_name'] ?? '') ?></td>
-            <td><?= h($r['emergency_phone'] ?? '') ?></td>
-            <td class="nowrap"><?= isset($r['safety_accepted']) ? h($r['safety_accepted']) : '' ?></td>
-            <td><?= h($r['legs'] ?? '') ?></td>
-            <td><?= h($r['status'] ?? '') ?></td>
-            <td class="nowrap"><?= h($r['approved_at'] ?? '') ?></td>
-            <td class="nowrap"><?= h($r['rejected_at'] ?? '') ?></td>
-            <td><?= h($r['rejection_reason'] ?? '') ?></td>
-          </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
+<table>
+  <thead>
+    <tr>
+      <th>Signup ID</th>
+      <th>Submitted</th>
+      <th>Team Leader</th>
+      <th>Group Size</th>
+      <th>Email</th>
+      <th>Phone</th>
+      <th>Safety</th>
+      <th>Leg</th>
+      <th>Leg Status</th>
+      <th>Was Taken at Submission</th>
+      <th>Approved At</th>
+      <th>Rejected At</th>
+      <th>Rejection Reason</th>
+    </tr>
+  </thead>
+  <tbody>
+    <?php if (empty($rows)): ?>
+      <tr><td colspan="13">No rows found.</td></tr>
+    <?php endif; ?>
+
+    <?php foreach ($rows as $r): ?>
+      <tr>
+        <td><?php echo (int)$r['signup_id']; ?></td>
+        <td class="small"><?php echo htmlspecialchars($r['created_at'] ?? ''); ?></td>
+        <td><?php echo htmlspecialchars(($r['team_leader_first_name'] ?? '') . ' ' . ($r['team_leader_surname'] ?? '')); ?></td>
+        <td><?php echo (int)($r['group_size'] ?? 0); ?></td>
+        <td><?php echo htmlspecialchars($r['email'] ?? ''); ?></td>
+        <td><?php echo htmlspecialchars($r['phone'] ?? ''); ?></td>
+        <td><?php echo ((int)($r['safety_accepted'] ?? 0) === 1) ? 'Yes' : 'No'; ?></td>
+        <td><?php echo (int)$r['leg_number']; ?></td>
+        <td><?php echo htmlspecialchars($r['leg_status'] ?? ''); ?></td>
+        <td><?php echo ((int)($r['was_taken'] ?? 0) === 1) ? 'Yes' : 'No'; ?></td>
+        <td class="small"><?php echo htmlspecialchars($r['approved_at'] ?? ''); ?></td>
+        <td class="small"><?php echo htmlspecialchars($r['rejected_at'] ?? ''); ?></td>
+        <td><?php echo htmlspecialchars($r['rejection_reason'] ?? ''); ?></td>
+      </tr>
+    <?php endforeach; ?>
+  </tbody>
+</table>
 
 </body>
 </html>

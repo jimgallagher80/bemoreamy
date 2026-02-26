@@ -4,13 +4,13 @@ header('Content-Type: application/json');
 try {
     require_once __DIR__ . '/includes/db.php';
 
-    // Public view: approved sign-ups only, names only
+    // Public view: confirmed legs only, names only
     $stmt = $pdo->query("
-        SELECT sl.leg_number, s.first_name, s.last_name
+        SELECT sl.leg_number, s.team_leader_first_name AS first_name, s.team_leader_surname AS last_name
         FROM signup_legs sl
         JOIN signups s ON s.id = sl.signup_id
-        WHERE s.status = 'approved'
-        ORDER BY sl.leg_number ASC, s.last_name ASC, s.first_name ASC
+        WHERE sl.status = 'confirmed'
+        ORDER BY sl.leg_number ASC, s.team_leader_surname ASC, s.team_leader_first_name ASC
     ");
 
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);

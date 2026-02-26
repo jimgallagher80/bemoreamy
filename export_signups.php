@@ -11,7 +11,7 @@ if (!isset($_SESSION['admin_logged_in'])) {
 $filter_status = $_GET['status'] ?? 'all';
 $filter_leg = $_GET['leg'] ?? 'all';
 
-$allowed_status = ['all','pending','approved','rejected'];
+$allowed_status = ['all','pending','confirmed','waitlist','rejected'];
 if (!in_array($filter_status, $allowed_status, true)) {
   $filter_status = 'all';
 }
@@ -27,12 +27,12 @@ $where = [];
 $params = [];
 
 if ($filter_status !== 'all') {
-  $where[] = "s.status = ?";
+  $where[] = "sl.status = ?";
   $params[] = $filter_status;
 }
 
 if ($filter_leg !== 'all') {
-  $where[] = "EXISTS (SELECT 1 FROM signup_legs sl2 WHERE sl2.signup_id = s.id AND sl2.leg_number = ?)";
+  $where[] = "sl.leg_number = ?";
   $params[] = (int)$filter_leg;
 }
 
@@ -45,20 +45,15 @@ $sql = "
   SELECT
     s.id,
     s.created_at,
-    s.first_name,
-    s.last_name,
+    s.team_leader_first_name,
+    s.team_leader_surname,
+    s.group_size,
     s.email,
-    s.mobile,
-    s.emergency_name,
-    s.emergency_phone,
+    s.phone,
     s.safety_accepted,
-    s.status,
-    s.approved_at,
-    s.rejected_at,
-    s.rejection_reason,
-    GROUP_CONCAT(sl.leg_number ORDER BY sl.leg_number) AS legs
+    GROUP_CONCAT(CONCAT(sl.leg_number, ':', sl.status) ORDER BY sl.leg_number SEPARATOR ', ') AS legs_with_status
   FROM signups s
-  LEFT JOIN signup_legs sl ON s.id = sl.signup_id
+  JOIN signup_legs sl ON s.id = sl.signup_id
   $where_sql
   GROUP BY s.id
   ORDER BY s.created_at DESC
@@ -80,36 +75,26 @@ $out = fopen('php://output', 'w');
 fputcsv($out, [
   'ID',
   'Submitted At',
-  'First Name',
-  'Last Name',
+  'Team Leader First Name',
+  'Team Leader Surname',
+  'Group Size',
   'Email',
-  'Telephone',
-  'Emergency Contact Name',
-  'Emergency Contact Number',
+  'Phone Number',
   'Safety Accepted',
-  'Legs',
-  'Status',
-  'Approved At',
-  'Rejected At',
-  'Rejection Reason'
+  'Legs (leg:status)'
 ]);
 
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
   fputcsv($out, [
     $row['id'] ?? '',
     $row['created_at'] ?? '',
-    $row['first_name'] ?? '',
-    $row['last_name'] ?? '',
+    $row['team_leader_first_name'] ?? '',
+    $row['team_leader_surname'] ?? '',
+    $row['group_size'] ?? '',
     $row['email'] ?? '',
-    $row['mobile'] ?? '',
-    $row['emergency_name'] ?? '',
-    $row['emergency_phone'] ?? '',
-    isset($row['safety_accepted']) ? (string)$row['safety_accepted'] : '',
-    $row['legs'] ?? '',
-    $row['status'] ?? '',
-    $row['approved_at'] ?? '',
-    $row['rejected_at'] ?? '',
-    $row['rejection_reason'] ?? ''
+    $row['phone'] ?? '',
+    ((int)($row['safety_accepted'] ?? 0) === 1) ? 'Yes' : 'No',
+    $row['legs_with_status'] ?? ''
   ]);
 }
 

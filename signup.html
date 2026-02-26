@@ -92,7 +92,9 @@
         <a href="amy.html">About Amy</a>
         <a href="route.html">The Route</a>
         <a href="signup.html">Sign Up</a>
-        <a href="charities.html">Charities</a>
+        
+        <a href="signup-status.html">Signup Status</a>
+<a href="charities.html">Charities</a>
         <a href="gallery.html">Gallery</a>
         <a href="contact.html">Contact</a>
       </nav>
@@ -119,38 +121,37 @@
 <form id="signupForm" class="form-grid" novalidate>
 
   <div class="field">
-    <label for="firstName">First Name</label>
-    <input id="firstName" required>
+    <label for="teamLeaderFirstName">Team Leader First Name</label>
+    <input id="teamLeaderFirstName" required>
   </div>
 
   <div class="field">
-    <label for="lastName">Last Name</label>
-    <input id="lastName" required>
+    <label for="teamLeaderSurname">Team Leader Surname</label>
+    <input id="teamLeaderSurname" required>
   </div>
 
   <div class="field">
-    <label for="email">Email</label>
+    <label for="groupSize">
+      Number of people in your group
+      <span class="linkish" id="openGroupInfo" aria-label="More information">ⓘ</span>
+    </label>
+    <input id="groupSize" type="number" inputmode="numeric" min="1" max="100" required>
+  </div>
+
+  <div class="field">
+    <label for="email">E-mail</label>
     <input id="email" type="email" required>
   </div>
 
   <div class="field">
-    <label for="mobile">Mobile</label>
-    <input id="mobile" required>
-  </div>
-
-  <div class="field">
-    <label for="emergencyName">Emergency Contact Name</label>
-    <input id="emergencyName" required>
-  </div>
-
-  <div class="field">
-    <label for="emergencyPhone">Emergency Contact Phone</label>
-    <input id="emergencyPhone" required>
+    <label for="phone">Phone Number</label>
+    <input id="phone" required>
   </div>
 
   <div class="legs-block">
     <div class="legs-title">Choose your legs</div>
     <div id="legsContainer"></div>
+    <div id="takenNotice" style="margin:10px 0 10px; font-weight:700;"></div>
     <button type="button" id="addLegBtn" class="btn">Add Another Leg</button>
   </div>
 
@@ -189,6 +190,17 @@
   </div>
 </div>
 
+
+<!-- Group size info modal -->
+<div class="modal-backdrop" id="groupInfoModal">
+  <div class="modal">
+    <h2>Group Information</h2>
+    <p>Names, contact details and emergency contact details for all members of the group will be collected later.</p>
+    <button type="button" id="closeGroupInfo">Close</button>
+  </div>
+</div>
+
+
 <!-- Success modal -->
 <div class="modal-backdrop" id="successModal">
   <div class="modal">
@@ -204,15 +216,56 @@ const form = document.getElementById('signupForm');
 const legsContainer = document.getElementById('legsContainer');
 const addLegBtn = document.getElementById('addLegBtn');
 
-const firstName = document.getElementById('firstName');
-const lastName = document.getElementById('lastName');
+const teamLeaderFirstName = document.getElementById('teamLeaderFirstName');
+const teamLeaderSurname = document.getElementById('teamLeaderSurname');
 const email = document.getElementById('email');
-const mobile = document.getElementById('mobile');
-const emergencyName = document.getElementById('emergencyName');
-const emergencyPhone = document.getElementById('emergencyPhone');
+const groupSize = document.getElementById('groupSize');
+const phone = document.getElementById('phone');
 const safetyAccepted = document.getElementById('safetyAccepted');
 
 const TOTAL_LEGS = 68;
+
+let TAKEN_LEGS = new Set();
+
+async function loadTakenLegs() {
+  try {
+    const res = await fetch('get_taken_legs.php');
+    const data = await res.json();
+    if (data && data.success && Array.isArray(data.taken_legs)) {
+      TAKEN_LEGS = new Set(data.taken_legs.map(n => String(n)));
+    } else {
+      TAKEN_LEGS = new Set();
+    }
+  } catch (e) {
+    TAKEN_LEGS = new Set();
+  }
+}
+
+function applyAvailabilityToSelect(selectEl) {
+  Array.from(selectEl.options).forEach(opt => {
+    if (!opt.value) return;
+    if (!opt.dataset.baseText) opt.dataset.baseText = opt.textContent;
+    const taken = TAKEN_LEGS.has(String(opt.value));
+    opt.textContent = opt.dataset.baseText + (taken ? ' - Taken' : ' - Available');
+  });
+}
+
+function refreshTakenNotice() {
+  const notice = document.getElementById('takenNotice');
+  const selected = legSelects.map(s => s.value).filter(Boolean);
+  const takenSelected = selected.filter(v => TAKEN_LEGS.has(String(v)));
+
+  if (!notice) return;
+
+  if (takenSelected.length === 0) {
+    notice.textContent = '';
+    return;
+  }
+
+  const uniq = Array.from(new Set(takenSelected.map(v => String(v)))).sort((a,b)=>parseInt(a)-parseInt(b));
+  notice.textContent = `Leg${uniq.length > 1 ? 's' : ''} ${uniq.join(', ')} ${uniq.length > 1 ? 'are' : 'is'} already taken. If you proceed with this selection, your interest will be noted should it become available.`;
+}
+
 
 // Only used to generate the dropdown labels
 const LEG_INFO = {
@@ -332,17 +385,32 @@ function addLeg(){
   const { wrap, sel } = createLegSelect();
   legsContainer.appendChild(wrap);
   legSelects.push(sel);
+
+  // Apply availability labels and keep notice updated
+  applyAvailabilityToSelect(sel);
+  sel.addEventListener('change', refreshTakenNotice);
+  refreshTakenNotice();
 }
 
-addLeg();
+(async () => {
+  await loadTakenLegs();
+  addLeg();
+  refreshTakenNotice();
+})();
 
-addLegBtn.addEventListener('click', addLeg);
+addLegBtn.addEventListener('click', () => {
+  addLeg();
+});
 
 /* modals */
 const safetyModal = document.getElementById('safetyModal');
 const successModal = document.getElementById('successModal');
 document.getElementById('openSafety').addEventListener('click', () => { safetyModal.style.display='flex'; });
 document.getElementById('closeSafety').addEventListener('click', () => { safetyModal.style.display='none'; });
+
+const groupInfoModal = document.getElementById('groupInfoModal');
+document.getElementById('openGroupInfo').addEventListener('click', () => { groupInfoModal.style.display='flex'; });
+document.getElementById('closeGroupInfo').addEventListener('click', () => { groupInfoModal.style.display='none'; });
 
 document.getElementById('closeSuccess').addEventListener('click', () => {
   successModal.style.display='none';
@@ -361,12 +429,11 @@ form.addEventListener('submit', async (e) => {
   const legs = legSelects.map(s => s.value).filter(Boolean);
 
   const payload = {
-    first_name: firstName.value.trim(),
-    last_name: lastName.value.trim(),
+    team_leader_first_name: teamLeaderFirstName.value.trim(),
+    team_leader_surname: teamLeaderSurname.value.trim(),
+    group_size: groupSize.value,
     email: email.value.trim(),
-    mobile: mobile.value.trim(),
-    emergency_name: emergencyName.value.trim(),
-    emergency_phone: emergencyPhone.value.trim(),
+    phone: phone.value.trim(),
     safety_accepted: safetyAccepted.checked ? 1 : 0,
     legs: legs
   };
