@@ -17,10 +17,11 @@
       --bg:#0b0b0b;
       --text:#f2f2f2;
       --muted:#b7b7b7;
-      --panel:rgba(18,18,18,.92);
-      --accent:#ff7a00;
-      --shadow: 0 16px 40px rgba(0,0,0,.45);
-      --radius: 18px;
+      --panel:rgba(18,18,18,.94);
+      --border:rgba(255,255,255,.10);
+      --orange:#ff7a00;
+      --shadow:0 16px 40px rgba(0,0,0,.45);
+      --radius:18px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -39,16 +40,68 @@
       z-index:1000;
       display:flex;
       align-items:center;
-      gap:10px;
       padding:12px 14px;
       background:linear-gradient(180deg, rgba(0,0,0,.88), rgba(0,0,0,.35) 80%, rgba(0,0,0,0));
       backdrop-filter: blur(6px);
     }
+    .topbar-row{
+      width:100%;
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .menu-wrap{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .menu-button{
+      border:0;
+      background:rgba(255,255,255,.08);
+      color:var(--text);
+      width:40px;
+      height:40px;
+      border-radius:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+    }
+    .menu-button:hover{ background:rgba(255,255,255,.12); }
+
+    .menu-dropdown{
+      position:absolute;
+      top:50px;
+      left:0;
+      width:220px;
+      background:rgba(18,18,18,.98);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      padding:10px;
+      display:none;
+    }
+    .menu-dropdown.open{ display:block; }
+    .menu-dropdown a{
+      display:block;
+      padding:10px 12px;
+      border-radius:12px;
+      color:var(--text);
+      text-decoration:none;
+      font-weight:700;
+    }
+    .menu-dropdown a:hover{ background:rgba(255,255,255,.08); }
+    .menu-dropdown a.active{ color:var(--orange); }
+
     .brand{
       display:flex;
       align-items:center;
       gap:10px;
-      min-width: 160px;
+      text-decoration:none;
+      color:var(--text);
+      min-width: 165px;
     }
     .brand img{
       width:40px;
@@ -86,6 +139,7 @@
       padding:10px 12px;
       font-size:14px;
       outline:none;
+      max-width: 56vw;
     }
     select:focus{
       border-color: rgba(255,122,0,.65);
@@ -125,9 +179,7 @@
     .panelTip strong{ color: var(--text); }
 
     .panel.expanded .panelTip{ display:none; }
-    .panelExpanded{
-      display:block;
-    }
+    .panelExpanded{ display:block; }
 
     .panelHead{
       display:flex;
@@ -179,7 +231,7 @@
       line-height: 1.2;
     }
     .value{
-      font-weight: 700;
+      font-weight: 800;
       font-size: 14px;
       line-height: 1.2;
       text-align:right;
@@ -187,27 +239,55 @@
       word-break: break-word;
     }
     .value a{
-      color: var(--accent);
+      color: var(--orange);
       text-decoration: none;
-      font-weight: 800;
+      font-weight: 900;
     }
     .value a:hover{ text-decoration: underline; }
+
+    .diamond-wrap{
+      width:30px;
+      height:30px;
+      border-radius:7px;
+      transform: rotate(45deg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow: 0 10px 18px rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.14);
+    }
+    .diamond-num{
+      transform: rotate(-45deg);
+      font-weight: 900;
+      font-size: 13px;
+      line-height: 1;
+    }
 
     .finishFlag{
       filter: drop-shadow(0 6px 12px rgba(0,0,0,.55));
       font-size: 18px;
     }
 
-    /* Sign-up link + modal (route page) */
-    .signupLink{
-      color: var(--accent);
+    .sr-only{
+      position:absolute;
+      width:1px;
+      height:1px;
+      padding:0;
+      margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      border:0;
+    }
+
+    /* Sign-ups link + modal (added) */
+    .signupsLink{
+      color: var(--orange);
       text-decoration: underline;
       text-underline-offset: 2px;
-      cursor: pointer;
+      font-weight: 800;
     }
-    .signupLink:focus{ outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 
-    .signupModal{
+    .signupsModal{
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,.65);
@@ -217,62 +297,100 @@
       z-index: 9999;
       padding: 18px;
     }
-    .signupModal.open{ display: flex; }
+    .signupsModal.open{ display: flex; }
 
-    .signupModalCard{
+    .signupsModalCard{
       width: min(520px, 100%);
-      background: rgba(20,20,20,.98);
-      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(18,18,18,.98);
+      border: 1px solid var(--border);
       border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+      box-shadow: var(--shadow);
       padding: 16px;
-      color: var(--text);
     }
-    .signupModalHead{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 10px;
+    .signupsModalHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
     }
-    .signupModalTitle{
+    .signupsModalTitle{
       font-size: 18px;
-      font-weight: 800;
+      font-weight: 900;
       margin: 0;
     }
-    .signupModalClose{
-      border: 0;
-      background: transparent;
+    .signupsModalClose{
+      border:0;
+      background: rgba(255,255,255,.08);
       color: var(--text);
-      font-size: 24px;
-      line-height: 1;
+      width: 36px;
+      height: 36px;
+      border-radius: 14px;
+      font-size: 22px;
       cursor: pointer;
-      padding: 6px 10px;
-      border-radius: 12px;
     }
-    .signupModalClose:hover{ background: rgba(255,255,255,.08); }
-    .signupModalBody{
-      max-height: min(60vh, 520px);
-      overflow: auto;
-      padding-right: 4px;
+    .signupsModalClose:hover{ background: rgba(255,255,255,.12); }
+
+    .modal-muted{
+      margin:0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .modal-list{
+      margin:0;
+      padding-left: 18px;
+      line-height: 1.5;
     }
   </style>
 </head>
 
 <body>
   <header class="topbar" id="topbar">
-    <div class="brand">
-      <img src="BMAlogo.svg" alt="Be More Amy logo" />
-      <div>
-        <div class="name">Be More Amy</div>
-        <div class="sub">South West Coastal Path relay</div>
-      </div>
-    </div>
+    <div class="topbar-row">
 
-    <div class="controls">
-      <select id="legSelect" aria-label="Select a leg">
-        <option value="">Select a leg</option>
-      </select>
+      <!-- Menu (left) -->
+      <div class="menu-wrap">
+        <button
+          class="menu-button"
+          type="button"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-controls="site-menu"
+          id="menuBtn"
+          title="Menu"
+        >
+          <img src="menu.svg" alt="" width="22" height="22" aria-hidden="true" />
+          <span class="sr-only">Open menu</span>
+        </button>
+
+        <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
+          <a href="index.html">Home</a>
+          <a href="route.html" class="active">Route</a>
+          <a href="signup.html">Sign up</a>
+          <a href="signup-status.html">Sign up status</a>
+          <a href="challenge.html">Challenge</a>
+          <a href="charities.html">Charities</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="contact.html">Contact</a>
+          <a href="amy.html">Amy</a>
+        </nav>
+      </div>
+
+      <!-- Brand (middle) -->
+      <a class="brand" href="index.html">
+        <img src="BMAlogo.svg" alt="Be More Amy logo" />
+        <div>
+          <div class="name">Be More Amy</div>
+          <div class="sub">South West Coastal Path relay</div>
+        </div>
+      </a>
+
+      <!-- Controls (right) -->
+      <div class="controls">
+        <select id="legSelect" aria-label="Select a leg">
+          <option value="">Select a leg</option>
+        </select>
+      </div>
     </div>
   </header>
 
@@ -281,7 +399,7 @@
   <section class="panel" id="panel" aria-label="Leg details">
     <p class="panelTip" id="panelTip">
       <span><strong>Tip:</strong> Tap a leg on the map, or use the dropdown.</span>
-      <span style="color:var(--accent); font-weight:900;">🏁</span>
+      <span style="color:var(--orange); font-weight:900;">🏁</span>
     </p>
 
     <div class="panelExpanded" id="panelExpanded" hidden>
@@ -295,14 +413,14 @@
     </div>
   </section>
 
-  <!-- Sign-ups modal -->
-  <div class="signupModal" id="signupModal" aria-hidden="true">
-    <div class="signupModalCard" role="dialog" aria-modal="true" aria-labelledby="signupModalTitle">
-      <div class="signupModalHead">
-        <h3 class="signupModalTitle" id="signupModalTitle">Leg sign-ups</h3>
-        <button class="signupModalClose" id="signupModalClose" type="button" aria-label="Close">×</button>
+  <!-- Sign-ups modal (added) -->
+  <div class="signupsModal" id="signupsModal" aria-hidden="true">
+    <div class="signupsModalCard" role="dialog" aria-modal="true" aria-labelledby="signupsModalTitle">
+      <div class="signupsModalHead">
+        <h3 class="signupsModalTitle" id="signupsModalTitle">Leg sign-ups</h3>
+        <button class="signupsModalClose" id="signupsModalClose" type="button" aria-label="Close">×</button>
       </div>
-      <div class="signupModalBody" id="signupModalBody"></div>
+      <div id="signupsModalBody"></div>
     </div>
   </div>
 
@@ -314,14 +432,28 @@
 
   <script src="./app.js"></script>
 
-  <!-- Menu behaviour -->
   <script>
     (function () {
-      const btn = document.querySelector(".menuBtn");
-      const menu = document.querySelector(".menu");
+      const btn = document.getElementById("menuBtn");
+      const menu = document.getElementById("site-menu");
       if (!btn || !menu) return;
+
+      function closeMenu() {
+        menu.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+      }
+
       btn.addEventListener("click", () => {
-        menu.classList.toggle("open");
+        const open = menu.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!menu.contains(e.target) && !btn.contains(e.target)) closeMenu();
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMenu();
       });
     })();
   </script>
