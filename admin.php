@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . '/includes/db.php';
 
-$ADMIN_PASSWORD = "CHANGE_THIS_TO_A_STRONG_PASSWORD";
+$ADMIN_PASSWORD = "SugarTits2026!";
 
 /* -------- LOGIN -------- */
 
