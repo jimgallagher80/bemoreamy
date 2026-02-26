@@ -82,6 +82,7 @@
       font-weight: 800;
       font-size: 16px;
       cursor: pointer;
+      box-sizing: border-box;
     }
 
     .btn:disabled {
@@ -110,6 +111,38 @@
     @media (max-width: 420px) {
       .contact-wrap { padding: 14px; }
     }
+
+    .modal-backdrop {
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.6);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      z-index: 9999;
+    }
+    .modal {
+      background:#fff;
+      border:2px solid #000;
+      border-radius:18px;
+      padding:16px;
+      max-width:600px;
+      width:100%;
+      box-sizing: border-box;
+    }
+    .modal button {
+      margin-top:10px;
+      padding:10px 14px;
+      border-radius:14px;
+      border:2px solid #000;
+      background:#FAEBC8;
+      font-weight:800;
+      width:100%;
+      max-width:100%;
+      box-sizing: border-box;
+      cursor:pointer;
+    }
   </style>
 </head>
 
@@ -125,114 +158,90 @@
           type="button"
           aria-haspopup="true"
           aria-expanded="false"
-          aria-controls="site-menu"
           id="menuBtn"
-          title="Menu"
         >
-          <img src="menu.svg" alt="" width="22" height="22" aria-hidden="true" />
-          <span class="sr-only">Open menu</span>
+          <img src="menu.svg" width="22" height="22" alt="Menu" />
         </button>
 
-        <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
+        <nav class="menu-dropdown" id="site-menu" role="menu">
           <a href="index.html">The Challenge</a>
           <a href="amy.html">About Amy</a>
           <a href="route.html">The Route</a>
           <a href="signup.html">Sign Up</a>
           <a href="gallery.html">Gallery</a>
+          <a href="charities.html">Charities</a>
           <a href="contact.html">Contact</a>
         </nav>
       </div>
 
-      <!-- Brand block (not clickable as a whole) -->
-      <div class="brand" aria-label="Be More Amy header">
-
-        <!-- Only logo is clickable -->
-        <a class="logo-link" href="index.html" aria-label="Home">
-          <img
-            class="brand-logo"
-            src="BMAlogo.svg"
-            alt="Be More Amy logo"
-            width="100"
-            height="100"
-          />
+      <!-- Brand -->
+      <div class="brand">
+        <a href="index.html">
+          <img class="brand-logo" src="BMAlogo.svg" width="100" alt="Be More Amy" />
         </a>
-
         <div class="brand-text">
           <div class="brand-line brand-title">BE MORE AMY</div>
           <div class="brand-line brand-subtitle">South West Coastal</div>
           <div class="brand-line brand-subtitle">Path Relay Challenge</div>
           <div class="brand-line brand-date">16th to 25th May 2026</div>
         </div>
-
       </div>
+
     </div>
   </header>
 
-  <!-- Page Content -->
   <main class="page">
-    <section class="intro" aria-label="Contact">
-      <p><strong>Contact</strong></p>
+    <h1>Contact</h1>
 
-      <div class="contact-wrap">
-        <p>
-          Use the form below to send us a message. Until the website database is connected, pressing submit will open your email app with the message pre-filled.
-        </p>
+    <div class="contact-wrap">
+      <p>
+        Use the form below to contact the team.
+      </p>
 
-        <p class="small-note">
-          Helpful to include:
-        </p>
-        <ul class="help-list">
-          <li>Your name and a contact number (optional).</li>
-          <li>If your question relates to a route leg, include the leg number or location.</li>
-          <li>Your availability window if you are trying to swap or coordinate.</li>
-        </ul>
+      <form id="contactForm" class="form-grid" novalidate method="post" action="contact_submit.php">
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" name="name" autocomplete="name" required placeholder="Your name" />
+        </div>
 
-        <form id="contactForm" class="form-grid" novalidate>
-          <div class="field">
-            <label for="name">Name</label>
-            <input id="name" name="name" autocomplete="name" required placeholder="Your name" />
-          </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required placeholder="name@example.com" />
+        </div>
 
-          <div class="field">
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" autocomplete="email" required placeholder="name@example.com" />
-          </div>
+        <div class="field">
+          <label for="subject">Subject</label>
+          <input id="subject" name="subject" required placeholder="What is your message about?" />
+        </div>
 
-          <div class="field">
-            <label for="subject">Subject</label>
-            <input id="subject" name="subject" required placeholder="What is your message about?" />
-          </div>
+        <div class="field">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" required placeholder="Write your message here"></textarea>
+        </div>
 
-          <div class="field">
-            <label for="message">Message</label>
-            <textarea id="message" name="message" required placeholder="Write your message here"></textarea>
-          </div>
+        <div class="check-row">
+          <input id="consent" name="consent" type="checkbox" required />
+          <label for="consent" style="font-weight:700; font-size:14px; margin:0;">
+            I confirm the details above are correct and you may contact me using the email address provided.
+          </label>
+        </div>
 
-          <div class="check-row">
-            <input id="consent" name="consent" type="checkbox" required />
-            <label for="consent" style="font-weight:700; font-size:14px; margin:0;">
-              I understand this will open my email app to send the message.
-            </label>
-          </div>
+        <button id="submitBtn" class="btn" type="submit">Submit message</button>
 
-          <button id="submitBtn" class="btn" type="submit">Submit message</button>
-
-          <div id="status" class="status" role="status" aria-live="polite"></div>
-
-          <p class="small-note" style="margin-top:6px;">
-            Prefer email? You can contact us directly at <a href="mailto:hello@bemoreamy.com">hello@bemoreamy.com</a>.
-          </p>
-        </form>
-      </div>
-    </section>
-
-    <section class="quick-links" aria-label="Quick links">
-      <a class="card-link" href="route.html">The Route</a>
-      <a class="card-link" href="signup.html">Sign Up</a>
-    </section>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+      </form>
+    </div>
   </main>
 
-  <!-- Menu behaviour + Contact form behaviour -->
+  <!-- Success modal -->
+  <div class="modal-backdrop" id="contactSuccessModal">
+    <div class="modal">
+      <h2>Message received</h2>
+      <p>Thanks for getting in touch. We&#39;ll come back to you as soon as we can.</p>
+      <button type="button" id="closeContactSuccess">Close</button>
+    </div>
+  </div>
+
   <script>
     (function () {
       // Header menu
@@ -266,37 +275,45 @@
       const form = document.getElementById("contactForm");
       const status = document.getElementById("status");
       const submitBtn = document.getElementById("submitBtn");
+      const successModal = document.getElementById("contactSuccessModal");
+      const closeSuccessBtn = document.getElementById("closeContactSuccess");
 
       function showStatus(html) {
         status.innerHTML = html;
         status.style.display = "block";
       }
 
+      function hideStatus() {
+        status.style.display = "none";
+        status.innerHTML = "";
+      }
+
       function isValidEmail(email) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim());
       }
 
-      function buildMailto(name, email, subject, message) {
-        const to = "hello@bemoreamy.com";
-        const fullSubject = `[Be More Amy] ${subject}`;
-
-        const bodyLines = [
-          `Name: ${name}`,
-          `Email: ${email}`,
-          "",
-          message.trim()
-        ];
-
-        const body = bodyLines.join("\n");
-        const url =
-          `mailto:${encodeURIComponent(to)}` +
-          `?subject=${encodeURIComponent(fullSubject)}` +
-          `&body=${encodeURIComponent(body)}`;
-
-        return url;
+      function openSuccessModal() {
+        successModal.style.display = "flex";
       }
 
-      form.addEventListener("submit", (e) => {
+      function closeSuccessModal() {
+        successModal.style.display = "none";
+        window.location.href = "index.html";
+      }
+
+      closeSuccessBtn.addEventListener("click", closeSuccessModal);
+
+      successModal.addEventListener("click", (e) => {
+        if (e.target === successModal) closeSuccessModal();
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && successModal.style.display === "flex") {
+          closeSuccessModal();
+        }
+      });
+
+      form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
         const name = document.getElementById("name").value.trim();
@@ -320,16 +337,31 @@
           return;
         }
 
-        showStatus("Opening your email app now. If it does not open, use the direct email link below.");
+        hideStatus();
         submitBtn.disabled = true;
 
-        const mailto = buildMailto(name, email, subject, message);
+        try {
+          const formData = new FormData(form);
 
-        // Small delay so the user sees the status message on mobile
-        setTimeout(() => {
-          window.location.href = mailto;
+          const res = await fetch(form.action, {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await res.json().catch(() => null);
+
+          if (res.ok && data && data.ok) {
+            form.reset();
+            openSuccessModal();
+          } else {
+            const msg = (data && data.error) ? data.error : "Sorry, something went wrong. Please try again.";
+            showStatus(`<strong>${msg}</strong>`);
+          }
+        } catch (err) {
+          showStatus("<strong>Sorry, something went wrong. Please try again.</strong>");
+        } finally {
           submitBtn.disabled = false;
-        }, 250);
+        }
       });
     })();
   </script>
