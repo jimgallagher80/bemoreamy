@@ -47,7 +47,6 @@ function sendEmail($to, $subject, $message) {
 }
 
 function buildStatusEmailBody($signup, $legs) {
-    // $legs rows: leg_number, status, rejection_reason
     $lines = [];
     $hasWaitlist = false;
 
@@ -98,12 +97,14 @@ $flash = '';
 if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
     $signupId = (int)$_POST['signup_id'];
 
-    // decisions[leg_number] = approve|reject|skip
+    // apply[leg_number] = 1  (checkboxes)
+    $apply = $_POST['apply'] ?? [];
+    // decision[leg_number] = approve|reject|skip
     $decisions = $_POST['decision'] ?? [];
-    // reasons[leg_number] = text
+    // reason[leg_number] = text
     $reasons = $_POST['reason'] ?? [];
 
-    if ($signupId > 0 && is_array($decisions)) {
+    if ($signupId > 0 && is_array($decisions) && is_array($apply)) {
 
         // Load signup
         $s = $pdo->prepare("SELECT * FROM signups WHERE id = ?");
@@ -115,14 +116,17 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
 
             try {
                 foreach ($decisions as $legKey => $decision) {
+
+                    // Only process legs that were ticked
+                    if (!isset($apply[$legKey])) {
+                        continue;
+                    }
+
                     $legNum = (int)$legKey;
                     $decision = trim((string)$decision);
 
                     if ($legNum <= 0) continue;
-
-                    if ($decision === 'skip' || $decision === '') {
-                        continue;
-                    }
+                    if ($decision === 'skip' || $decision === '') continue;
 
                     if ($decision === 'approve') {
                         // Is leg already taken by someone else?
@@ -161,7 +165,7 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
                     }
                 }
 
-                // Keep parent signup status as pending (this is just a container now)
+                // Keep parent signup status as pending (container)
                 $pdo->prepare("UPDATE signups SET status = 'pending' WHERE id = ?")->execute([$signupId]);
 
                 $pdo->commit();
@@ -292,11 +296,11 @@ textarea, input[type="text"] { width:100%; margin-top:6px; padding:8px; }
 .pill-available { border-color:#090; color:#090; }
 .grid {
   display:grid;
-  grid-template-columns: 24px 1fr 160px;
+  grid-template-columns: 24px 1fr 180px;
   gap:10px;
-  align-items:center;
+  align-items:start;
 }
-select { padding:6px; }
+select { padding:6px; width:100%; }
 </style>
 </head>
 <body>
@@ -413,7 +417,7 @@ select { padding:6px; }
     <div style="margin-top:12px;">
       <button type="submit" name="batch_update" value="1" style="padding:10px 14px;">Confirm Decisions &amp; Send One Email</button>
       <div class="small" style="margin-top:6px;">
-        Tip: tick the legs you are changing. Only ticked legs will be updated.
+        Tick the legs you are changing. Only ticked legs will be updated.
       </div>
     </div>
   </form>
