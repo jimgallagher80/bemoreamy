@@ -1,101 +1,555 @@
 <!doctype html>
 <html lang="en-GB">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BE MORE AMY — The Route</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>South West Coastal Path — Route Map</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --text:#f2f2f2;
+      --muted:#b7b7b7;
+      --panel:rgba(18,18,18,.94);
+      --border:rgba(255,255,255,.10);
+      --orange:#ff7a00;
+      --shadow:0 16px 44px rgba(0,0,0,.55);
+      --safeTop: env(safe-area-inset-top);
+      --safeBottom: env(safe-area-inset-bottom);
+
+      --bmaHeader:#FAEBC8;
+      --routeHeaderH: 150px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+    }
+
+    /* Hide SR-only text */
+    .sr-only{
+      position:absolute !important;
+      width:1px !important;
+      height:1px !important;
+      padding:0 !important;
+      margin:-1px !important;
+      overflow:hidden !important;
+      clip:rect(0,0,0,0) !important;
+      white-space:nowrap !important;
+      border:0 !important;
+    }
+
+    /* Header */
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:1000;
+      padding: calc(10px + var(--safeTop)) 14px 10px;
+      background: var(--bmaHeader);
+      border-bottom:1px solid rgba(0,0,0,.10);
+      transition: padding 180ms ease;
+    }
+
+    .topbar-row{
+      position:relative;
+      height: var(--routeHeaderH);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding-bottom: 6px; /* lifts content away from bottom border */
+    }
+
+    /* We align menu + select to the vertical centre of the logo (not the whole header) */
+    .menu-wrap,
+    .controls{
+      position:absolute;
+      top: calc(50% - 18px);  /* bring up slightly */
+      transform: translateY(-50%);
+      z-index:1200;
+    }
+
+    .menu-wrap{ left:0; }
+    .controls{
+      right:0;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:8px;
+    }
+
+    .menu-button{
+      appearance:none;
+      border:none;
+      background:transparent;
+      padding:10px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+    }
+    .menu-button:focus{
+      outline:2px solid rgba(0,0,0,.30);
+      outline-offset:3px;
+      border-radius:10px;
+    }
+
+    .menu-dropdown{
+      position:absolute;
+      left:0;
+      top: calc(100% + 8px);
+      min-width: 210px;
+      background:#ffffff;
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+      padding:8px;
+      display:none;
+    }
+    .menu-dropdown.open{ display:block; }
+
+    .menu-dropdown a{
+      display:block;
+      padding:10px 12px;
+      border-radius:10px;
+      text-decoration:none;
+      color:#111;
+      font-size:15px;
+      font-weight:650;
+    }
+    .menu-dropdown a:hover,
+    .menu-dropdown a:focus{
+      background: rgba(250,235,200,.60);
+      outline:none;
+    }
+
+    /* Centre brand */
+    .route-brand{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start; /* lets us control vertical placement */
+      text-align:center;
+      color:#000;
+
+      /* Move everything UP a bit */
+      padding-top: 6px;
+
+      /* keep clear of menu + select */
+      padding-left: 150px;
+      padding-right: 150px;
+    }
+
+    .route-brand img{
+      width:100px;
+      height:100px;
+      object-fit:contain;
+      display:block;
+    }
+
+    /* Minimal space between logo and title */
+    .route-title{ margin-top: 2px; }
+
+    .route-title h1{
+      margin:0;
+      font-weight:800;
+      color:#000;
+      line-height:1.10;
+      font-size: clamp(15px, 4.2vw, 19px);
+    }
+
+    .title-line{
+      display:block;
+      white-space:nowrap;
+    }
+
+    /* Date line: a touch above bottom border, and tight to title */
+    .route-date{
+      margin-top: 3px;
+      padding-bottom: 2px;
+      font-size: clamp(12px, 3.4vw, 15px);
+      font-weight: 400;
+      color:#000;
+      white-space: nowrap;
+    }
+
+    /* Smaller, narrower select */
+    #legSelect{
+      appearance:none;
+      border:1.5px solid #000;
+      background: var(--bmaHeader);
+      color:#000;
+
+      padding: 6px 8px;
+      border-radius: 14px;
+
+      font-weight:650;
+      font-size: 12.5px;
+      min-width: 96px;      /* reduced width */
+      max-width: 120px;
+    }
+
+    /* Confirmed Signups button styled to match the select */
+    #confirmedSignupsBtn{
+      appearance:none;
+      border:1.5px solid #000;
+      background: var(--bmaHeader);
+      color:#000;
+
+      padding: 6px 8px;
+      border-radius: 14px;
+
+      font-weight:650;
+      font-size: 12.5px;
+      min-width: 96px;
+      max-width: 120px;
+      cursor:pointer;
+      text-align:center;
+    }
+
+    /* Compact header when panel expanded */
+    body.compact-header .topbar{
+      padding: calc(8px + var(--safeTop)) 12px 8px;
+    }
+    body.compact-header .topbar-row{
+      height: 70px;
+      padding-bottom: 0;
+    }
+    body.compact-header .route-brand{
+      padding-top: 0;
+      padding-left: 120px;
+      padding-right: 120px;
+    }
+    body.compact-header .route-brand img{
+      width:44px;
+      height:44px;
+    }
+    body.compact-header .route-title h1{
+      font-size:14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.compact-header .route-date{ display:none; }
+    body.compact-header .controls{ display:none; }
+
+    /* Map */
+    #map{
+      height: calc(100vh - var(--routeHeaderH));
+      width: 100%;
+    }
+
+    /* Bottom panel */
+    .panel{
+      position:fixed;
+      left:10px;
+      right:10px;
+      bottom: calc(10px + var(--safeBottom));
+      z-index:1100;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      transition: max-height 180ms ease, padding 180ms ease;
+    }
+
+    .panel.collapsed{
+      padding: 10px 12px;
+      max-height: 52px;
+    }
+
+    .panel.expanded{
+      padding: 10px 12px 10px;
+      max-height: 26vh;
+      overflow:auto;
+    }
+
+    .panel-tip{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.25;
+      margin:0;
+    }
+
+    .panel-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:2px;
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:14px;
+      font-weight:800;
+      letter-spacing:0;
+      line-height:1.2;
+    }
+
+    .closeBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      width:30px;
+      height:30px;
+      border-radius:10px;
+      font-size:18px;
+      line-height:1;
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+
+    .subtitle{
+      margin:0 0 8px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.15;
+      font-weight:800;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:6px;
+      font-size:13px;
+      line-height:1.15;
+    }
+
+    .row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px dashed rgba(255,255,255,.10);
+      padding-bottom:6px;
+    }
+    .row:last-child{ border-bottom:none; padding-bottom:0; }
+
+    .label{ color:var(--muted); min-width:45%; }
+    .value{ text-align:right; word-break:break-word; }
+
+    a{ color:#9ad1ff; text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+
+    /* Diamond marker */
+    .diamond-wrap{
+      width:30px;
+      height:30px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transform: rotate(45deg);
+      border: 2px solid rgba(0,0,0,.65);
+      box-shadow: 0 0 0 4px rgba(0,0,0,.35);
+    }
+    .diamond-num{
+      transform: rotate(-45deg);
+      font-weight:900;
+      font-size:13px;
+      line-height:1;
+    }
+
+    .finish-flag{
+      font-size:18px;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.6));
+    }
+
+    .leaflet-popup-content-wrapper{ border-radius:14px; }
+
+    @media (max-width: 420px){
+      .route-brand{
+        padding-left: 130px;
+        padding-right: 130px;
+        padding-top: 5px;
+      }
+      .menu-wrap,
+      .controls{
+        top: calc(50% - 20px);
+      }
+      #legSelect{
+        min-width: 92px;
+        font-size: 12px;
+        padding: 6px 7px;
+        border-radius: 13px;
+      }
+      #confirmedSignupsBtn{
+        min-width: 92px;
+        font-size: 12px;
+        padding: 6px 7px;
+        border-radius: 13px;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <header class="topbar" id="topbar">
+    <div class="topbar-row">
 
-<header class="site-header">
-  <div class="header-inner">
+      <!-- Menu (left) -->
+      <div class="menu-wrap">
+        <button
+          class="menu-button"
+          type="button"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-controls="site-menu"
+          id="menuBtn"
+          title="Menu"
+        >
+          <img src="menu.svg" alt="" width="22" height="22" aria-hidden="true" />
+          <span class="sr-only">Open menu</span>
+        </button>
 
-    <div class="menu-wrap">
-      <button class="menu-button" id="menuBtn">
-        <img src="menu.svg" width="22" height="22" alt="Menu">
-      </button>
-      <nav class="menu-dropdown" id="site-menu">
-        <a href="index.html">The Challenge</a>
-        <a href="amy.html">About Amy</a>
-        <a href="route.html">The Route</a>
-        <a href="signup.html">Sign Up</a>
-        <a href="signup-status.html">Signup Status</a>
-        <a href="charities.html">Charities</a>
-        <a href="gallery.html">Gallery</a>
-        <a href="contact.html">Contact</a>
-      </nav>
-    </div>
-
-    <div class="brand">
-      <a href="index.html">
-        <img class="brand-logo" src="BMAlogo.svg" width="100" alt="Be More Amy">
-      </a>
-      <div class="brand-text">
-        <div class="brand-line brand-title">BE MORE AMY</div>
-        <div class="brand-line brand-subtitle">South West Coastal</div>
-        <div class="brand-line brand-subtitle">Path Relay Challenge</div>
-        <div class="brand-line brand-date">16th to 23rd May 2026</div>
+        <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
+          <a href="index.html">The Challenge</a>
+          <a href="amy.html">About Amy</a>
+          <a href="route.html">The Route</a>
+          <a href="signup.html">Sign Up</a>
+          <a href="charities.html">Charities</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="contact.html">Contact</a>
+        </nav>
       </div>
+
+      <!-- Centre logo + title + date -->
+      <div class="route-brand">
+        <a href="index.html" aria-label="Home" style="display:inline-block">
+          <img src="BMAlogo.svg" alt="Be More Amy logo" width="100" height="100" />
+        </a>
+
+        <div class="route-title">
+          <h1 id="headerTitle">
+            <span class="title-line">South West Coastal Path</span>
+            <span class="title-line">Relay Challenge</span>
+          </h1>
+        </div>
+
+        <div class="route-date">15th May to 23rd May 2026</div>
+      </div>
+
+      <!-- Leg select (right) -->
+      <div class="controls" id="controls">
+        <select id="legSelect" aria-label="Select leg">
+          <option value="">Select leg…</option>
+        </select>
+
+        <button id="confirmedSignupsBtn" type="button" aria-label="Confirmed signups">
+          Confirmed Signups
+        </button>
+      </div>
+
     </div>
+  </header>
 
-  </div>
-</header>
+  <div id="map" aria-label="Route map"></div>
 
-<main class="page">
-<h1>The Route</h1>
+  <section class="panel collapsed" id="panel" aria-live="polite">
+    <p class="panel-tip" id="panelTip">Zoom with pinch/scroll, drag to pan. Tap a leg to view details.</p>
 
-<div style="margin-bottom:16px;">
+    <div id="panelExpanded" style="display:none">
+      <div class="panel-head">
+        <h2 class="panel-title" id="panelLegTitle">Leg</h2>
+        <button class="closeBtn" id="closeBtn" type="button" aria-label="Close">×</button>
+      </div>
 
-  <!-- Select Leg Dropdown -->
-  <select id="legSelect" class="btn" style="margin-bottom:10px;">
-    <option value="">Select Leg</option>
-  </select>
+      <p class="subtitle" id="panelSubtitle"></p>
+      <div class="grid" id="detailsGrid"></div>
+    </div>
+  </section>
 
-  <!-- Confirmed Signups Button -->
-  <button onclick="window.location.href='signup-status.html'" class="btn">
-    Confirmed Signups
-  </button>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
 
-</div>
+  <script src="./app.v2.js"></script>
 
-<div id="map" style="height:500px;border:2px solid #000;border-radius:18px;"></div>
+  <script>
+    // Confirmed Signups button
+    document.getElementById('confirmedSignupsBtn').addEventListener('click', function () {
+      window.location.href = 'signup-status.html';
+    });
 
-</main>
+    // Ensure the dropdown is ordered 1..68 AFTER app.v2.js has populated it
+    (function sortLegDropdownNumerically() {
+      const sel = document.getElementById('legSelect');
+      if (!sel) return;
 
-<script src="app.v2.js"></script>
+      function sortNow() {
+        const opts = Array.from(sel.querySelectorAll('option'));
+        if (opts.length <= 2) return; // nothing to sort yet
 
-<script>
-// Ensure dropdown is always numerically ordered 1–68
-document.addEventListener("DOMContentLoaded", function () {
-    const select = document.getElementById("legSelect");
+        const placeholder = opts.find(o => !o.value) || opts[0];
+        const rest = opts.filter(o => o !== placeholder);
 
-    // Clear existing (except first placeholder)
-    select.innerHTML = '<option value="">Select Leg</option>';
+        // If values are missing/not numeric, try to extract from text like "Leg 12"
+        rest.sort((a, b) => {
+          const av = parseInt(a.value, 10);
+          const bv = parseInt(b.value, 10);
 
-    for (let i = 1; i <= 68; i++) {
-        const opt = document.createElement("option");
-        opt.value = i;
-        opt.textContent = "Leg " + i;
-        select.appendChild(opt);
-    }
-});
+          if (!Number.isNaN(av) && !Number.isNaN(bv)) return av - bv;
 
-// Menu toggle
-const menuBtn = document.getElementById('menuBtn');
-const menu = document.getElementById('site-menu');
+          const at = parseInt((a.textContent || '').match(/\d+/)?.[0] || '0', 10);
+          const bt = parseInt((b.textContent || '').match(/\d+/)?.[0] || '0', 10);
+          return at - bt;
+        });
 
-menuBtn.addEventListener('click', () => {
-  menu.classList.toggle('open');
-});
+        sel.innerHTML = '';
+        sel.appendChild(placeholder);
+        rest.forEach(o => sel.appendChild(o));
+      }
 
-document.addEventListener('click', (e) => {
-  if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
-    menu.classList.remove('open');
-  }
-});
-</script>
+      // Try immediately, then again shortly after in case app.v2.js fills asynchronously
+      sortNow();
+      setTimeout(sortNow, 250);
+      setTimeout(sortNow, 800);
+    })();
+  </script>
 
+  <!-- Menu behaviour -->
+  <script>
+    (function () {
+      const btn = document.getElementById("menuBtn");
+      const menu = document.getElementById("site-menu");
+
+      function closeMenu() {
+        menu.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+      }
+
+      function toggleMenu() {
+        const isOpen = menu.classList.toggle("open");
+        btn.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleMenu();
+      });
+
+      document.addEventListener("click", () => closeMenu());
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMenu();
+      });
+
+      menu.addEventListener("click", (e) => e.stopPropagation());
+    })();
+  </script>
 </body>
 </html>
