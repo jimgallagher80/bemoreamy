@@ -198,6 +198,11 @@ textarea { width:100%; margin-top:6px; }
   </select>
 
   <button type="submit">Apply</button>
+   
+    <a href="export_signups.php?<?= htmlspecialchars($current_qs) ?>" style="display:inline-block; margin-left:10px; padding:6px 10px; border:1px solid #000; text-decoration:none; background:#fff; color:#000;">
+  Export CSV
+</a>
+    
 </form>
 
 <?php foreach ($signups as $s): ?>
