@@ -13,165 +13,262 @@
 .field input, .field select {
   width:100%;
   padding:12px;
-  border:1px solid #bdbdbd;
-  border-radius:12px;
+  border:2px solid #000;
+  border-radius:14px;
   font-size:16px;
 }
-.small { font-size: 12px; color:#333; margin-top:6px; }
-.legs-box { border:1px solid #ddd; border-radius:14px; padding:12px; background:#fafafa; }
-.btn { display:inline-block; padding:12px 14px; border-radius:14px; background:#000; color:#fff; text-decoration:none; border:none; cursor:pointer; font-weight:800; }
-.btn.secondary { background:#444; }
-.btn:disabled { opacity:0.5; cursor:not-allowed; }
-.leg-row { display:flex; gap:10px; align-items:center; margin-bottom:10px; }
-.leg-row button { background:#b00020; color:#fff; border:none; border-radius:12px; padding:10px 12px; cursor:pointer; font-weight:800; }
+
+.legs-block { border:2px solid rgba(0,0,0,0.12); border-radius:16px; padding:12px; }
+.legs-title { font-weight:800; margin-bottom:10px; }
+
+.btn {
+  width:100%;
+  padding:14px;
+  border-radius:16px;
+  border:2px solid #000;
+  background:#FAEBC8;
+  font-weight:800;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.modal-backdrop {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index: 9999;
+}
 .modal {
-  display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%;
-  background:rgba(0,0,0,0.6); padding:20px; box-sizing:border-box;
+  background:#fff;
+  border:2px solid #000;
+  border-radius:18px;
+  padding:16px;
+  max-width:600px;
+  width:100%;
 }
-.modal-content {
-  background:#fff; max-width:520px; margin:80px auto; padding:18px; border-radius:18px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.3);
+.modal button {
+  margin-top:10px;
+  padding:10px 14px;
+  border-radius:14px;
+  border:2px solid #000;
+  background:#FAEBC8;
+  font-weight:800;
+  width:100%;
 }
-.modal-content h3 { margin:0 0 10px; }
-.modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
+
+.linkish { text-decoration:underline; font-weight:800; cursor:pointer; }
 </style>
 </head>
 
 <body>
+
 <header class="site-header">
-  <div class="site-header__inner">
-    <a class="brand" href="index.html">
-      <img src="BMAlogo.svg" alt="Be More Amy">
-      <span>BE MORE AMY</span>
-    </a>
+  <div class="header-inner">
+    <div class="menu-wrap">
+      <button class="menu-button" id="menuBtn">
+        <img src="menu.svg" width="22" height="22" alt="Menu">
+      </button>
+      <nav class="menu-dropdown" id="site-menu">
+        <a href="index.html">The Challenge</a>
+        <a href="amy.html">About Amy</a>
+        <a href="route.html">The Route</a>
+        <a href="signup.html">Sign Up</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
 
-    <button class="menuBtn" aria-label="Menu">
-      <img src="menu.svg" alt="">
-    </button>
-
-    <nav class="menu">
-      <a href="index.html">Home</a>
-      <a href="route.html">Route</a>
-      <a href="signup.html" class="active">Sign Up</a>
-      <a href="signup-status.html">Sign Up Status</a>
-      <a href="challenge.html">Challenge</a>
-      <a href="charities.html">Charities</a>
-      <a href="gallery.html">Gallery</a>
-      <a href="contact.html">Contact</a>
-      <a href="amy.html">Amy</a>
-    </nav>
+    <div class="brand">
+      <a href="index.html">
+        <img class="brand-logo" src="BMAlogo.svg" width="100" alt="Be More Amy">
+      </a>
+      <div class="brand-text">
+        <div class="brand-line brand-title">BE MORE AMY</div>
+        <div class="brand-line brand-subtitle">South West Coastal</div>
+        <div class="brand-line brand-subtitle">Path Relay Challenge</div>
+        <div class="brand-line brand-date">16th to 25th May 2026</div>
+      </div>
+    </div>
   </div>
 </header>
 
-<main class="container">
-  <h1>Sign up for a leg</h1>
-  <p>Please fill out your details and select the leg(s) you would like to cover.</p>
+<main class="page">
+<h1>Sign Up</h1>
 
-  <section class="signup-wrap">
-    <form id="signupForm" class="form-grid" novalidate>
+<div class="signup-wrap">
+<form id="signupForm" class="form-grid" novalidate>
 
-      <div class="field">
-        <label for="firstName">First name</label>
-        <input id="firstName" name="firstName" required>
-      </div>
+  <div class="field">
+    <label for="firstName">First Name</label>
+    <input id="firstName" required>
+  </div>
 
-      <div class="field">
-        <label for="lastName">Last name</label>
-        <input id="lastName" name="lastName" required>
-      </div>
+  <div class="field">
+    <label for="lastName">Last Name</label>
+    <input id="lastName" required>
+  </div>
 
-      <div class="field">
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" required>
-      </div>
+  <div class="field">
+    <label for="email">Email</label>
+    <input id="email" type="email" required>
+  </div>
 
-      <div class="field">
-        <label for="phone">Phone</label>
-        <input id="phone" name="phone" required>
-      </div>
+  <div class="field">
+    <label for="mobile">Mobile</label>
+    <input id="mobile" required>
+  </div>
 
-      <div class="field">
-        <label for="emergencyName">Emergency contact name</label>
-        <input id="emergencyName" name="emergencyName" required>
-      </div>
+  <div class="field">
+    <label for="emergencyName">Emergency Contact Name</label>
+    <input id="emergencyName" required>
+  </div>
 
-      <div class="field">
-        <label for="emergencyPhone">Emergency contact phone</label>
-        <input id="emergencyPhone" name="emergencyPhone" required>
-      </div>
+  <div class="field">
+    <label for="emergencyPhone">Emergency Contact Phone</label>
+    <input id="emergencyPhone" required>
+  </div>
 
-      <div class="field legs-box">
-        <label>Leg(s) you would like</label>
-        <div id="legsContainer"></div>
-        <button type="button" id="addLegBtn" class="btn secondary">Add another leg</button>
-        <div class="small">You can select more than one leg. Please only choose legs you genuinely expect to cover.</div>
-      </div>
+  <div class="legs-block">
+    <div class="legs-title">Choose your legs</div>
+    <div id="legsContainer"></div>
+    <button type="button" id="addLegBtn" class="btn">Add Another Leg</button>
+  </div>
 
-      <div class="field">
-        <label style="display:flex; gap:10px; align-items:flex-start;">
-          <input id="safetyAccepted" type="checkbox" required style="margin-top:4px;">
-          <span>I have read and accept the safety guidance.</span>
-        </label>
-        <div class="small"><a href="#" id="openSafety">View safety guidance</a></div>
-      </div>
+  <div>
+    <input type="checkbox" id="safetyAccepted">
+    <label for="safetyAccepted">
+      I confirm I have read and agree to the
+      <span class="linkish" id="openSafety">safety information</span>.
+    </label>
+  </div>
 
-      <div>
-        <button class="btn" id="submitBtn" type="submit">Submit</button>
-      </div>
+  <button type="submit" class="btn" id="submitBtn">Submit</button>
 
-    </form>
-  </section>
+</form>
+</div>
 </main>
 
 <!-- Safety modal -->
-<div class="modal" id="safetyModal" aria-hidden="true">
-  <div class="modal-content">
-    <h3>Safety guidance</h3>
-    <p>Please ensure you have planned your leg responsibly and have appropriate kit, lighting, hydration, and support where required.</p>
-    <div class="modal-actions">
-      <button class="btn secondary" id="closeSafety" type="button">Close</button>
-    </div>
+<div class="modal-backdrop" id="safetyModal">
+  <div class="modal">
+    <h2>Safety Information</h2>
+    <p>
+      This is a self-led relay challenge. By signing up, you confirm that you and any team members are responsible
+      for your own safety, planning, navigation, equipment, fitness to take part, and wellbeing throughout your leg(s).
+      You should take appropriate precautions for coastal path conditions, weather, tides, and terrain, and you are
+      responsible for following relevant laws and guidance, including road safety where applicable.
+    </p>
+    <p>
+      The organisers and associated volunteers do not provide supervision, medical cover, or safety support on the route.
+      Participation is voluntary and undertaken at your own risk.
+    </p>
+    <p>
+      Nothing in this notice excludes or limits liability where it would be unlawful to do so.
+    </p>
+    <button type="button" id="closeSafety">Close</button>
   </div>
 </div>
 
 <!-- Success modal -->
-<div class="modal" id="successModal" aria-hidden="true">
-  <div class="modal-content">
-    <h3>Thank you</h3>
-    <p>Your sign-up has been received. You will be emailed once it is approved.</p>
-    <div class="modal-actions">
-      <button class="btn" id="goStatus" type="button">View status</button>
-    </div>
+<div class="modal-backdrop" id="successModal">
+  <div class="modal">
+    <h2>Thank You</h2>
+    <p>Your signup has been received and is now pending approval.</p>
+    <p>Click continue to view the current signups.</p>
+    <button type="button" id="closeSuccess">Continue</button>
   </div>
 </div>
-
-<script>
-(function () {
-  const menuBtn = document.querySelector(".menuBtn");
-  const menu = document.querySelector(".menu");
-  if (menuBtn && menu) {
-    menuBtn.addEventListener("click", () => menu.classList.toggle("open"));
-  }
-})();
-</script>
 
 <script>
 const form = document.getElementById('signupForm');
 const legsContainer = document.getElementById('legsContainer');
 const addLegBtn = document.getElementById('addLegBtn');
-const submitBtn = document.getElementById('submitBtn');
 
 const firstName = document.getElementById('firstName');
 const lastName = document.getElementById('lastName');
 const email = document.getElementById('email');
-const phone = document.getElementById('phone');
+const mobile = document.getElementById('mobile');
 const emergencyName = document.getElementById('emergencyName');
 const emergencyPhone = document.getElementById('emergencyPhone');
 const safetyAccepted = document.getElementById('safetyAccepted');
 
-TOTAL_LEGS = 68; // change to match your real total number of legs
+const TOTAL_LEGS = 68; // change to match your real total number of legs
 
-const LEG_INFO = {"1":{"start":"Studland","end":"Durlston Head","setoff":"Sat 16 May 2026 08:00","finish":"Sat 16 May 2026 10:27"},"2":{"start":"Durlston Head","end":"Kimmeridge","setoff":"Sat 16 May 2026 10:27","finish":"Sat 16 May 2026 13:44"},"3":{"start":"Kimmeridge","end":"Durdle Door","setoff":"Sat 16 May 2026 13:44","finish":"Sat 16 May 2026 16:22"},"4":{"start":"Durdle Door","end":"Bowleaze Cove","setoff":"Sat 16 May 2026 16:22","finish":"Sat 16 May 2026 18:33"},"5":{"start":"Bowleaze Cove","end":"Chesil Beach","setoff":"Sat 16 May 2026 18:33","finish":"Sat 16 May 2026 20:01"},"6":{"start":"Chesil Beach","end":"Portland Bill","setoff":"Sat 16 May 2026 20:01","finish":"Sat 16 May 2026 21:51"},"7":{"start":"Portland Bill","end":"Wyke Regis","setoff":"Sat 16 May 2026 21:51","finish":"Sat 16 May 2026 23:41"},"8":{"start":"Wyke Regis","end":"Abbotsbury","setoff":"Sat 16 May 2026 23:41","finish":"Sun 17 May 2026 02:14"},"9":{"start":"Abbotsbury","end":"Seatown","setoff":"Sun 17 May 2026 02:14","finish":"Sun 17 May 2026 04:48"},"10":{"start":"Seatown","end":"Lyme Regis","setoff":"Sun 17 May 2026 04:48","finish":"Sun 17 May 2026 07:00"},"11":{"start":"Lyme Regis","end":"Beer","setoff":"Sun 17 May 2026 07:00","finish":"Sun 17 May 2026 09:19"},"12":{"start":"Beer","end":"Sidmouth","setoff":"Sun 17 May 2026 09:19","finish":"Sun 17 May 2026 11:53"},"13":{"start":"Sidmouth","end":"Exmouth","setoff":"Sun 17 May 2026 11:53","finish":"Sun 17 May 2026 15:03"},"14":{"start":"Dawlish Warren","end":"Teignmouth","setoff":"Sun 17 May 2026 15:03","finish":"Sun 17 May 2026 16:45"},"15":{"start":"Shaldon","end":"Hopes Nose","setoff":"Sun 17 May 2026 16:45","finish":"Sun 17 May 2026 19:26"},"16":{"start":"Hopes Nose","end":"Broadsands","setoff":"Sun 17 May 2026 19:26","finish":"Sun 17 May 2026 21:31"},"17":{"start":"Broadsands","end":"Sharkham Point","setoff":"Sun 17 May 2026 21:31","finish":"Sun 17 May 2026 23:06"},"18":{"start":"Sharkham Point","end":"Kingswear","setoff":"Sun 17 May 2026 23:06","finish":"Mon 18 May 2026 01:39"},"19":{"start":"Dartmouth","end":"Beesands","setoff":"Mon 18 May 2026 01:39","finish":"Mon 18 May 2026 04:35"},"20":{"start":"Beesands","end":"East Portlemouth","setoff":"Mon 18 May 2026 04:35","finish":"Mon 18 May 2026 07:42"},"21":{"start":"Salcombe","end":"Bantham","setoff":"Mon 18 May 2026 07:42","finish":"Mon 18 May 2026 10:48"},"22":{"start":"Bigbury","end":"Wonwell","setoff":"Mon 18 May 2026 10:48","finish":"Mon 18 May 2026 12:31"},"23":{"start":"Mothecombe","end":"Moss Mayo","setoff":"Mon 18 May 2026 12:31","finish":"Mon 18 May 2026 14:50"},"24":{"start":"Wembury","end":"Laira Bridge","setoff":"Mon 18 May 2026 14:50","finish":"Mon 18 May 2026 17:45"},"25":{"start":"Laira Bridge","end":"Stonehouse","setoff":"Mon 18 May 2026 17:45","finish":"Mon 18 May 2026 19:02"},"26":{"start":"Cremyll","end":"Tregantle","setoff":"Mon 18 May 2026 19:02","finish":"Mon 18 May 2026 21:47"},"27":{"start":"Tregantle","end":"Looe","setoff":"Mon 18 May 2026 21:47","finish":"Tue 19 May 2026 00:35"},"28":{"start":"Looe","end":"Polruan / Fowey","setoff":"Tue 19 May 2026 00:35","finish":"Tue 19 May 2026 04:15"},"29":{"start":"Fowey","end":"Carlyon Bay","setoff":"Tue 19 May 2026 04:15","finish":"Tue 19 May 2026 06:37"},"30":{"start":"Carlyon Bay","end":"Mevagissey","setoff":"Tue 19 May 2026 06:37","finish":"Tue 19 May 2026 09:13"},"31":{"start":"Mevagissey","end":"Portloe","setoff":"Tue 19 May 2026 09:13","finish":"Tue 19 May 2026 12:41"},"32":{"start":"Portloe","end":"Porthcurnick","setoff":"Tue 19 May 2026 12:41","finish":"Tue 19 May 2026 14:53"},"33":{"start":"Porthcurnick","end":"Bohortha","setoff":"Tue 19 May 2026 14:53","finish":"Tue 19 May 2026 16:28"},"34":{"start":"Falmouth","end":"Helford Passage","setoff":"Tue 19 May 2026 16:28","finish":"Tue 19 May 2026 19:02"},"35":{"start":"Helford Passage","end":"Porthoustock","setoff":"Tue 19 May 2026 19:02","finish":"Tue 19 May 2026 21:28"},"36":{"start":"Porthoustock","end":"Cadgwith","setoff":"Tue 19 May 2026 21:28","finish":"Wed 20 May 2026 00:24"},"37":{"start":"Cadgwith","end":"Mullion","setoff":"Wed 20 May 2026 00:24","finish":"Wed 20 May 2026 03:12"},"38":{"start":"Mullion","end":"Rinsey","setoff":"Wed 20 May 2026 03:12","finish":"Wed 20 May 2026 06:15"},"39":{"start":"Rinsey","end":"Penzance","setoff":"Wed 20 May 2026 06:15","finish":"Wed 20 May 2026 08:56"},"40":{"start":"Penzance","end":"Penberth","setoff":"Wed 20 May 2026 08:56","finish":"Wed 20 May 2026 11:51"},"41":{"start":"Penberth","end":"Gwynver","setoff":"Wed 20 May 2026 11:51","finish":"Wed 20 May 2026 14:25"},"42":{"start":"Gwynver","end":"Portheras","setoff":"Wed 20 May 2026 14:25","finish":"Wed 20 May 2026 16:51"},"43":{"start":"Portheras","end":"St Ives","setoff":"Wed 20 May 2026 16:51","finish":"Wed 20 May 2026 20:31"},"44":{"start":"St Ives","end":"Sandy Acres Beach","setoff":"Wed 20 May 2026 20:31","finish":"Wed 20 May 2026 22:57"},"45":{"start":"Sandy Acres Beach","end":"Portreath","setoff":"Wed 20 May 2026 22:57","finish":"Thu 21 May 2026 01:31"},"46":{"start":"Portreath","end":"Trevellas Cove","setoff":"Thu 21 May 2026 01:31","finish":"Thu 21 May 2026 04:05"},"47":{"start":"Trevellas Cove","end":"Crantock","setoff":"Thu 21 May 2026 04:05","finish":"Thu 21 May 2026 07:00"},"48":{"start":"Crantock","end":"Watergate Bay","setoff":"Thu 21 May 2026 07:00","finish":"Thu 21 May 2026 09:34"},"49":{"start":"Watergate Bay","end":"Trevose Head","setoff":"Thu 21 May 2026 09:34","finish":"Thu 21 May 2026 12:30"},"50":{"start":"Trevose Head","end":"Padstow","setoff":"Thu 21 May 2026 12:30","finish":"Thu 21 May 2026 14:56"},"51":{"start":"Rock","end":"Port Quin","setoff":"Thu 21 May 2026 14:56","finish":"Thu 21 May 2026 17:19"},"52":{"start":"Port Quin","end":"Trebarwith","setoff":"Thu 21 May 2026 17:19","finish":"Thu 21 May 2026 20:36"},"53":{"start":"Trebarwith","end":"Boscastle","setoff":"Thu 21 May 2026 20:36","finish":"Thu 21 May 2026 22:33"},"54":{"start":"Boscastle","end":"Crackington Haven","setoff":"Thu 21 May 2026 22:33","finish":"Fri 22 May 2026 00:52"},"55":{"start":"Crackington Haven","end":"Bude","setoff":"Fri 22 May 2026 00:52","finish":"Fri 22 May 2026 03:55"},"56":{"start":"Bude","end":"Welcombe Mouth","setoff":"Fri 22 May 2026 03:55","finish":"Fri 22 May 2026 07:13"},"57":{"start":"Welcombe Mouth","end":"Hartland Point","setoff":"Fri 22 May 2026 07:13","finish":"Fri 22 May 2026 09:39"},"58":{"start":"Hartland Point","end":"Bucks Mill","setoff":"Fri 22 May 2026 09:39","finish":"Fri 22 May 2026 12:57"},"59":{"start":"Bucks Mill","end":"Westward Ho!","setoff":"Fri 22 May 2026 12:57","finish":"Fri 22 May 2026 15:38"},"60":{"start":"Westward Ho!","end":"Instow","setoff":"Fri 22 May 2026 15:38","finish":"Fri 22 May 2026 17:49"},"61":{"start":"Instow","end":"Chivenor","setoff":"Fri 22 May 2026 17:49","finish":"Fri 22 May 2026 20:08"},"62":{"start":"Chivenor","end":"Croyde","setoff":"Fri 22 May 2026 20:08","finish":"Fri 22 May 2026 22:35"},"63":{"start":"Croyde","end":"Bull Point","setoff":"Fri 22 May 2026 22:35","finish":"Sat 23 May 2026 01:16"},"64":{"start":"Bull Point","end":"Combe Martin","setoff":"Sat 23 May 2026 01:16","finish":"Sat 23 May 2026 04:19"},"65":{"start":"Combe Martin","end":"Lee Abbey","setoff":"Sat 23 May 2026 04:19","finish":"Sat 23 May 2026 07:36"},"66":{"start":"Lee Abbey","end":"County Gate","setoff":"Sat 23 May 2026 07:36","finish":"Sat 23 May 2026 10:10"},"67":{"start":"County Gate","end":"Bossington","setoff":"Sat 23 May 2026 10:10","finish":"Sat 23 May 2026 12:11"},"68":{"start":"Bossington","end":"Minehead","setoff":"Sat 23 May 2026 12:11","finish":"Sat 23 May 2026 14:00"}};
+// Only used to generate the dropdown labels (no design/layout changes)
+const LEG_INFO = {
+  "1":{"start":"Studland","end":"Durlston Head","setoff":"Sat 16 May 2026 08:00","finish":"Sat 16 May 2026 10:27"},
+  "2":{"start":"Durlston Head","end":"Kimmeridge","setoff":"Sat 16 May 2026 10:27","finish":"Sat 16 May 2026 13:44"},
+  "3":{"start":"Kimmeridge","end":"Durdle Door","setoff":"Sat 16 May 2026 13:44","finish":"Sat 16 May 2026 16:22"},
+  "4":{"start":"Durdle Door","end":"Bowleaze Cove","setoff":"Sat 16 May 2026 16:22","finish":"Sat 16 May 2026 18:33"},
+  "5":{"start":"Bowleaze Cove","end":"Chesil Beach","setoff":"Sat 16 May 2026 18:33","finish":"Sat 16 May 2026 20:01"},
+  "6":{"start":"Chesil Beach","end":"Portland Bill","setoff":"Sat 16 May 2026 20:01","finish":"Sat 16 May 2026 21:51"},
+  "7":{"start":"Portland Bill","end":"Wyke Regis","setoff":"Sat 16 May 2026 21:51","finish":"Sat 16 May 2026 23:41"},
+  "8":{"start":"Wyke Regis","end":"Abbotsbury","setoff":"Sat 16 May 2026 23:41","finish":"Sun 17 May 2026 02:14"},
+  "9":{"start":"Abbotsbury","end":"Seatown","setoff":"Sun 17 May 2026 02:14","finish":"Sun 17 May 2026 04:48"},
+  "10":{"start":"Seatown","end":"Lyme Regis","setoff":"Sun 17 May 2026 04:48","finish":"Sun 17 May 2026 07:00"},
+  "11":{"start":"Lyme Regis","end":"Beer","setoff":"Sun 17 May 2026 07:00","finish":"Sun 17 May 2026 09:19"},
+  "12":{"start":"Beer","end":"Sidmouth","setoff":"Sun 17 May 2026 09:19","finish":"Sun 17 May 2026 11:53"},
+  "13":{"start":"Sidmouth","end":"Exmouth","setoff":"Sun 17 May 2026 11:53","finish":"Sun 17 May 2026 15:03"},
+  "14":{"start":"Dawlish Warren","end":"Teignmouth","setoff":"Sun 17 May 2026 15:03","finish":"Sun 17 May 2026 16:45"},
+  "15":{"start":"Shaldon","end":"Hopes Nose","setoff":"Sun 17 May 2026 16:45","finish":"Sun 17 May 2026 19:26"},
+  "16":{"start":"Hopes Nose","end":"Broadsands","setoff":"Sun 17 May 2026 19:26","finish":"Sun 17 May 2026 21:31"},
+  "17":{"start":"Broadsands","end":"Sharkham Point","setoff":"Sun 17 May 2026 21:31","finish":"Sun 17 May 2026 23:06"},
+  "18":{"start":"Sharkham Point","end":"Kingswear","setoff":"Sun 17 May 2026 23:06","finish":"Mon 18 May 2026 01:39"},
+  "19":{"start":"Dartmouth","end":"Beesands","setoff":"Mon 18 May 2026 01:39","finish":"Mon 18 May 2026 04:35"},
+  "20":{"start":"Beesands","end":"East Portlemouth","setoff":"Mon 18 May 2026 04:35","finish":"Mon 18 May 2026 07:42"},
+  "21":{"start":"Salcombe","end":"Bantham","setoff":"Mon 18 May 2026 07:42","finish":"Mon 18 May 2026 10:48"},
+  "22":{"start":"Bigbury","end":"Wonwell","setoff":"Mon 18 May 2026 10:48","finish":"Mon 18 May 2026 12:31"},
+  "23":{"start":"Mothecombe","end":"Moss Mayo","setoff":"Mon 18 May 2026 12:31","finish":"Mon 18 May 2026 14:50"},
+  "24":{"start":"Wembury","end":"Laira Bridge","setoff":"Mon 18 May 2026 14:50","finish":"Mon 18 May 2026 17:45"},
+  "25":{"start":"Laira Bridge","end":"Stonehouse","setoff":"Mon 18 May 2026 17:45","finish":"Mon 18 May 2026 19:02"},
+  "26":{"start":"Cremyll","end":"Tregantle","setoff":"Mon 18 May 2026 19:02","finish":"Mon 18 May 2026 21:47"},
+  "27":{"start":"Tregantle","end":"Looe","setoff":"Mon 18 May 2026 21:47","finish":"Tue 19 May 2026 00:35"},
+  "28":{"start":"Looe","end":"Polruan / Fowey","setoff":"Tue 19 May 2026 00:35","finish":"Tue 19 May 2026 04:15"},
+  "29":{"start":"Fowey","end":"Carlyon Bay","setoff":"Tue 19 May 2026 04:15","finish":"Tue 19 May 2026 06:37"},
+  "30":{"start":"Carlyon Bay","end":"Mevagissey","setoff":"Tue 19 May 2026 06:37","finish":"Tue 19 May 2026 09:13"},
+  "31":{"start":"Mevagissey","end":"Portloe","setoff":"Tue 19 May 2026 09:13","finish":"Tue 19 May 2026 12:41"},
+  "32":{"start":"Portloe","end":"Porthcurnick","setoff":"Tue 19 May 2026 12:41","finish":"Tue 19 May 2026 14:53"},
+  "33":{"start":"Porthcurnick","end":"Bohortha","setoff":"Tue 19 May 2026 14:53","finish":"Tue 19 May 2026 16:28"},
+  "34":{"start":"Falmouth","end":"Helford Passage","setoff":"Tue 19 May 2026 16:28","finish":"Tue 19 May 2026 19:02"},
+  "35":{"start":"Helford Passage","end":"Porthoustock","setoff":"Tue 19 May 2026 19:02","finish":"Tue 19 May 2026 21:28"},
+  "36":{"start":"Porthoustock","end":"Cadgwith","setoff":"Tue 19 May 2026 21:28","finish":"Wed 20 May 2026 00:24"},
+  "37":{"start":"Cadgwith","end":"Mullion","setoff":"Wed 20 May 2026 00:24","finish":"Wed 20 May 2026 03:12"},
+  "38":{"start":"Mullion","end":"Rinsey","setoff":"Wed 20 May 2026 03:12","finish":"Wed 20 May 2026 06:15"},
+  "39":{"start":"Rinsey","end":"Penzance","setoff":"Wed 20 May 2026 06:15","finish":"Wed 20 May 2026 08:56"},
+  "40":{"start":"Penzance","end":"Penberth","setoff":"Wed 20 May 2026 08:56","finish":"Wed 20 May 2026 11:51"},
+  "41":{"start":"Penberth","end":"Gwynver","setoff":"Wed 20 May 2026 11:51","finish":"Wed 20 May 2026 14:25"},
+  "42":{"start":"Gwynver","end":"Portheras","setoff":"Wed 20 May 2026 14:25","finish":"Wed 20 May 2026 16:51"},
+  "43":{"start":"Portheras","end":"St Ives","setoff":"Wed 20 May 2026 16:51","finish":"Wed 20 May 2026 20:31"},
+  "44":{"start":"St Ives","end":"Sandy Acres Beach","setoff":"Wed 20 May 2026 20:31","finish":"Wed 20 May 2026 22:57"},
+  "45":{"start":"Sandy Acres Beach","end":"Portreath","setoff":"Wed 20 May 2026 22:57","finish":"Thu 21 May 2026 01:31"},
+  "46":{"start":"Portreath","end":"Trevellas Cove","setoff":"Thu 21 May 2026 01:31","finish":"Thu 21 May 2026 04:05"},
+  "47":{"start":"Trevellas Cove","end":"Crantock","setoff":"Thu 21 May 2026 04:05","finish":"Thu 21 May 2026 07:00"},
+  "48":{"start":"Crantock","end":"Watergate Bay","setoff":"Thu 21 May 2026 07:00","finish":"Thu 21 May 2026 09:34"},
+  "49":{"start":"Watergate Bay","end":"Trevose Head","setoff":"Thu 21 May 2026 09:34","finish":"Thu 21 May 2026 12:30"},
+  "50":{"start":"Trevose Head","end":"Padstow","setoff":"Thu 21 May 2026 12:30","finish":"Thu 21 May 2026 14:56"},
+  "51":{"start":"Rock","end":"Port Quin","setoff":"Thu 21 May 2026 14:56","finish":"Thu 21 May 2026 17:19"},
+  "52":{"start":"Port Quin","end":"Trebarwith","setoff":"Thu 21 May 2026 17:19","finish":"Thu 21 May 2026 20:36"},
+  "53":{"start":"Trebarwith","end":"Boscastle","setoff":"Thu 21 May 2026 20:36","finish":"Thu 21 May 2026 22:33"},
+  "54":{"start":"Boscastle","end":"Crackington Haven","setoff":"Thu 21 May 2026 22:33","finish":"Fri 22 May 2026 00:52"},
+  "55":{"start":"Crackington Haven","end":"Bude","setoff":"Fri 22 May 2026 00:52","finish":"Fri 22 May 2026 03:55"},
+  "56":{"start":"Bude","end":"Welcombe Mouth","setoff":"Fri 22 May 2026 03:55","finish":"Fri 22 May 2026 07:13"},
+  "57":{"start":"Welcombe Mouth","end":"Hartland Point","setoff":"Fri 22 May 2026 07:13","finish":"Fri 22 May 2026 09:39"},
+  "58":{"start":"Hartland Point","end":"Bucks Mill","setoff":"Fri 22 May 2026 09:39","finish":"Fri 22 May 2026 12:57"},
+  "59":{"start":"Bucks Mill","end":"Westward Ho!","setoff":"Fri 22 May 2026 12:57","finish":"Fri 22 May 2026 15:38"},
+  "60":{"start":"Westward Ho!","end":"Instow","setoff":"Fri 22 May 2026 15:38","finish":"Fri 22 May 2026 17:49"},
+  "61":{"start":"Instow","end":"Chivenor","setoff":"Fri 22 May 2026 17:49","finish":"Fri 22 May 2026 20:08"},
+  "62":{"start":"Chivenor","end":"Croyde","setoff":"Fri 22 May 2026 20:08","finish":"Fri 22 May 2026 22:35"},
+  "63":{"start":"Croyde","end":"Bull Point","setoff":"Fri 22 May 2026 22:35","finish":"Sat 23 May 2026 01:16"},
+  "64":{"start":"Bull Point","end":"Combe Martin","setoff":"Sat 23 May 2026 01:16","finish":"Sat 23 May 2026 04:19"},
+  "65":{"start":"Combe Martin","end":"Lee Abbey","setoff":"Sat 23 May 2026 04:19","finish":"Sat 23 May 2026 07:36"},
+  "66":{"start":"Lee Abbey","end":"County Gate","setoff":"Sat 23 May 2026 07:36","finish":"Sat 23 May 2026 10:10"},
+  "67":{"start":"County Gate","end":"Bossington","setoff":"Sat 23 May 2026 10:10","finish":"Sat 23 May 2026 12:11"},
+  "68":{"start":"Bossington","end":"Minehead","setoff":"Sat 23 May 2026 12:11","finish":"Sat 23 May 2026 14:00"}
+};
 
 function formatLegTimeShort(dateTimeStr) {
   // "Sat 16 May 2026 08:00" -> "0800 Sat 16 May"
@@ -182,7 +279,7 @@ function formatLegTimeShort(dateTimeStr) {
   const dd = parts[1];
   const mon = parts[2];
   const time = parts[4];
-  const hhmm = time.replace(":", "");
+  const hhmm = String(time).replace(":", "");
   return `${hhmm} ${day} ${dd} ${mon}`;
 }
 
@@ -190,101 +287,96 @@ function createLegDropdown() {
   const select = document.createElement('select');
   select.required = true;
   select.innerHTML = '<option value="">Select a leg</option>';
+
   for (let i = 1; i <= TOTAL_LEGS; i++) {
     const info = LEG_INFO[String(i)];
     const title = info ? `${info.start} to ${info.end}` : `Leg ${i}`;
+
     const setoff = info ? formatLegTimeShort(info.setoff) : "";
     const finish = info ? formatLegTimeShort(info.finish) : "";
     const timePart = (setoff && finish) ? `${setoff} to ${finish}` : "";
-    const label = timePart ? `Leg ${i}: ${title}, ${timePart}` : `Leg ${i}: ${title}`;
+
+    const label = timePart
+      ? `Leg ${i}: ${title}, ${timePart}`
+      : `Leg ${i}: ${title}`;
+
     select.innerHTML += `<option value="${i}">${label}</option>`;
   }
+
   select.style.marginBottom = "10px";
   legsContainer.appendChild(select);
 }
 
 createLegDropdown();
 
-addLegBtn.addEventListener('click', () => {
-  createLegDropdown();
-});
-
-document.addEventListener('click', (e) => {
-  if (e.target && e.target.classList.contains('removeLeg')) {
-    const row = e.target.closest('.leg-row');
-    if (row) row.remove();
-  }
-});
-
-const safetyModal = document.getElementById('safetyModal');
-const openSafety = document.getElementById('openSafety');
-const closeSafety = document.getElementById('closeSafety');
-
-openSafety.addEventListener('click', (e) => {
-  e.preventDefault();
-  safetyModal.style.display = 'block';
-});
-closeSafety.addEventListener('click', () => {
-  safetyModal.style.display = 'none';
-});
-
-const successModal = document.getElementById('successModal');
-const goStatus = document.getElementById('goStatus');
-goStatus.addEventListener('click', () => {
-  window.location.href = 'signup-status.html';
-});
+addLegBtn.addEventListener('click', createLegDropdown);
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  if (!safetyAccepted.checked) {
-    alert("Please accept the safety guidance.");
+  const legs = Array.from(legsContainer.querySelectorAll('select'))
+    .map(s => parseInt(s.value, 10))
+    .filter(n => !isNaN(n));
+
+  if (!firstName.value.trim() || !lastName.value.trim() || !email.value.trim() || !mobile.value.trim()
+      || !emergencyName.value.trim() || !emergencyPhone.value.trim()) {
+    alert("Please complete all fields.");
     return;
   }
 
-  const selects = Array.from(legsContainer.querySelectorAll('select'));
-  const legs = selects.map(s => s.value).filter(Boolean);
-
-  if (legs.length === 0) {
+  if (!legs.length) {
     alert("Please select at least one leg.");
     return;
   }
 
-  submitBtn.disabled = true;
+  if (!safetyAccepted.checked) {
+    alert("You must accept the safety information.");
+    return;
+  }
 
   const payload = {
     first_name: firstName.value.trim(),
     last_name: lastName.value.trim(),
     email: email.value.trim(),
-    phone: phone.value.trim(),
+    mobile: mobile.value.trim(),
     emergency_name: emergencyName.value.trim(),
     emergency_phone: emergencyPhone.value.trim(),
-    legs: legs,
-    safety_accepted: true
+    safety_accepted: 1,
+    legs: legs
   };
 
   try {
-    const res = await fetch('submit_signup.php', {
+    const res = await fetch('/submit_signup.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
+    const out = await res.json();
 
-    if (!res.ok || !data.success) {
-      alert(data.error || "There was a problem submitting your sign-up.");
-      submitBtn.disabled = false;
-      return;
+    if (out.ok) {
+      document.getElementById('successModal').style.display = 'flex';
+    } else {
+      alert(out.error || "Submission failed.");
     }
-
-    successModal.style.display = 'block';
-
   } catch (err) {
-    alert("There was a problem submitting your sign-up.");
-  } finally {
-    submitBtn.disabled = false;
+    alert("Network error. Please try again.");
   }
+});
+
+document.getElementById('closeSuccess').addEventListener('click', () => {
+  window.location.href = "/signup-status.html";
+});
+
+document.getElementById('openSafety').addEventListener('click', () => {
+  document.getElementById('safetyModal').style.display = 'flex';
+});
+document.getElementById('closeSafety').addEventListener('click', () => {
+  document.getElementById('safetyModal').style.display = 'none';
+});
+
+document.getElementById("menuBtn").addEventListener('click', () => {
+  document.getElementById("site-menu").classList.toggle("open");
 });
 </script>
 
