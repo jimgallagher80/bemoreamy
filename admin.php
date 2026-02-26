@@ -91,91 +91,101 @@ function buildStatusEmailBody($signup, $legs) {
     return $body;
 }
 
-/* -------- ACTIONS (PER LEG) -------- */
+/* -------- BATCH UPDATE ACTION (PER SIGNUP) -------- */
 
 $flash = '';
 
-if (isset($_POST['approve_leg'])) {
-    $signupId = (int)($_POST['signup_id'] ?? 0);
-    $legNum = (int)($_POST['leg_number'] ?? 0);
+if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
+    $signupId = (int)$_POST['signup_id'];
 
-    if ($signupId > 0 && $legNum > 0) {
+    // decisions[leg_number] = approve|reject|skip
+    $decisions = $_POST['decision'] ?? [];
+    // reasons[leg_number] = text
+    $reasons = $_POST['reason'] ?? [];
+
+    if ($signupId > 0 && is_array($decisions)) {
+
         // Load signup
         $s = $pdo->prepare("SELECT * FROM signups WHERE id = ?");
         $s->execute([$signupId]);
         $signup = $s->fetch(PDO::FETCH_ASSOC);
 
         if ($signup) {
-            // Is leg already taken by someone else?
-            $t = $pdo->prepare("
-                SELECT COUNT(*) 
-                FROM signup_legs 
-                WHERE leg_number = ? 
-                  AND status = 'confirmed'
-                  AND signup_id <> ?
-            ");
-            $t->execute([$legNum, $signupId]);
-            $takenByOther = ((int)$t->fetchColumn() > 0);
+            $pdo->beginTransaction();
 
-            if ($takenByOther) {
-                $newStatus = 'waitlist';
-            } else {
-                $newStatus = 'confirmed';
+            try {
+                foreach ($decisions as $legKey => $decision) {
+                    $legNum = (int)$legKey;
+                    $decision = trim((string)$decision);
+
+                    if ($legNum <= 0) continue;
+
+                    if ($decision === 'skip' || $decision === '') {
+                        continue;
+                    }
+
+                    if ($decision === 'approve') {
+                        // Is leg already taken by someone else?
+                        $t = $pdo->prepare("
+                            SELECT COUNT(*)
+                            FROM signup_legs
+                            WHERE leg_number = ?
+                              AND status = 'confirmed'
+                              AND signup_id <> ?
+                        ");
+                        $t->execute([$legNum, $signupId]);
+                        $takenByOther = ((int)$t->fetchColumn() > 0);
+
+                        $newStatus = $takenByOther ? 'waitlist' : 'confirmed';
+
+                        $u = $pdo->prepare("
+                            UPDATE signup_legs
+                            SET status = ?, approved_at = NOW(), rejected_at = NULL, rejection_reason = NULL
+                            WHERE signup_id = ? AND leg_number = ?
+                        ");
+                        $u->execute([$newStatus, $signupId, $legNum]);
+                    }
+
+                    if ($decision === 'reject') {
+                        $reason = trim((string)($reasons[$legKey] ?? ''));
+                        if ($reason === '') {
+                            $reason = 'Rejected by admin';
+                        }
+
+                        $u = $pdo->prepare("
+                            UPDATE signup_legs
+                            SET status = 'rejected', rejected_at = NOW(), approved_at = NULL, rejection_reason = ?
+                            WHERE signup_id = ? AND leg_number = ?
+                        ");
+                        $u->execute([$reason, $signupId, $legNum]);
+                    }
+                }
+
+                // Keep parent signup status as pending (this is just a container now)
+                $pdo->prepare("UPDATE signups SET status = 'pending' WHERE id = ?")->execute([$signupId]);
+
+                $pdo->commit();
+
+                // Send ONE email after all decisions applied
+                $legsStmt = $pdo->prepare("
+                    SELECT leg_number, status, rejection_reason
+                    FROM signup_legs
+                    WHERE signup_id = ?
+                    ORDER BY leg_number ASC
+                ");
+                $legsStmt->execute([$signupId]);
+                $legs = $legsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                $subject = "BE MORE AMY: Update on your leg selection(s)";
+                $message = buildStatusEmailBody($signup, $legs);
+                sendEmail($signup['email'], $subject, $message);
+
+                $flash = "Updated signup #{$signupId}. One email sent to the applicant.";
+            } catch (Exception $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                $flash = "Error updating signup #{$signupId}.";
+                error_log("Batch update failed: " . $e->getMessage());
             }
-
-            $u = $pdo->prepare("
-                UPDATE signup_legs
-                SET status = ?, approved_at = NOW(), rejected_at = NULL, rejection_reason = NULL
-                WHERE signup_id = ? AND leg_number = ?
-            ");
-            $u->execute([$newStatus, $signupId, $legNum]);
-
-            // Ensure parent signup stays pending for grouping (optional)
-            $pdo->prepare("UPDATE signups SET status = 'pending' WHERE id = ?")->execute([$signupId]);
-
-            // Email: include all legs and their statuses
-            $legsStmt = $pdo->prepare("SELECT leg_number, status, rejection_reason FROM signup_legs WHERE signup_id = ? ORDER BY leg_number ASC");
-            $legsStmt->execute([$signupId]);
-            $legs = $legsStmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $subject = "BE MORE AMY: Update on your leg selection(s)";
-            $message = buildStatusEmailBody($signup, $legs);
-            sendEmail($signup['email'], $subject, $message);
-
-            $flash = "Updated: signup #{$signupId}, leg {$legNum} set to {$newStatus}.";
-        }
-    }
-}
-
-if (isset($_POST['reject_leg'])) {
-    $signupId = (int)($_POST['signup_id'] ?? 0);
-    $legNum = (int)($_POST['leg_number'] ?? 0);
-    $reason = trim((string)($_POST['rejection_reason'] ?? ''));
-
-    if ($signupId > 0 && $legNum > 0) {
-        $s = $pdo->prepare("SELECT * FROM signups WHERE id = ?");
-        $s->execute([$signupId]);
-        $signup = $s->fetch(PDO::FETCH_ASSOC);
-
-        if ($signup) {
-            $u = $pdo->prepare("
-                UPDATE signup_legs
-                SET status = 'rejected', rejected_at = NOW(), approved_at = NULL, rejection_reason = ?
-                WHERE signup_id = ? AND leg_number = ?
-            ");
-            $u->execute([$reason, $signupId, $legNum]);
-
-            $pdo->prepare("UPDATE signups SET status = 'pending' WHERE id = ?")->execute([$signupId]);
-
-            $legsStmt = $pdo->prepare("SELECT leg_number, status, rejection_reason FROM signup_legs WHERE signup_id = ? ORDER BY leg_number ASC");
-            $legsStmt->execute([$signupId]);
-            $legs = $legsStmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $subject = "BE MORE AMY: Update on your leg selection(s)";
-            $message = buildStatusEmailBody($signup, $legs);
-            sendEmail($signup['email'], $subject, $message);
-
-            $flash = "Updated: signup #{$signupId}, leg {$legNum} rejected.";
         }
     }
 }
@@ -245,7 +255,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// legs list for dropdown filter (1..68 based on data present)
+// legs list for dropdown filter
 $legs_stmt = $pdo->query("SELECT DISTINCT leg_number FROM signup_legs ORDER BY leg_number ASC");
 $leg_numbers = $legs_stmt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -267,7 +277,7 @@ foreach ($rows as $r) {
 <title>Admin Panel</title>
 <style>
 body { font-family:sans-serif; padding:30px; }
-.signup { border:1px solid #ccc; padding:12px; margin-bottom:10px; }
+.signup { border:1px solid #ccc; padding:12px; margin-bottom:12px; }
 button { margin-right:8px; padding:6px 10px; }
 textarea, input[type="text"] { width:100%; margin-top:6px; padding:8px; }
 .status-confirmed { color:green; font-weight:700; }
@@ -280,7 +290,13 @@ textarea, input[type="text"] { width:100%; margin-top:6px; padding:8px; }
 .pill { display:inline-block; padding:2px 8px; border:1px solid #ccc; border-radius:999px; font-size:12px; margin-left:6px; }
 .pill-taken { border-color:#c00; color:#c00; }
 .pill-available { border-color:#090; color:#090; }
-.actions { margin-top:8px; }
+.grid {
+  display:grid;
+  grid-template-columns: 24px 1fr 160px;
+  gap:10px;
+  align-items:center;
+}
+select { padding:6px; }
 </style>
 </head>
 <body>
@@ -348,52 +364,59 @@ textarea, input[type="text"] { width:100%; margin-top:6px; padding:8px; }
     Safety accepted: <?php echo ((int)$head['safety_accepted'] === 1) ? 'Yes' : 'No'; ?>
   </div>
 
-  <?php foreach ($items as $r):
-    $legNum = (int)$r['leg_number'];
-    $st = $r['leg_status'];
-    $statusClass = 'status-pending';
-    if ($st === 'confirmed') $statusClass = 'status-confirmed';
-    if ($st === 'waitlist') $statusClass = 'status-waitlist';
-    if ($st === 'rejected') $statusClass = 'status-rejected';
+  <form method="post" style="margin-top:12px;">
+    <input type="hidden" name="signup_id" value="<?php echo (int)$sid; ?>">
 
-    $takenByOther = ((int)$r['taken_by_other'] > 0);
-    $pillClass = $takenByOther ? 'pill pill-taken' : 'pill pill-available';
-    $pillText = $takenByOther ? 'Taken' : 'Available';
-  ?>
-    <div class="leg-row">
-      <div>
-        <strong>Leg <?php echo $legNum; ?></strong>
-        <span class="<?php echo $pillClass; ?>"><?php echo $pillText; ?></span>
-        <?php if ((int)$r['was_taken'] === 1): ?>
-          <span class="pill pill-taken">Was taken at submission</span>
-        <?php endif; ?>
+    <?php foreach ($items as $r):
+      $legNum = (int)$r['leg_number'];
+      $st = $r['leg_status'];
+
+      $statusClass = 'status-pending';
+      if ($st === 'confirmed') $statusClass = 'status-confirmed';
+      if ($st === 'waitlist') $statusClass = 'status-waitlist';
+      if ($st === 'rejected') $statusClass = 'status-rejected';
+
+      $takenByOther = ((int)$r['taken_by_other'] > 0);
+      $pillClass = $takenByOther ? 'pill pill-taken' : 'pill pill-available';
+      $pillText = $takenByOther ? 'Taken' : 'Available';
+    ?>
+      <div class="leg-row">
+        <div class="grid">
+          <div>
+            <input type="checkbox" name="apply[<?php echo $legNum; ?>]" value="1">
+          </div>
+
+          <div>
+            <strong>Leg <?php echo $legNum; ?></strong>
+            <span class="<?php echo $pillClass; ?>"><?php echo $pillText; ?></span>
+            <?php if ((int)$r['was_taken'] === 1): ?>
+              <span class="pill pill-taken">Was taken at submission</span>
+            <?php endif; ?>
+            <div class="<?php echo $statusClass; ?>">Current status: <?php echo htmlspecialchars($st); ?></div>
+            <?php if (!empty($r['rejection_reason'])): ?>
+              <div class="small">Rejection reason: <?php echo htmlspecialchars($r['rejection_reason']); ?></div>
+            <?php endif; ?>
+          </div>
+
+          <div>
+            <select name="decision[<?php echo $legNum; ?>]">
+              <option value="skip">No change</option>
+              <option value="approve">Approve</option>
+              <option value="reject">Reject</option>
+            </select>
+            <input type="text" name="reason[<?php echo $legNum; ?>]" placeholder="Rejection reason (if rejecting)">
+          </div>
+        </div>
       </div>
+    <?php endforeach; ?>
 
-      <div class="<?php echo $statusClass; ?>">
-        Status: <?php echo htmlspecialchars($st); ?>
-      </div>
-
-      <?php if (!empty($r['rejection_reason'])): ?>
-        <div class="small">Rejection reason: <?php echo htmlspecialchars($r['rejection_reason']); ?></div>
-      <?php endif; ?>
-
-      <div class="actions">
-        <form method="post" style="margin:0;">
-          <input type="hidden" name="signup_id" value="<?php echo (int)$sid; ?>">
-          <input type="hidden" name="leg_number" value="<?php echo $legNum; ?>">
-
-          <button type="submit" name="approve_leg" value="1">Approve</button>
-        </form>
-
-        <form method="post" style="margin:8px 0 0;">
-          <input type="hidden" name="signup_id" value="<?php echo (int)$sid; ?>">
-          <input type="hidden" name="leg_number" value="<?php echo $legNum; ?>">
-          <input type="text" name="rejection_reason" placeholder="Rejection reason (required if rejecting)">
-          <button type="submit" name="reject_leg" value="1" style="margin-top:6px;">Reject</button>
-        </form>
+    <div style="margin-top:12px;">
+      <button type="submit" name="batch_update" value="1" style="padding:10px 14px;">Confirm Decisions &amp; Send One Email</button>
+      <div class="small" style="margin-top:6px;">
+        Tip: tick the legs you are changing. Only ticked legs will be updated.
       </div>
     </div>
-  <?php endforeach; ?>
+  </form>
 </div>
 <?php endforeach; ?>
 
