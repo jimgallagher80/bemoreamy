@@ -48,7 +48,13 @@ $sql = "
     s.first_name,
     s.last_name,
     s.email,
+    s.mobile,
+    s.emergency_name,
+    s.emergency_phone,
+    s.safety_accepted,
     s.status,
+    s.approved_at,
+    s.rejected_at,
     s.rejection_reason,
     GROUP_CONCAT(sl.leg_number ORDER BY sl.leg_number) AS legs
   FROM signups s
@@ -71,15 +77,20 @@ echo "\xEF\xBB\xBF";
 
 $out = fopen('php://output', 'w');
 
-// Column headers
 fputcsv($out, [
   'ID',
   'Submitted At',
   'First Name',
   'Last Name',
   'Email',
+  'Telephone',
+  'Emergency Contact Name',
+  'Emergency Contact Number',
+  'Safety Accepted',
   'Legs',
   'Status',
+  'Approved At',
+  'Rejected At',
   'Rejection Reason'
 ]);
 
@@ -90,8 +101,14 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $row['first_name'] ?? '',
     $row['last_name'] ?? '',
     $row['email'] ?? '',
+    $row['mobile'] ?? '',
+    $row['emergency_name'] ?? '',
+    $row['emergency_phone'] ?? '',
+    isset($row['safety_accepted']) ? (string)$row['safety_accepted'] : '',
     $row['legs'] ?? '',
     $row['status'] ?? '',
+    $row['approved_at'] ?? '',
+    $row['rejected_at'] ?? '',
     $row['rejection_reason'] ?? ''
   ]);
 }
