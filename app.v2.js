@@ -7,8 +7,7 @@
   const GREY = "#6a6a6a";
 
   const LEG_SIGNUPS_URL = "get_leg_signups.php";
-
-  let signupsByLeg = null; // { [legNumber]: { count: number, names: string[] } }
+  let signupsByLeg = null; // loaded once, approved-only counts + names
 
   // Estimated set off and finish times per leg
   // These are displayed in the panel (formatted to "0800 Sat 16 May")
@@ -24,7 +23,6 @@
   const detailsGrid = $("detailsGrid");
   const closeBtn = $("closeBtn");
   const legSelect = $("legSelect");
-  const topbar = $("topbar");
 
   const map = L.map("map", {
     zoomControl: true,
@@ -44,41 +42,35 @@
   let lastSelectedCenter = null;
   let lastSelectedZoom = null;
 
-  const layerByLeg = new Map();
-  const markerByLeg = new Map();
-  const propsByLeg = new Map();
+  const layerByLeg = new Map();   // leg -> polyline layer
+  const propsByLeg = new Map();   // leg -> properties
+  const markerByLeg = new Map();  // leg -> diamond marker
+  const endpointsByLeg = new Map(); // leg -> { start:[lat,lng], end:[lat,lng] }
 
   function safe(v) {
-    const s = String(v ?? "");
-    return s
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+    return (v === undefined || v === null || v === "") ? "—" : v;
   }
 
-  function formatKm(km) {
-    const n = Number(km);
-    if (!Number.isFinite(n)) return "—";
-    return `${n.toFixed(1)} km`;
+  function formatLegTimeShort(dateTimeStr) {
+    // "Sat 16 May 2026 08:00" -> "0800 Sat 16 May"
+    if (!dateTimeStr) return "—";
+    const parts = String(dateTimeStr).trim().split(/\s+/);
+    if (parts.length < 5) return safe(dateTimeStr);
+    const day = parts[0];
+    const dd = parts[1];
+    const mon = parts[2];
+    const time = parts[4];
+    const hhmm = String(time).replace(":", "");
+    return `${hhmm} ${day} ${dd} ${mon}`;
   }
 
-  function formatM(m) {
-    const n = Number(m);
-    if (!Number.isFinite(n)) return "—";
-    return `${Math.round(n)} m`;
-  }
-
-  function asLink(url, text) {
-    const u = safe(url);
-    if (!u || u === "—") return "—";
-    return `<a href="${u}" target="_blank" rel="noopener">${safe(text)}</a>`;
-  }
-
-  function getLegTiming(legKey) {
-    const k = String(legKey);
-    return LEG_TIMES[k] || { setoff: "—", finish: "—" };
+  function getLegTiming(legNumber) {
+    const key = String(legNumber);
+    const t = (LEG_TIMES && LEG_TIMES[key]) ? LEG_TIMES[key] : null;
+    return {
+      setoff: t ? formatLegTimeShort(t.setoff) : "—",
+      finish: t ? formatLegTimeShort(t.finish) : "—",
+    };
   }
 
   async function loadLegSignups() {
@@ -97,11 +89,9 @@
     if (!signupsByLeg) return null;
     const k = String(legKey);
     const v = signupsByLeg[k];
-    if (!v || typeof v.count !== "number") return { count: 0, names: [] };
-    return {
-      count: Number(v.count) || 0,
-      names: Array.isArray(v.names) ? v.names : [],
-    };
+    const count = (v && typeof v.count === "number") ? v.count : 0;
+    const names = (v && Array.isArray(v.names)) ? v.names : [];
+    return { count: Number(count) || 0, names };
   }
 
   function ensureSignupsModal() {
@@ -144,14 +134,10 @@
     `;
     document.body.appendChild(backdrop);
 
-    const close = () => {
-      backdrop.style.display = "none";
-    };
+    const close = () => { backdrop.style.display = "none"; };
 
     document.getElementById("signupsModalClose").addEventListener("click", close);
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) close();
-    });
+    backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && backdrop.style.display === "flex") close();
     });
@@ -171,82 +157,71 @@
     } else if (!info.names || info.names.length === 0) {
       body.innerHTML = `<p class="muted">No confirmed signups yet.</p>`;
     } else {
-      const items = info.names.map((n) => `<li>${safe(n)}</li>`).join("");
+      const esc = (s) => String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+      const items = info.names.map((n) => `<li>${esc(n)}</li>`).join("");
       body.innerHTML = `<ul>${items}</ul>`;
     }
 
-    const backdrop = document.getElementById("signupsModalBackdrop");
-    backdrop.style.display = "flex";
+    document.getElementById("signupsModalBackdrop").style.display = "flex";
   }
 
   function renderSignupsValue(legKey) {
     const info = getLegSignupInfo(legKey);
-    if (!info) return `<span data-leg="${safe(legKey)}">—</span>`;
+    if (!info) return "—";
     const c = info.count || 0;
-    if (c <= 0) return `<span data-leg="${safe(legKey)}">0 signed up</span>`;
-    return `<a href="#" class="signups-link" data-leg="${safe(legKey)}">${c} signed up</a>`;
+    if (c <= 0) return "0 signed up";
+    return `<a href="#" class="signups-link" data-leg="${String(legKey)}">${c} signed up</a>`;
   }
 
-  function updateSignupsValueIfVisible() {
-    const rowValue = document.getElementById("signupsValue");
-    if (!rowValue) return;
-    const legKey = selectedLegKey || rowValue.getAttribute("data-leg") || "";
-    if (!legKey) return;
-    rowValue.innerHTML = renderSignupsValue(legKey);
-  }
+  function diamondIcon(leg, state) {
+    const isSelected = state === "selected";
+    const isDim = state === "dim";
 
-  function setCollapsed() {
-    panel.classList.add("collapsed");
-    panelTip.style.display = "block";
-    panelExpanded.style.display = "none";
-  }
+    const bg = isSelected ? ORANGE : (isDim ? GREY : ORANGE);
+    const text = isSelected ? "#111" : (isDim ? "#f2f2f2" : "#111");
 
-  function setExpanded() {
-    panel.classList.remove("collapsed");
-    panelTip.style.display = "none";
-    panelExpanded.style.display = "block";
-  }
-
-  function lineStyle(mode) {
-    const isSelected = mode === "selected";
-    return {
-      color: isSelected ? ORANGE : GREY,
-      weight: isSelected ? 6 : 4,
-      opacity: 0.95,
-    };
-  }
-
-  function diamondSvg(color, stroke) {
-    return `
-      <svg width="22" height="22" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect x="4" y="4" width="14" height="14" transform="rotate(45 11 11)" fill="${color}" stroke="${stroke}" stroke-width="2" />
-      </svg>
-    `.trim();
-  }
-
-  function diamondIcon(legKey, mode) {
-    const isSelected = mode === "selected";
-    const color = isSelected ? ORANGE : "#e8e8e8";
-    const stroke = isSelected ? "#000" : "#000";
     return L.divIcon({
       className: "",
-      html: diamondSvg(color, stroke),
-      iconSize: [22, 22],
-      iconAnchor: [11, 11],
+      html: `
+        <div class="diamond-wrap" style="background:${bg}">
+          <div class="diamond-num" style="color:${text}">${leg}</div>
+        </div>
+      `,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      popupAnchor: [0, -14],
     });
   }
 
   function finishIcon() {
     return L.divIcon({
-      className: "",
-      html: `
-        <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" fill="${ORANGE}" stroke="#000" stroke-width="2"/>
-        </svg>
-      `.trim(),
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
+      className: "finish-flag",
+      html: "🏁",
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+      popupAnchor: [0, -12],
     });
+  }
+
+  function setCollapsed() {
+    document.body.classList.remove("compact-header");
+    panel.classList.remove("expanded");
+    panel.classList.add("collapsed");
+    panelExpanded.style.display = "none";
+    panelTip.style.display = "block";
+  }
+
+  function setExpanded() {
+    document.body.classList.add("compact-header");
+    panel.classList.remove("collapsed");
+    panel.classList.add("expanded");
+    panelTip.style.display = "none";
+    panelExpanded.style.display = "block";
   }
 
   function clearFinishFlag() {
@@ -256,12 +231,38 @@
     }
   }
 
+  function lineStyle(state) {
+    const isSelected = state === "selected";
+    const isDim = state === "dim";
+    const color = isSelected ? ORANGE : (isDim ? "#bcbcbc" : GREY);
+    const weight = isSelected ? 6 : 4;
+    return { color, weight, opacity: 0.95 };
+  }
+
+  function formatKm(km) {
+    const n = Number(km);
+    if (!Number.isFinite(n)) return "—";
+    return `${n.toFixed(1)} km`;
+  }
+
+  function formatM(m) {
+    const n = Number(m);
+    if (!Number.isFinite(n)) return "—";
+    return `${Math.round(n)} m`;
+  }
+
+  function asLink(url, text) {
+    const u = safe(url);
+    if (!u || u === "—") return "—";
+    return `<a href="${u}" target="_blank" rel="noopener">${text}</a>`;
+  }
+
   function applySelectionStyles(selectedKey) {
     for (const [k, layer] of layerByLeg.entries()) {
-      layer.setStyle(lineStyle(k === selectedKey ? "selected" : "normal"));
+      layer.setStyle(lineStyle(k === selectedKey ? "selected" : "dim"));
     }
     for (const [k, marker] of markerByLeg.entries()) {
-      marker.setIcon(diamondIcon(k, k === selectedKey ? "selected" : "normal"));
+      marker.setIcon(diamondIcon(k, k === selectedKey ? "selected" : "dim"));
     }
   }
 
@@ -293,7 +294,7 @@
       <div class="row"><div class="label">Distance</div><div class="value">${formatKm(props.distance_km)}</div></div>
       <div class="row"><div class="label">Elevation gain</div><div class="value">${formatM(props.elevation_gain_m)}</div></div>
       <div class="row"><div class="label">Difficulty</div><div class="value">${safe(props.difficulty)}</div></div>
-      <div class="row"><div class="label">Signed up</div><div class="value" id="signupsValue" data-leg="${safe(props.leg)}">${renderSignupsValue(props.leg)}</div></div>
+      <div class="row"><div class="label">Signed up</div><div class="value" id="signupsValue">${renderSignupsValue(props.leg)}</div></div>
       <div class="row"><div class="label">Estimated set off time</div><div class="value">${t.setoff}</div></div>
       <div class="row"><div class="label">Estimated finish time</div><div class="value">${t.finish}</div></div>
       <div class="row"><div class="label">Strava route</div><div class="value">${asLink(props.strava_url, "Open")}</div></div>
@@ -310,13 +311,19 @@
     setExpanded();
     applySelectionStyles(selectedLegKey);
     renderDetails(props);
-    updateSignupsValueIfVisible();
+    const sv = document.getElementById("signupsValue");
+    if (sv && signupsByLeg) sv.innerHTML = renderSignupsValue(props.leg);
 
     clearFinishFlag();
-    const finishLat = props.finish_lat;
-    const finishLng = props.finish_lng;
-    if (finishLat && finishLng) {
-      finishMarker = L.marker([finishLat, finishLng], { icon: finishIcon() }).addTo(map);
+    const endpoints = endpointsByLeg.get(selectedLegKey);
+    if (endpoints && Array.isArray(endpoints.end)) {
+      finishMarker = L.marker(endpoints.end, { icon: finishIcon() }).addTo(map);
+    } else {
+      const finishLat = props.finish_lat;
+      const finishLng = props.finish_lng;
+      if (finishLat && finishLng) {
+        finishMarker = L.marker([finishLat, finishLng], { icon: finishIcon() }).addTo(map);
+      }
     }
 
     legSelect.value = selectedLegKey;
@@ -326,6 +333,32 @@
       if (layer) {
         map.fitBounds(layer.getBounds(), { padding: [35, 35] });
       }
+    }
+  }
+
+  function getFeatureEndpoints(feature) {
+    try {
+      const g = feature && feature.geometry;
+      if (!g) return null;
+
+      // GeoJSON uses [lng, lat]
+      const toLatLng = (c) => [c[1], c[0]];
+
+      if (g.type === "LineString" && Array.isArray(g.coordinates) && g.coordinates.length) {
+        const coords = g.coordinates;
+        return { start: toLatLng(coords[0]), end: toLatLng(coords[coords.length - 1]) };
+      }
+
+      if (g.type === "MultiLineString" && Array.isArray(g.coordinates) && g.coordinates.length) {
+        const firstLine = g.coordinates[0];
+        const lastLine = g.coordinates[g.coordinates.length - 1];
+        if (!firstLine || !firstLine.length || !lastLine || !lastLine.length) return null;
+        return { start: toLatLng(firstLine[0]), end: toLatLng(lastLine[lastLine.length - 1]) };
+      }
+
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -349,9 +382,14 @@
           openPanelForLeg(legKey, true);
         });
 
-        // DIAMONDS: always place at the polyline bounds centre (reliable)
-        const center = layer.getBounds().getCenter();
-        const marker = L.marker(center, { icon: diamondIcon(legKey, "normal") });
+        const endpoints = getFeatureEndpoints(feature);
+        if (endpoints) endpointsByLeg.set(legKey, endpoints);
+
+        const startLatLng = endpoints
+          ? endpoints.start
+          : [layer.getBounds().getCenter().lat, layer.getBounds().getCenter().lng];
+
+        const marker = L.marker(startLatLng, { icon: diamondIcon(legKey, "normal") });
 
         marker.on("click", () => {
           lastSelectedCenter = map.getCenter();
@@ -362,7 +400,6 @@
         markerByLeg.set(legKey, marker);
         marker.addTo(startMarkersLayer);
 
-        // Dropdown option (kept as original: "Leg X")
         const opt = document.createElement("option");
         opt.value = legKey;
         opt.textContent = `Leg ${legKey}`;
@@ -401,8 +438,12 @@
     loadGeojson(),
     loadLegSignups().then((d) => {
       signupsByLeg = d;
-      updateSignupsValueIfVisible();
-    }),
+      if (selectedLegKey) {
+        const sv = document.getElementById("signupsValue");
+        const p = propsByLeg.get(String(selectedLegKey));
+        if (sv && p) sv.innerHTML = renderSignupsValue(p.leg);
+      }
+    })
   ])
     .then(() => wireUI())
     .catch((err) => {
