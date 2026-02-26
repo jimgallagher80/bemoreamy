@@ -4,7 +4,7 @@ header('Content-Type: application/json');
 try {
     require_once __DIR__ . '/includes/db.php';
 
-    // Only expose approved sign-ups publicly
+    // Public view: approved sign-ups only, names only
     $stmt = $pdo->query("
         SELECT sl.leg_number, s.first_name, s.last_name
         FROM signup_legs sl
