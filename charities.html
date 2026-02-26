@@ -1,123 +1,145 @@
 <!doctype html>
 <html lang="en-GB">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BE MORE AMY — Charities</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BE MORE AMY — Charities</title>
+<link rel="stylesheet" href="style.css">
 
-  <link rel="stylesheet" href="style.css" />
+<style>
+.charity-section {
+  margin-top: 30px;
+  padding: 20px;
+  border: 2px solid #000;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.charity-logo {
+  display: block;
+  margin: 0 auto 16px auto;
+  max-height: 90px;
+  width: auto;
+}
+
+.charity-section h2 {
+  margin-top: 0;
+}
+
+.charity-section p {
+  line-height: 1.6;
+}
+</style>
 </head>
 
 <body>
-  <!-- Sticky Header -->
-  <header class="site-header">
-    <div class="header-inner">
 
-      <!-- Menu pinned to the far left -->
-      <div class="menu-wrap">
-        <button
-          class="menu-button"
-          type="button"
-          aria-haspopup="true"
-          aria-expanded="false"
-          aria-controls="site-menu"
-          id="menuBtn"
-          title="Menu"
-        >
-          <img src="menu.svg" alt="" width="22" height="22" aria-hidden="true" />
-          <span class="sr-only">Open menu</span>
-        </button>
+<header class="site-header">
+  <div class="header-inner">
+    <div class="menu-wrap">
+      <button class="menu-button" id="menuBtn">
+        <img src="menu.svg" width="22" height="22" alt="Menu">
+      </button>
+      <nav class="menu-dropdown" id="site-menu">
+        <a href="index.html">The Challenge</a>
+        <a href="amy.html">About Amy</a>
+        <a href="route.html">The Route</a>
+        <a href="signup.html">Sign Up</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="charities.html">Charities</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
 
-        <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
-          <a href="index.html">Home</a>
-          <a href="challenge.html">The Challenge</a>
-          <a href="route.html">The Route</a>
-          <a href="charities.html">Charities</a>
-          <a href="amy.html">About Amy</a>
-          <a href="signup.html">Sign Up</a>
-          <a href="gallery.html">Gallery</a>
-          <a href="contact.html">Contact</a>
-        </nav>
-      </div>
-
-      <!-- Brand block -->
-      <div class="brand" aria-label="Be More Amy header">
-        <a class="logo-link" href="index.html" aria-label="Home">
-          <img
-            class="brand-logo"
-            src="BMAlogo.svg"
-            alt="Be More Amy logo"
-            width="100"
-            height="100"
-          />
-        </a>
-
-        <div class="brand-text">
-          <div class="brand-line brand-title">BE MORE AMY</div>
-          <div class="brand-line brand-subtitle">South West Coastal</div>
-          <div class="brand-line brand-subtitle">Path Relay Challenge</div>
-          <div class="brand-line brand-date">16th to 25th May 2026</div>
-        </div>
+    <div class="brand">
+      <a href="index.html">
+        <img class="brand-logo" src="BMAlogo.svg" width="100" alt="Be More Amy">
+      </a>
+      <div class="brand-text">
+        <div class="brand-line brand-title">BE MORE AMY</div>
+        <div class="brand-line brand-subtitle">South West Coastal</div>
+        <div class="brand-line brand-subtitle">Path Relay Challenge</div>
+        <div class="brand-line brand-date">16th to 25th May 2026</div>
       </div>
     </div>
-  </header>
+  </div>
+</header>
 
-  <!-- Page Content -->
-  <main class="page">
-    <section class="intro" aria-label="Charities">
-      <p><strong>Charities</strong></p>
+<main class="page">
 
-      <p>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-        Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-      </p>
+<h1>Charities</h1>
 
-      <p>
-        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-      </p>
+<p>
+We would greatly appreciate any fundraising efforts going towards the charities and organisations that helped Amy and those closest to her throughout her battle with cancer.
+</p>
 
-      <p>
-        We will add the confirmed charity partners, donation links, and transparency notes here shortly.
-      </p>
-    </section>
+<!-- Breast Cancer Now -->
+<section class="charity-section">
 
-    <section class="quick-links" aria-label="Quick links">
-      <a class="card-link" href="signup.html">Sign Up</a>
-      <a class="card-link" href="contact.html">Contact</a>
-    </section>
-  </main>
+  <a href="https://breastcancernow.org/" target="_blank" rel="noopener">
+    <img src="images/charities/breast-cancer-now.png" alt="Breast Cancer Now Logo" class="charity-logo">
+  </a>
 
-  <!-- Menu behaviour -->
-  <script>
-    (function () {
-      const btn = document.getElementById("menuBtn");
-      const menu = document.getElementById("site-menu");
+  <h2>Breast Cancer Now</h2>
 
-      function closeMenu() {
-        menu.classList.remove("open");
-        btn.setAttribute("aria-expanded", "false");
-      }
+  <p>
+  When Amy was first diagnosed, Breast Cancer Now helped us navigate the immense and life-changing shift that such a diagnosis brings. Their support, resources and guidance provided clarity and reassurance at a time when everything felt uncertain.
+  </p>
 
-      function toggleMenu() {
-        const isOpen = menu.classList.toggle("open");
-        btn.setAttribute("aria-expanded", String(isOpen));
-      }
+</section>
 
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        toggleMenu();
-      });
+<!-- Make 2nds Count -->
+<section class="charity-section">
 
-      document.addEventListener("click", () => closeMenu());
+  <a href="https://make2ndscount.co.uk/" target="_blank" rel="noopener">
+    <img src="images/charities/make-2nds-count.png" alt="Make 2nds Count Logo" class="charity-logo">
+  </a>
 
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeMenu();
-      });
+  <h2>Make 2nds Count</h2>
 
-      menu.addEventListener("click", (e) => e.stopPropagation());
-    })();
-  </script>
+  <p>
+  After a two-year period of remission, filled with Ironman training, earning an MBE and running the Fleet Flagship, Amy’s cancer returned as a stage 4 diagnosis. This meant seeking new and innovative treatments. Make 2nds Count played a vital role during this stage, and Amy was passionate about championing their work so that others could benefit as we did.
+  </p>
+
+</section>
+
+<!-- Weldmar Hospice -->
+<section class="charity-section">
+
+  <a href="https://www.weldmarhospicecare.org/" target="_blank" rel="noopener">
+    <img src="images/charities/weldmar-hospice.png" alt="Weldmar Hospice Logo" class="charity-logo">
+  </a>
+
+  <h2>Weldmar Hospice</h2>
+
+  <p>
+  As Amy entered the palliative care stage, Weldmar Hospice provided immeasurable relief and compassionate care in a beautifully calm, peaceful and dignified setting. They made an incredibly difficult period much more bearable for all of us.
+  </p>
+
+</section>
+
+<!-- Military vs Cancer -->
+<section class="charity-section">
+
+  <a href="https://www.militaryvscancer.com/" target="_blank" rel="noopener">
+    <img src="images/charities/military-vs-cancer.png" alt="Military vs Cancer Logo" class="charity-logo">
+  </a>
+
+  <h2>Military vs Cancer</h2>
+
+  <p>
+  Supporting serving personnel and their families at every stage of this disease is the small yet powerful charity Military vs Cancer. Their work in advocating for and looking after the military community deserves recognition and support.
+  </p>
+
+</section>
+
+</main>
+
+<script>
+document.getElementById("menuBtn").addEventListener("click", function(){
+  document.getElementById("site-menu").classList.toggle("open");
+});
+</script>
 
 </body>
 </html>
