@@ -20,326 +20,347 @@
       --panel:rgba(18,18,18,.94);
       --border:rgba(255,255,255,.10);
       --orange:#ff7a00;
-      --shadow:0 16px 40px rgba(0,0,0,.45);
-      --radius:18px;
+      --shadow:0 16px 44px rgba(0,0,0,.55);
+      --safeTop: env(safe-area-inset-top);
+      --safeBottom: env(safe-area-inset-bottom);
+
+      --bmaHeader:#FAEBC8;
+      --routeHeaderH: 150px;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
+
+    *{ box-sizing:border-box; }
     body{
       margin:0;
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       background:var(--bg);
       color:var(--text);
-      overflow:hidden;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
     }
 
-    /* Top bar */
+    /* Hide SR-only text */
+    .sr-only{
+      position:absolute !important;
+      width:1px !important;
+      height:1px !important;
+      padding:0 !important;
+      margin:-1px !important;
+      overflow:hidden !important;
+      clip:rect(0,0,0,0) !important;
+      white-space:nowrap !important;
+      border:0 !important;
+    }
+
+    /* Header */
     .topbar{
-      position:fixed;
-      top:0; left:0; right:0;
+      position:sticky;
+      top:0;
       z-index:1000;
-      display:flex;
-      align-items:center;
-      padding:12px 14px;
-      background:linear-gradient(180deg, rgba(0,0,0,.88), rgba(0,0,0,.35) 80%, rgba(0,0,0,0));
-      backdrop-filter: blur(6px);
-    }
-    .topbar-row{
-      width:100%;
-      display:flex;
-      align-items:center;
-      gap:12px;
+      padding: calc(10px + var(--safeTop)) 14px 10px;
+      background: var(--bmaHeader);
+      border-bottom:1px solid rgba(0,0,0,.10);
+      transition: padding 180ms ease;
     }
 
-    .menu-wrap{
+    .topbar-row{
       position:relative;
+      height: var(--routeHeaderH);
       display:flex;
       align-items:center;
-      gap:10px;
+      justify-content:center;
+      padding-bottom: 6px; /* lifts content away from bottom border */
     }
+
+    /* We align menu + select to the vertical centre of the logo (not the whole header) */
+    .menu-wrap,
+    .controls{
+      position:absolute;
+      top: calc(50% - 18px);  /* bring up slightly */
+      transform: translateY(-50%);
+      z-index:1200;
+    }
+
+    .menu-wrap{ left:0; }
+    .controls{ right:0; }
+
     .menu-button{
-      border:0;
-      background:rgba(255,255,255,.08);
-      color:var(--text);
-      width:40px;
-      height:40px;
-      border-radius:14px;
-      display:flex;
+      appearance:none;
+      border:none;
+      background:transparent;
+      padding:10px;
+      display:inline-flex;
       align-items:center;
       justify-content:center;
       cursor:pointer;
     }
-    .menu-button:hover{ background:rgba(255,255,255,.12); }
+    .menu-button:focus{
+      outline:2px solid rgba(0,0,0,.30);
+      outline-offset:3px;
+      border-radius:10px;
+    }
 
     .menu-dropdown{
       position:absolute;
-      top:50px;
       left:0;
-      width:220px;
-      background:rgba(18,18,18,.98);
-      border:1px solid var(--border);
-      border-radius:16px;
-      box-shadow: var(--shadow);
-      padding:10px;
+      top: calc(100% + 8px);
+      min-width: 210px;
+      background:#ffffff;
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+      padding:8px;
       display:none;
     }
     .menu-dropdown.open{ display:block; }
+
     .menu-dropdown a{
       display:block;
       padding:10px 12px;
-      border-radius:12px;
-      color:var(--text);
+      border-radius:10px;
       text-decoration:none;
-      font-weight:700;
+      color:#111;
+      font-size:15px;
+      font-weight:650;
     }
-    .menu-dropdown a:hover{ background:rgba(255,255,255,.08); }
-    .menu-dropdown a.active{ color:var(--orange); }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      text-decoration:none;
-      color:var(--text);
-      min-width: 165px;
-    }
-    .brand img{
-      width:40px;
-      height:40px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.06);
-      padding:4px;
-    }
-    .brand .name{
-      font-weight:900;
-      letter-spacing:.3px;
-      text-transform:uppercase;
-      font-size:13px;
-      line-height:1.1;
-    }
-    .brand .sub{
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.1;
-    }
-
-    .controls{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex:1;
-      justify-content:flex-end;
-    }
-    select{
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.12);
-      color:var(--text);
-      border-radius: 12px;
-      padding:10px 12px;
-      font-size:14px;
+    .menu-dropdown a:hover,
+    .menu-dropdown a:focus{
+      background: rgba(250,235,200,.60);
       outline:none;
-      max-width: 56vw;
-    }
-    select:focus{
-      border-color: rgba(255,122,0,.65);
-      box-shadow: 0 0 0 3px rgba(255,122,0,.18);
     }
 
-    /* Map full screen */
+    /* Centre brand */
+    .route-brand{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start; /* lets us control vertical placement */
+      text-align:center;
+      color:#000;
+
+      /* Move everything UP a bit */
+      padding-top: 6px;
+
+      /* keep clear of menu + select */
+      padding-left: 150px;
+      padding-right: 150px;
+    }
+
+    .route-brand img{
+      width:100px;
+      height:100px;
+      object-fit:contain;
+      display:block;
+    }
+
+    /* Minimal space between logo and title */
+    .route-title{ margin-top: 2px; }
+
+    .route-title h1{
+      margin:0;
+      font-weight:800;
+      color:#000;
+      line-height:1.10;
+      font-size: clamp(15px, 4.2vw, 19px);
+    }
+
+    .title-line{
+      display:block;
+      white-space:nowrap;
+    }
+
+    /* Date line: a touch above bottom border, and tight to title */
+    .route-date{
+      margin-top: 3px;
+      padding-bottom: 2px;
+      font-size: clamp(12px, 3.4vw, 15px);
+      font-weight: 400;
+      color:#000;
+      white-space: nowrap;
+    }
+
+    /* Smaller, narrower select */
+    #legSelect{
+      appearance:none;
+      border:1.5px solid #000;
+      background: var(--bmaHeader);
+      color:#000;
+
+      padding: 6px 8px;
+      border-radius: 14px;
+
+      font-weight:650;
+      font-size: 12.5px;
+      min-width: 96px;      /* reduced width */
+      max-width: 120px;
+    }
+
+    /* Compact header when panel expanded */
+    body.compact-header .topbar{
+      padding: calc(8px + var(--safeTop)) 12px 8px;
+    }
+    body.compact-header .topbar-row{
+      height: 70px;
+      padding-bottom: 0;
+    }
+    body.compact-header .route-brand{
+      padding-top: 0;
+      padding-left: 120px;
+      padding-right: 120px;
+    }
+    body.compact-header .route-brand img{
+      width:44px;
+      height:44px;
+    }
+    body.compact-header .route-title h1{
+      font-size:14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.compact-header .route-date{ display:none; }
+    body.compact-header .controls{ display:none; }
+
+    /* Map */
     #map{
-      position:fixed;
-      inset:0;
+      height: calc(100vh - var(--routeHeaderH));
+      width: 100%;
     }
 
     /* Bottom panel */
     .panel{
       position:fixed;
-      left:0; right:0;
-      bottom:0;
-      z-index:1001;
+      left:10px;
+      right:10px;
+      bottom: calc(10px + var(--safeBottom));
+      z-index:1100;
       background:var(--panel);
-      border-top:1px solid rgba(255,255,255,.12);
-      border-top-left-radius: var(--radius);
-      border-top-right-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
-      max-height: 55vh;
+      border:1px solid var(--border);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      transition: max-height 180ms ease, padding 180ms ease;
+    }
+
+    .panel.collapsed{
+      padding: 10px 12px;
+      max-height: 52px;
+    }
+
+    .panel.expanded{
+      padding: 10px 12px 10px;
+      max-height: 26vh;
       overflow:auto;
     }
-    .panelTip{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
+
+    .panel-tip{
+      font-size:13px;
       color:var(--muted);
-      font-size:14px;
+      line-height:1.25;
       margin:0;
     }
-    .panelTip strong{ color: var(--text); }
 
-    .panel.expanded .panelTip{ display:none; }
-    .panelExpanded{ display:block; }
-
-    .panelHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom: 8px;
-    }
-    .panelHead h2{
-      margin:0;
-      font-size: 18px;
-      letter-spacing:.2px;
-    }
-    .closeBtn{
-      border:0;
-      background:rgba(255,255,255,.08);
-      color:var(--text);
-      width:36px;
-      height:36px;
-      border-radius: 14px;
-      font-size: 22px;
-      cursor:pointer;
-    }
-    .closeBtn:hover{ background:rgba(255,255,255,.12); }
-
-    .subtitle{
-      margin: 0 0 10px 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .grid{
-      display:grid;
-      gap:10px;
-    }
-    .row{
+    .panel-head{
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
       gap:10px;
-      padding:10px 12px;
-      border: 1px solid rgba(255,255,255,.10);
-      border-radius: 14px;
-      background: rgba(0,0,0,.18);
+      margin-bottom:2px;
     }
-    .label{
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.2;
-    }
-    .value{
-      font-weight: 800;
-      font-size: 14px;
-      line-height: 1.2;
-      text-align:right;
-      max-width: 60%;
-      word-break: break-word;
-    }
-    .value a{
-      color: var(--orange);
-      text-decoration: none;
-      font-weight: 900;
-    }
-    .value a:hover{ text-decoration: underline; }
 
+    .panel-title{
+      margin:0;
+      font-size:14px;
+      font-weight:800;
+      letter-spacing:0;
+      line-height:1.2;
+    }
+
+    .closeBtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      width:30px;
+      height:30px;
+      border-radius:10px;
+      font-size:18px;
+      line-height:1;
+      cursor:pointer;
+      flex:0 0 auto;
+    }
+
+    .subtitle{
+      margin:0 0 8px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.15;
+      font-weight:800;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:6px;
+      font-size:13px;
+      line-height:1.15;
+    }
+
+    .row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px dashed rgba(255,255,255,.10);
+      padding-bottom:6px;
+    }
+    .row:last-child{ border-bottom:none; padding-bottom:0; }
+
+    .label{ color:var(--muted); min-width:45%; }
+    .value{ text-align:right; word-break:break-word; }
+
+    a{ color:#9ad1ff; text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+
+    /* Diamond marker */
     .diamond-wrap{
       width:30px;
       height:30px;
-      border-radius:7px;
-      transform: rotate(45deg);
       display:flex;
       align-items:center;
       justify-content:center;
-      box-shadow: 0 10px 18px rgba(0,0,0,.35);
-      border:1px solid rgba(255,255,255,.14);
+      transform: rotate(45deg);
+      border: 2px solid rgba(0,0,0,.65);
+      box-shadow: 0 0 0 4px rgba(0,0,0,.35);
     }
     .diamond-num{
       transform: rotate(-45deg);
-      font-weight: 900;
-      font-size: 13px;
-      line-height: 1;
+      font-weight:900;
+      font-size:13px;
+      line-height:1;
     }
 
-    .finishFlag{
-      filter: drop-shadow(0 6px 12px rgba(0,0,0,.55));
-      font-size: 18px;
+    .finish-flag{
+      font-size:18px;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.6));
     }
 
-    .sr-only{
-      position:absolute;
-      width:1px;
-      height:1px;
-      padding:0;
-      margin:-1px;
-      overflow:hidden;
-      clip:rect(0,0,0,0);
-      border:0;
-    }
+    .leaflet-popup-content-wrapper{ border-radius:14px; }
 
-    /* Sign-ups link + modal (added) */
-    .signupsLink{
-      color: var(--orange);
-      text-decoration: underline;
-      text-underline-offset: 2px;
-      font-weight: 800;
-    }
-
-    .signupsModal{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.65);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      padding: 18px;
-    }
-    .signupsModal.open{ display: flex; }
-
-    .signupsModalCard{
-      width: min(520px, 100%);
-      background: rgba(18,18,18,.98);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-      padding: 16px;
-    }
-    .signupsModalHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom:10px;
-    }
-    .signupsModalTitle{
-      font-size: 18px;
-      font-weight: 900;
-      margin: 0;
-    }
-    .signupsModalClose{
-      border:0;
-      background: rgba(255,255,255,.08);
-      color: var(--text);
-      width: 36px;
-      height: 36px;
-      border-radius: 14px;
-      font-size: 22px;
-      cursor: pointer;
-    }
-    .signupsModalClose:hover{ background: rgba(255,255,255,.12); }
-
-    .modal-muted{
-      margin:0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .modal-list{
-      margin:0;
-      padding-left: 18px;
-      line-height: 1.5;
+    @media (max-width: 420px){
+      .route-brand{
+        padding-left: 130px;
+        padding-right: 130px;
+        padding-top: 5px;
+      }
+      .menu-wrap,
+      .controls{
+        top: calc(50% - 20px);
+      }
+      #legSelect{
+        min-width: 92px;
+        font-size: 12px;
+        padding: 6px 7px;
+        border-radius: 13px;
+      }
     }
   </style>
 </head>
@@ -364,47 +385,49 @@
         </button>
 
         <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
-          <a href="index.html">Home</a>
-          <a href="route.html" class="active">Route</a>
-          <a href="signup.html">Sign up</a>
-          <a href="signup-status.html">Sign up status</a>
-          <a href="challenge.html">Challenge</a>
-          <a href="charities.html">Charities</a>
+          <a href="index.html">The Challenge</a>
+          <a href="amy.html">About Amy</a>
+          <a href="route.html">The Route</a>
+          <a href="signup.html">Sign Up</a>
           <a href="gallery.html">Gallery</a>
           <a href="contact.html">Contact</a>
-          <a href="amy.html">Amy</a>
         </nav>
       </div>
 
-      <!-- Brand (middle) -->
-      <a class="brand" href="index.html">
-        <img src="BMAlogo.svg" alt="Be More Amy logo" />
-        <div>
-          <div class="name">Be More Amy</div>
-          <div class="sub">South West Coastal Path relay</div>
-        </div>
-      </a>
+      <!-- Centre logo + title + date -->
+      <div class="route-brand">
+        <a href="index.html" aria-label="Home" style="display:inline-block">
+          <img src="BMAlogo.svg" alt="Be More Amy logo" width="100" height="100" />
+        </a>
 
-      <!-- Controls (right) -->
-      <div class="controls">
-        <select id="legSelect" aria-label="Select a leg">
-          <option value="">Select a leg</option>
+        <div class="route-title">
+          <h1 id="headerTitle">
+            <span class="title-line">South West Coastal Path</span>
+            <span class="title-line">Relay Challenge</span>
+          </h1>
+        </div>
+
+        <div class="route-date">15th May to 24th May 2026</div>
+      </div>
+
+      <!-- Leg select (right) -->
+      <div class="controls" id="controls">
+        <select id="legSelect" aria-label="Select leg">
+          <option value="">Select leg…</option>
         </select>
       </div>
+
     </div>
   </header>
 
-  <main id="map" aria-label="Route map"></main>
+  <div id="map" aria-label="Route map"></div>
 
-  <section class="panel" id="panel" aria-label="Leg details">
-    <p class="panelTip" id="panelTip">
-      <span><strong>Tip:</strong> Tap a leg on the map, or use the dropdown.</span>
-      <span style="color:var(--orange); font-weight:900;">🏁</span>
-    </p>
+  <section class="panel collapsed" id="panel" aria-live="polite">
+    <p class="panel-tip" id="panelTip">Zoom with pinch/scroll, drag to pan. Tap a leg to view details.</p>
 
-    <div class="panelExpanded" id="panelExpanded" hidden>
-      <div class="panelHead">
-        <h2 class="panelLegTitle" id="panelLegTitle">Leg</h2>
+    <div id="panelExpanded" style="display:none">
+      <div class="panel-head">
+        <h2 class="panel-title" id="panelLegTitle">Leg</h2>
         <button class="closeBtn" id="closeBtn" type="button" aria-label="Close">×</button>
       </div>
 
@@ -412,17 +435,6 @@
       <div class="grid" id="detailsGrid"></div>
     </div>
   </section>
-
-  <!-- Sign-ups modal (added) -->
-  <div class="signupsModal" id="signupsModal" aria-hidden="true">
-    <div class="signupsModalCard" role="dialog" aria-modal="true" aria-labelledby="signupsModalTitle">
-      <div class="signupsModalHead">
-        <h3 class="signupsModalTitle" id="signupsModalTitle">Leg sign-ups</h3>
-        <button class="signupsModalClose" id="signupsModalClose" type="button" aria-label="Close">×</button>
-      </div>
-      <div id="signupsModalBody"></div>
-    </div>
-  </div>
 
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -432,29 +444,34 @@
 
   <script src="./app.js"></script>
 
+  <!-- Menu behaviour -->
   <script>
     (function () {
       const btn = document.getElementById("menuBtn");
       const menu = document.getElementById("site-menu");
-      if (!btn || !menu) return;
 
       function closeMenu() {
         menu.classList.remove("open");
         btn.setAttribute("aria-expanded", "false");
       }
 
-      btn.addEventListener("click", () => {
-        const open = menu.classList.toggle("open");
-        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      function toggleMenu() {
+        const isOpen = menu.classList.toggle("open");
+        btn.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleMenu();
       });
 
-      document.addEventListener("click", (e) => {
-        if (!menu.contains(e.target) && !btn.contains(e.target)) closeMenu();
-      });
+      document.addEventListener("click", () => closeMenu());
 
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") closeMenu();
       });
+
+      menu.addEventListener("click", (e) => e.stopPropagation());
     })();
   </script>
 </body>
