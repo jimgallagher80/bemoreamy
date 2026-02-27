@@ -490,10 +490,20 @@ function validateRequiredFields(formEl) {
 
       try {
         const r = await fetch('submit_team_details.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+});
+
+const text = await r.text();
+let out = null;
+
+try {
+  out = JSON.parse(text);
+} catch (e) {
+  alert('Server returned an unexpected response. Please send this to the organiser:\n\n' + text.slice(0, 300));
+  return;
+}
 
         const out = await r.json();
         if (out && out.success) {
