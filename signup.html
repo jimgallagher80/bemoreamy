@@ -1,235 +1,146 @@
-<!doctype html>
-<html lang="en-GB">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BE MORE AMY — Sign Up</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Be More Amy – Signup</title>
+  <link rel="stylesheet" href="style.css" />
 
-<style>
-/* Keep inputs/selects inside their container on mobile (previous working behaviour) */
-*, *::before, *::after { box-sizing: border-box; }
+  <style>
+    /* Keep inputs/selects inside their container on mobile (previous working behaviour) */
+    .field { width: 100%; box-sizing: border-box; }
+    .field input, .field select {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    #legsContainer select{
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
 
-.signup-wrap { margin-top: 10px; border:2px solid #000; border-radius:18px; background:#fff; padding:16px; overflow:hidden; }
-.form-grid { display:grid; gap:14px; min-width:0; }
-.field label { display:block; font-weight:700; margin-bottom:6px; }
-.field { min-width:0; }
-.field input, .field select {
-  width:100%;
-  max-width:100%;
-  display:block;
-  min-width:0;
-  padding:12px;
-  border:2px solid #000;
-  border-radius:14px;
-  font-size:16px;
-}
-
-.legs-block { border:2px solid rgba(0,0,0,0.12); border-radius:16px; padding:12px; }
-.legs-title { font-weight:800; margin-bottom:10px; }
-
-.btn {
-  width:100%;
-  max-width:100%;
-  padding:14px;
-  border-radius:16px;
-  border:2px solid #000;
-  background:#FAEBC8;
-  color:#111;
-  font-weight:800;
-  font-size:16px;
-  cursor:pointer;
-}
-
-.modal-backdrop {
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  z-index: 9999;
-}
-.modal {
-  background:#fff;
-  border:2px solid #000;
-  border-radius:18px;
-  padding:16px;
-  max-width:600px;
-  width:100%;
-
-  /* FIX: ensure modal never exceeds viewport and scrolls internally */
-  max-height: calc(100vh - 80px);
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.modal button {
-  margin-top:10px;
-  padding:10px 14px;
-  border-radius:14px;
-  border:2px solid #000;
-  background:#FAEBC8;
-  color:#111;
-  font-weight:800;
-  width:100%;
-  max-width:100%;
-}
-
-.linkish { text-decoration:underline; font-weight:800; cursor:pointer; }
-
-.intro-text { margin-bottom:16px; line-height:1.4; }
-</style>
+    /* Modal */
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,0.55);
+      display:none; align-items:center; justify-content:center; padding:18px; z-index:9999;
+    }
+    .modal{
+      background:#fff; border:2px solid #000; border-radius:18px;
+      padding:14px; max-width:520px; width:100%; max-height:calc(100vh - 80px); overflow:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .modal h2{ margin:4px 0 10px; }
+    .modal p{ margin:10px 0; }
+    .modal button{
+      margin-top:10px; padding:10px 14px; border-radius:14px;
+      border:2px solid #000; background:#FAEBC8; font-weight:800;
+      width:100%; cursor:pointer;
+    }
+    .taken-notice{
+      font-weight:700;
+      margin-top:10px;
+    }
+  </style>
 </head>
 
 <body>
-
-<header class="site-header">
-  <div class="header-inner">
-    <div class="menu-wrap">
-      <button class="menu-button" id="menuBtn">
-        <img src="menu.svg" width="22" height="22" alt="Menu">
-      </button>
-      <nav class="menu-dropdown" id="site-menu">
-        <a href="index.html">The Challenge</a>
-        <a href="amy.html">About Amy</a>
-        <a href="route.html">The Route</a>
-        <a href="signup.html">Sign Up</a>
-        <a href="signup-status.html">Signup Status</a>
-        <a href="charities.html">Charities</a>
-        <a href="gallery.html">Gallery</a>
-        <a href="contact.html">Contact</a>
-      </nav>
-    </div>
-
-    <div class="brand">
-      <a href="index.html">
-        <img class="brand-logo" src="BMAlogo.svg" width="100" alt="Be More Amy">
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a href="index.html" aria-label="Home" style="display:inline-block">
+        <img src="BMAlogo.svg" alt="Be More Amy logo" width="100" height="100" />
       </a>
-      <div class="brand-text">
-        <div class="brand-line brand-title">BE MORE AMY</div>
-        <div class="brand-line brand-subtitle">South West Coastal</div>
-        <div class="brand-line brand-subtitle">Path Relay Challenge</div>
-        <div class="brand-line brand-date">16th to 23rd May 2026</div>
+      <div>
+        <h1 class="site-title">South West Coastal Path Relay Challenge</h1>
+        <div class="site-date">15th May to 23rd May 2026</div>
       </div>
     </div>
-  </div>
-</header>
+  </header>
 
-<main class="page">
-<h1>Sign Up</h1>
-
-<div class="intro-text">
-  <p>
-    Team leaders should sign up using the form below. Once confirmed, you will receive an email with a further link to a form to collect full details of your team, including emergency contacts and other essential information.
-  </p>
-  <p>
-    Before selecting a leg, please check the
-    <a href="signup-status.html" class="linkish">list of confirmed signups</a>.
-    If you select a leg that is already taken, your interest will be noted should that leg become available.
-  </p>
-</div>
-
-<div class="signup-wrap">
-<form id="signupForm" class="form-grid" novalidate>
-
-  <div class="field">
-    <label for="teamLeaderFirstName">Team Leader First Name</label>
-    <input id="teamLeaderFirstName" required>
-  </div>
-
-  <div class="field">
-    <label for="teamLeaderSurname">Team Leader Surname</label>
-    <input id="teamLeaderSurname" required>
-  </div>
-
-  <div class="field">
-    <label for="groupSize">
-      Number of people in your group
-      <span class="linkish" id="openGroupInfo" aria-label="More information">ⓘ</span>
-    </label>
-    <input id="groupSize" type="number" inputmode="numeric" min="1" max="100" required>
-  </div>
-
-  <div class="field">
-    <label for="email">E-mail</label>
-    <input id="email" type="email" required>
-  </div>
-
-  <div class="field">
-    <label for="phone">Phone Number</label>
-    <input id="phone" required>
-  </div>
-
-  <div class="legs-block">
-    <div class="legs-title">Choose your legs</div>
-    <div id="legsContainer"></div>
-    <div id="takenNotice" style="margin:10px 0 10px; font-weight:700;"></div>
-    <button type="button" id="addLegBtn" class="btn">Add Another Leg</button>
-  </div>
-
-  <div>
-    <input type="checkbox" id="safetyAccepted">
-    <label for="safetyAccepted">
-      I confirm I have read and agree to the
-      <span class="linkish" id="openSafety">safety and logistics information</span>.
-    </label>
-  </div>
-
-  <button type="submit" class="btn" id="submitBtn">Submit</button>
-
-</form>
-</div>
-</main>
-
-<!-- Safety & logistics modal -->
-<div class="modal-backdrop" id="safetyModal">
-  <div class="modal">
-    <h2>Safety and Logistics Information</h2>
+  <main class="page">
+    <h2>Signup</h2>
 
     <p>
-      This is a self-led relay challenge. By signing up, you confirm that you and any team members are responsible for your own safety, planning, navigation, equipment, fitness to take part, and wellbeing throughout your leg(s).
-      You should take appropriate precautions for coastal path conditions, weather, tides, and terrain, and you are responsible for following relevant laws and guidance, including road safety where applicable.
+      Before selecting a leg, please check the
+      <a href="route.html">Route</a> page to understand the legs and current availability.
+      If you select a leg that is already taken, your interest will be noted should that leg become available.
     </p>
 
-    <p>
-      A kit list will be sent out in advance of the event.
-    </p>
+    <form id="signupForm" class="form">
+      <div class="field">
+        <label for="teamLeaderFirstName">Team Leader First Name</label>
+        <input type="text" id="teamLeaderFirstName" required />
+      </div>
 
-    <p>
-      Teams should plan their own transport to and from the start and finish of their legs. Whilst there may be transport available to help, this cannot be guaranteed for every single leg transition at this time.
-    </p>
+      <div class="field">
+        <label for="teamLeaderSurname">Team Leader Surname</label>
+        <input type="text" id="teamLeaderSurname" required />
+      </div>
 
-    <p>
-      The organisers and associated volunteers do not provide supervision, medical cover, or safety support on the route. Participation is voluntary and undertaken at your own risk.
-    </p>
+      <div class="field">
+        <label for="groupSize">Group Size (minimum 2)</label>
+        <input type="number" id="groupSize" min="2" value="2" required />
+      </div>
 
-    <p>
-      Nothing in this notice excludes or limits liability where it would be unlawful to do so.
-    </p>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" required />
+      </div>
 
-    <button type="button" id="closeSafety">Close</button>
+      <div class="field">
+        <label for="phone">Phone</label>
+        <input type="text" id="phone" required />
+      </div>
+
+      <hr />
+
+      <h3>Select Leg(s)</h3>
+      <div id="legsContainer"></div>
+
+      <button type="button" class="btn" id="addLegBtn">Add another leg</button>
+
+      <div class="taken-notice" id="takenNotice"></div>
+
+      <hr />
+
+      <div class="field">
+        <label>
+          <input type="checkbox" id="safetyAccepted" />
+          I confirm I have read and understood the Safety & Logistics information.
+        </label>
+      </div>
+
+      <button class="btn" type="submit">Submit Signup</button>
+    </form>
+  </main>
+
+  <!-- Safety modal -->
+  <div class="modal-backdrop" id="safetyModal">
+    <div class="modal">
+      <h2>Safety & Logistics</h2>
+      <p>Please confirm you have read and understood the Safety & Logistics information before submitting.</p>
+      <button type="button" id="closeSafety">Close</button>
+    </div>
   </div>
-</div>
 
-<!-- Group size info modal -->
-<div class="modal-backdrop" id="groupInfoModal">
-  <div class="modal">
-    <h2>Group Information</h2>
-    <p>Names, contact details and emergency contact details for all members of the group will be collected later.</p>
-    <button type="button" id="closeGroupInfo">Close</button>
+  <!-- Group size modal -->
+  <div class="modal-backdrop" id="groupInfoModal">
+    <div class="modal">
+      <h2>Group Size</h2>
+      <p>Group size must be a minimum of 2.</p>
+      <button type="button" id="closeGroupInfo">Close</button>
+    </div>
   </div>
-</div>
 
-<!-- Success modal -->
-<div class="modal-backdrop" id="successModal">
-  <div class="modal">
-    <h2>Thank You</h2>
-    <p>Your signup has been received and is now pending approval.</p>
-    <p>Click continue to view the current signups.</p>
-    <button type="button" id="closeSuccess">Continue</button>
+  <!-- Success modal -->
+  <div class="modal-backdrop" id="successModal">
+    <div class="modal">
+      <h2>Thank You</h2>
+      <p>Your signup has been received and is now pending approval.</p>
+      <p>Click continue to view the current signups.</p>
+      <button type="button" id="closeSuccess">Continue</button>
+    </div>
   </div>
-</div>
 
 <script>
 const form = document.getElementById('signupForm');
@@ -245,6 +156,98 @@ const safetyAccepted = document.getElementById('safetyAccepted');
 
 const TOTAL_LEGS = 68;
 let TAKEN_LEGS = new Set();
+const GEOJSON_URL = "ALL_COASTAL_LEGS_ENRICHED.geojson";
+
+// From app.v2.js (kept in sync): used to display estimated set off time + leg duration in dropdown labels
+const LEG_TIMES = {"1":{"setoff":"Sat 16 May 2026 08:00","finish":"Sat 16 May 2026 10:27"},"2":{"setoff":"Sat 16 May 2026 10:27","finish":"Sat 16 May 2026 13:44"},"3":{"setoff":"Sat 16 May 2026 13:44","finish":"Sat 16 May 2026 16:22"},"4":{"setoff":"Sat 16 May 2026 16:22","finish":"Sat 16 May 2026 18:33"},"5":{"setoff":"Sat 16 May 2026 18:33","finish":"Sat 16 May 2026 20:01"},"6":{"setoff":"Sat 16 May 2026 20:01","finish":"Sat 16 May 2026 21:51"},"7":{"setoff":"Sat 16 May 2026 21:51","finish":"Sat 16 May 2026 23:41"},"8":{"setoff":"Sat 16 May 2026 23:41","finish":"Sun 17 May 2026 02:14"},"9":{"setoff":"Sun 17 May 2026 02:14","finish":"Sun 17 May 2026 04:48"},"10":{"setoff":"Sun 17 May 2026 04:48","finish":"Sun 17 May 2026 07:00"},"11":{"setoff":"Sun 17 May 2026 07:00","finish":"Sun 17 May 2026 09:19"},"12":{"setoff":"Sun 17 May 2026 09:19","finish":"Sun 17 May 2026 11:53"},"13":{"setoff":"Sun 17 May 2026 11:53","finish":"Sun 17 May 2026 15:03"},"14":{"setoff":"Sun 17 May 2026 15:03","finish":"Sun 17 May 2026 16:45"},"15":{"setoff":"Sun 17 May 2026 16:45","finish":"Sun 17 May 2026 19:26"},"16":{"setoff":"Sun 17 May 2026 19:26","finish":"Sun 17 May 2026 21:31"},"17":{"setoff":"Sun 17 May 2026 21:31","finish":"Sun 17 May 2026 23:06"},"18":{"setoff":"Sun 17 May 2026 23:06","finish":"Mon 18 May 2026 01:39"},"19":{"setoff":"Mon 18 May 2026 01:39","finish":"Mon 18 May 2026 04:35"},"20":{"setoff":"Mon 18 May 2026 04:35","finish":"Mon 18 May 2026 07:42"},"21":{"setoff":"Mon 18 May 2026 07:42","finish":"Mon 18 May 2026 10:48"},"22":{"setoff":"Mon 18 May 2026 10:48","finish":"Mon 18 May 2026 12:31"},"23":{"setoff":"Mon 18 May 2026 12:31","finish":"Mon 18 May 2026 14:50"},"24":{"setoff":"Mon 18 May 2026 14:50","finish":"Mon 18 May 2026 17:45"},"25":{"setoff":"Mon 18 May 2026 17:45","finish":"Mon 18 May 2026 19:02"},"26":{"setoff":"Mon 18 May 2026 19:02","finish":"Mon 18 May 2026 21:47"},"27":{"setoff":"Mon 18 May 2026 21:47","finish":"Tue 19 May 2026 00:35"},"28":{"setoff":"Tue 19 May 2026 00:35","finish":"Tue 19 May 2026 04:15"},"29":{"setoff":"Tue 19 May 2026 04:15","finish":"Tue 19 May 2026 06:37"},"30":{"setoff":"Tue 19 May 2026 06:37","finish":"Tue 19 May 2026 09:13"},"31":{"setoff":"Tue 19 May 2026 09:13","finish":"Tue 19 May 2026 12:41"},"32":{"setoff":"Tue 19 May 2026 12:41","finish":"Tue 19 May 2026 14:53"},"33":{"setoff":"Tue 19 May 2026 14:53","finish":"Tue 19 May 2026 16:28"},"34":{"setoff":"Tue 19 May 2026 16:28","finish":"Tue 19 May 2026 19:02"},"35":{"setoff":"Tue 19 May 2026 19:02","finish":"Tue 19 May 2026 21:28"},"36":{"setoff":"Tue 19 May 2026 21:28","finish":"Wed 20 May 2026 00:24"},"37":{"setoff":"Wed 20 May 2026 00:24","finish":"Wed 20 May 2026 03:12"},"38":{"setoff":"Wed 20 May 2026 03:12","finish":"Wed 20 May 2026 06:15"},"39":{"setoff":"Wed 20 May 2026 06:15","finish":"Wed 20 May 2026 08:56"},"40":{"setoff":"Wed 20 May 2026 08:56","finish":"Wed 20 May 2026 11:51"},"41":{"setoff":"Wed 20 May 2026 11:51","finish":"Wed 20 May 2026 14:25"},"42":{"setoff":"Wed 20 May 2026 14:25","finish":"Wed 20 May 2026 16:51"},"43":{"setoff":"Wed 20 May 2026 16:51","finish":"Wed 20 May 2026 20:31"},"44":{"setoff":"Wed 20 May 2026 20:31","finish":"Wed 20 May 2026 22:57"},"45":{"setoff":"Wed 20 May 2026 22:57","finish":"Thu 21 May 2026 01:31"},"46":{"setoff":"Thu 21 May 2026 01:31","finish":"Thu 21 May 2026 04:05"},"47":{"setoff":"Thu 21 May 2026 04:05","finish":"Thu 21 May 2026 07:00"},"48":{"setoff":"Thu 21 May 2026 07:00","finish":"Thu 21 May 2026 09:34"},"49":{"setoff":"Thu 21 May 2026 09:34","finish":"Thu 21 May 2026 12:30"},"50":{"setoff":"Thu 21 May 2026 12:30","finish":"Thu 21 May 2026 14:56"},"51":{"setoff":"Thu 21 May 2026 14:56","finish":"Thu 21 May 2026 17:19"},"52":{"setoff":"Thu 21 May 2026 17:19","finish":"Thu 21 May 2026 20:36"},"53":{"setoff":"Thu 21 May 2026 20:36","finish":"Thu 21 May 2026 22:33"},"54":{"setoff":"Thu 21 May 2026 22:33","finish":"Fri 22 May 2026 00:52"},"55":{"setoff":"Fri 22 May 2026 00:52","finish":"Fri 22 May 2026 03:55"},"56":{"setoff":"Fri 22 May 2026 03:55","finish":"Fri 22 May 2026 07:13"},"57":{"setoff":"Fri 22 May 2026 07:13","finish":"Fri 22 May 2026 09:39"},"58":{"setoff":"Fri 22 May 2026 09:39","finish":"Fri 22 May 2026 12:57"},"59":{"setoff":"Fri 22 May 2026 12:57","finish":"Fri 22 May 2026 15:38"},"60":{"setoff":"Fri 22 May 2026 15:38","finish":"Fri 22 May 2026 17:49"},"61":{"setoff":"Fri 22 May 2026 17:49","finish":"Fri 22 May 2026 20:08"},"62":{"setoff":"Fri 22 May 2026 20:08","finish":"Fri 22 May 2026 22:35"},"63":{"setoff":"Fri 22 May 2026 22:35","finish":"Sat 23 May 2026 01:16"},"64":{"setoff":"Sat 23 May 2026 01:16","finish":"Sat 23 May 2026 04:19"},"65":{"setoff":"Sat 23 May 2026 04:19","finish":"Sat 23 May 2026 07:36"},"66":{"setoff":"Sat 23 May 2026 07:36","finish":"Sat 23 May 2026 10:10"},"67":{"setoff":"Sat 23 May 2026 10:10","finish":"Sat 23 May 2026 12:11"},"68":{"setoff":"Sat 23 May 2026 12:11","finish":"Sat 23 May 2026 14:00"}};
+
+const LEG_INFO = {};
+
+function formatLegTimeShort(dateTimeStr) {
+  // "Sat 16 May 2026 08:00" -> "0800 Sat 16 May"
+  if (!dateTimeStr) return "—";
+  const parts = String(dateTimeStr).trim().split(/\s+/);
+  if (parts.length < 5) return String(dateTimeStr);
+  const day = parts[0];
+  const dd = parts[1];
+  const mon = parts[2];
+  const time = parts[4];
+  const hhmm = String(time).replace(":", "");
+  return `${hhmm} ${day} ${dd} ${mon}`;
+}
+
+function parseLegDateTime(dateTimeStr) {
+  // "Sat 16 May 2026 08:00"
+  if (!dateTimeStr) return null;
+  const parts = String(dateTimeStr).trim().split(/\s+/);
+  if (parts.length < 5) return null;
+  const dd = parseInt(parts[1], 10);
+  const monStr = parts[2];
+  const yyyy = parseInt(parts[3], 10);
+  const hm = parts[4].split(":");
+  const hh = parseInt(hm[0], 10);
+  const mm = parseInt(hm[1], 10);
+
+  const months = {
+    Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+    Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+  };
+  const mon = months[monStr];
+  if (Number.isNaN(dd) || Number.isNaN(yyyy) || Number.isNaN(hh) || Number.isNaN(mm)) return null;
+  if (typeof mon !== "number") return null;
+
+  // Use UTC to avoid locale parsing issues
+  return new Date(Date.UTC(yyyy, mon, dd, hh, mm, 0));
+}
+
+function formatDurationShort(totalMinutes) {
+  if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return "—";
+  const mins = Math.round(totalMinutes);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h <= 0) return `${m}m`;
+  return `${h}h${String(m).padStart(2, "0")}`;
+}
+
+function getLegDurationShort(legNumber) {
+  const key = String(legNumber);
+  const t = (LEG_TIMES && LEG_TIMES[key]) ? LEG_TIMES[key] : null;
+  if (!t) return "—";
+  const a = parseLegDateTime(t.setoff);
+  const b = parseLegDateTime(t.finish);
+  if (!a || !b) return "—";
+  const mins = (b.getTime() - a.getTime()) / 60000;
+  return formatDurationShort(mins);
+}
+
+async function loadLegInfo() {
+  try {
+    const res = await fetch(GEOJSON_URL, { cache: "no-store" });
+    if (!res.ok) return;
+    const geo = await res.json();
+    if (!geo || !Array.isArray(geo.features)) return;
+
+    geo.features.forEach((f) => {
+      const p = (f && f.properties) ? f.properties : null;
+      if (!p) return;
+      const leg = String(p.leg);
+      if (!leg) return;
+
+      const t = (LEG_TIMES && LEG_TIMES[leg]) ? LEG_TIMES[leg] : null;
+      const setoff = t ? formatLegTimeShort(t.setoff) : "—";
+      const duration = getLegDurationShort(leg);
+
+      LEG_INFO[leg] = {
+        start: p.start || "—",
+        end: p.end || "—",
+        setoff,
+        duration
+      };
+    });
+  } catch (e) {
+    // leave LEG_INFO empty
+  }
+}
 
 async function loadTakenLegs() {
   try {
@@ -285,9 +288,6 @@ function refreshTakenNotice() {
   notice.textContent = `Leg${uniq.length > 1 ? 's' : ''} ${uniq.join(', ')} ${uniq.length > 1 ? 'are' : 'is'} already taken. If you proceed with this selection, your interest will be noted should it become available.`;
 }
 
-/* Only used to generate the dropdown labels (kept as-is) */
-const LEG_INFO = window.LEG_INFO || {};
-
 function createLegSelect(){
   const wrap = document.createElement('div');
   wrap.style.marginBottom = '10px';
@@ -301,8 +301,8 @@ function createLegSelect(){
     const opt = document.createElement('option');
     opt.value = String(i);
 
-    if (info && info.start && info.end && info.setoff && info.finish) {
-      opt.textContent = `${i}: ${info.start} → ${info.end} (${info.setoff} to ${info.finish})`;
+    if (info && info.start && info.end && info.setoff && info.duration) {
+      opt.textContent = `Leg ${i}: ${info.start} (${info.setoff}) → ${info.end} (${info.duration})`;
     } else {
       opt.textContent = `Leg ${i}`;
     }
@@ -328,6 +328,7 @@ function addLeg(){
 
 (async () => {
   await loadTakenLegs();
+  await loadLegInfo();
   addLeg();
   refreshTakenNotice();
 })();
@@ -336,11 +337,11 @@ addLegBtn.addEventListener('click', () => addLeg());
 
 /* modals */
 const safetyModal = document.getElementById('safetyModal');
-document.getElementById('openSafety').addEventListener('click', () => { safetyModal.style.display='flex'; });
+document.getElementById('openSafety')?.addEventListener('click', () => { safetyModal.style.display='flex'; });
 document.getElementById('closeSafety').addEventListener('click', () => { safetyModal.style.display='none'; });
 
 const groupInfoModal = document.getElementById('groupInfoModal');
-document.getElementById('openGroupInfo').addEventListener('click', () => { groupInfoModal.style.display='flex'; });
+document.getElementById('openGroupInfo')?.addEventListener('click', () => { groupInfoModal.style.display='flex'; });
 document.getElementById('closeGroupInfo').addEventListener('click', () => { groupInfoModal.style.display='none'; });
 
 const successModal = document.getElementById('successModal');
@@ -379,29 +380,16 @@ form.addEventListener('submit', async (e) => {
 
     const data = await res.json();
 
-    if (data && data.success) {
-      successModal.style.display = 'flex';
+    if (!data || !data.success) {
+      alert(data && data.error ? data.error : 'Failed to submit');
       return;
     }
 
-    alert((data && data.error) ? data.error : 'Error submitting form');
+    successModal.style.display = 'flex';
   } catch (err) {
-    alert('Error submitting form');
-  }
-});
-
-/* menu */
-const menuBtn = document.getElementById('menuBtn');
-const menu = document.getElementById('site-menu');
-menuBtn.addEventListener('click', () => {
-  menu.classList.toggle('open');
-});
-document.addEventListener('click', (e) => {
-  if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
-    menu.classList.remove('open');
+    alert('Failed to submit');
   }
 });
 </script>
-
 </body>
 </html>
