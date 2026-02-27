@@ -16,14 +16,7 @@
 .signup-entry {
     border-bottom:1px solid #ccc;
     padding:10px 0;
-}
-.signup-entry:last-child {
-    border-bottom:none;
-}
-.small {
-    font-size:12px;
-    color:#444;
-}
+}.status-approved { color:green; font-weight:700; }
 </style>
 </head>
 <body>
@@ -32,7 +25,7 @@
   <div class="header-inner">
     <div class="brand">
       <a href="index.html">
-        <img class="brand-logo" src="BMAlogo.svg" width="100" alt="Be More Amy">
+        <img class="brand-logo" src="BMAlogo.svg" width="100">
       </a>
     </div>
   </div>
@@ -46,42 +39,50 @@ Loading…
 </div>
 
 <div style="margin-top:20px;">
-  <button onclick="window.location.href='index.html'" class="btn">Return to Home</button>
+<button onclick="window.location.href='index.html'" class="btn">Return to Home</button>
 </div>
 
 </main>
 
 <script>
 async function loadSignups() {
-  const res = await fetch('get_signups.php');
-  const data = await res.json();
+    const res = await fetch('get_signups.php');
+    const data = await res.json();
 
-  const container = document.getElementById('signupList');
-  container.innerHTML = '';
+    const container = document.getElementById('signupList');
+    container.innerHTML = '';
 
-  if (!data || !data.success) {
-    container.textContent = 'Unable to load signups.';
-    return;
-  }
+    if (!data.length) {
+        container.innerHTML = 'No signups yet.';
+        return;
+    }
 
-  const rows = data.confirmed || [];
+    data.forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'signup-entry';
 
-  if (rows.length === 0) {
-    container.textContent = 'No confirmed signups yet.';
-    return;
-  }
+        // If team details have been submitted, show team name + member list.
+        if (entry.has_team_details) {
+            const membersText = (entry.members || []).map(m => {
+                const name = `${m.first_name} ${m.last_name}`;
+                return (parseInt(m.member_index, 10) === 1) ? `${name} (TL)` : name;
+            }).join(', ');
 
-  rows.forEach(row => {
-    const div = document.createElement('div');
-    div.className = 'signup-entry';
+            div.innerHTML = `
+                <strong>Leg ${entry.leg_number}</strong><br>
+                <strong>${entry.display_team_name}</strong><br>
+                ${membersText}
+            `;
+        } else {
+            // Otherwise, keep the existing display style (team leader name only).
+            div.innerHTML = `
+                <strong>Leg ${entry.leg_number}</strong><br>
+                <strong>${entry.team_leader_first_name} ${entry.team_leader_surname}</strong>
+            `;
+        }
 
-    div.innerHTML = `
-      <strong>Leg ${row.leg_number}</strong><br>
-      ${row.first_name} ${row.last_name} <span class="small">(Team size: ${row.group_size})</span>
-    `;
-
-    container.appendChild(div);
-  });
+        container.appendChild(div);
+    });
 }
 
 loadSignups();
