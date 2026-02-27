@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BE MORE AMY — Team Details</title>
+<link rel="stylesheet" href="style.css">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+
+.signup-wrap { margin-top: 10px; border:2px solid #000; border-radius:18px; background:#fff; padding:16px; overflow:hidden; }
+.form-grid { display:grid; gap:14px; min-width:0; }
+.field label { display:block; font-weight:700; margin-bottom:6px; }
+.field { min-width:0; }
+.field input, .field select, .field textarea {
+  width:100%;
+  max-width:100%;
+  display:block;
+  min-width:0;
+  padding:12px;
+  border:2px solid #000;
+  border-radius:14px;
+  font-size:16px;
+}
+
+.section-title { font-weight:800; margin:10px 0 6px; }
+.muted { color:#333; font-size:14px; line-height:1.35; }
+
+.btn {
+  width:100%;
+  max-width:100%;
+  padding:14px;
+  border-radius:16px;
+  border:2px solid #000;
+  background:#FAEBC8;
+  color:#111;
+  font-weight:800;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.modal-backdrop {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:9999;
+}
+.modal {
+  background:#fff;
+  border:2px solid #000;
+  border-radius:18px;
+  padding:16px;
+  max-width:600px;
+  width:100%;
+  max-height: calc(100vh - 80px);
+  overflow:auto;
+  -webkit-overflow-scrolling: touch;
+}
+.modal button {
+  margin-top:10px;
+  padding:10px 14px;
+  border-radius:14px;
+  border:2px solid #000;
+  background:#FAEBC8;
+  color:#111;
+  font-weight:800;
+  width:100%;
+  max-width:100%;
+}
+
+.linkish { text-decoration:underline; font-weight:800; cursor:pointer; }
+
+.readonly-box{
+  border:2px solid rgba(0,0,0,0.12);
+  border-radius:16px;
+  padding:12px;
+  background:#fff;
+}
+.pill{
+  display:inline-block;
+  padding:6px 10px;
+  border:2px solid #000;
+  border-radius:999px;
+  font-weight:800;
+  margin:4px 6px 0 0;
+  background:#FAEBC8;
+  color:#111;
+  font-size:14px;
+}
+
+.member-card{
+  border:2px solid rgba(0,0,0,0.12);
+  border-radius:16px;
+  padding:12px;
+  background:#fff;
+}
+.member-head{
+  font-weight:900;
+  margin:0 0 10px;
+}
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="menu-wrap">
+      <button class="menu-button" id="menuBtn">
+        <img src="menu.svg" width="22" height="22" alt="Menu">
+      </button>
+      <nav class="menu-dropdown" id="site-menu">
+        <a href="index.html">The Challenge</a>
+        <a href="amy.html">About Amy</a>
+        <a href="route.html">The Route</a>
+        <a href="signup.html">Sign Up</a>
+        <a href="signup-status.html">Signup Status</a>
+        <a href="charities.html">Charities</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+
+    <div class="brand">
+      <a href="index.html">
+        <img class="brand-logo" src="BMAlogo.svg" width="100" alt="Be More Amy">
+      </a>
+      <div class="brand-text">
+        <div class="brand-line brand-title">BE MORE AMY</div>
+        <div class="brand-line brand-subtitle">South West Coastal</div>
+        <div class="brand-line brand-subtitle">Path Relay Challenge</div>
+        <div class="brand-line brand-date">16th to 23rd May 2026</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+<h1>Team Details</h1>
+
+<div class="signup-wrap">
+  <div id="loadError" class="muted" style="display:none; font-weight:800;"></div>
+
+  <form id="teamForm" class="form-grid" novalidate style="display:none;">
+
+    <div class="field">
+      <label for="teamName">Team name (optional)</label>
+      <input id="teamName" placeholder="Leave blank to use the team leader's name">
+    </div>
+
+    <div class="readonly-box">
+      <div class="section-title">Confirmed legs</div>
+      <div id="legsPills"></div>
+      <p class="muted" style="margin:10px 0 0;">
+        These legs are confirmed and cannot be changed here. If you need to change legs, email
+        <a class="linkish" href="mailto:hello@bemoreamy.com">hello@bemoreamy.com</a>.
+      </p>
+    </div>
+
+    <div class="field">
+      <label for="groupSizeSelect">Number of people in your group</label>
+      <select id="groupSizeSelect"></select>
+      <p class="muted" style="margin:8px 0 0;">
+        Minimum group size is 2. Changing this will add or remove team member sections below.
+      </p>
+    </div>
+
+    <div class="member-card" id="leaderCard">
+      <p class="member-head">Team Leader — Team Member 1</p>
+
+      <div class="field">
+        <label for="leaderFirstName">First name</label>
+        <input id="leaderFirstName" required>
+      </div>
+
+      <div class="field">
+        <label for="leaderLastName">Last name</label>
+        <input id="leaderLastName" required>
+      </div>
+
+      <div class="field">
+        <label for="leaderEmail">E-mail address</label>
+        <input id="leaderEmail" type="email" required>
+      </div>
+
+      <div class="field">
+        <label for="leaderPhone">Phone number</label>
+        <input id="leaderPhone" required>
+      </div>
+
+      <div class="field">
+        <label for="leaderECName">Emergency contact name</label>
+        <input id="leaderECName" required>
+      </div>
+
+      <div class="field">
+        <label for="leaderECPhone">Emergency contact number</label>
+        <input id="leaderECPhone" required>
+      </div>
+    </div>
+
+    <div id="membersContainer"></div>
+
+    <div>
+      <input type="checkbox" id="safetyAccepted">
+      <label for="safetyAccepted">
+        I confirm I have read and agree to the
+        <span class="linkish" id="openSafety">safety and logistics information</span>.
+      </label>
+    </div>
+
+    <button type="submit" class="btn">Submit Team Details</button>
+
+  </form>
+</div>
+
+</main>
+
+<!-- Safety & logistics modal -->
+<div class="modal-backdrop" id="safetyModal">
+  <div class="modal">
+    <h2>Safety and Logistics Information</h2>
+
+    <p style="font-weight:800;">
+      By submitting this form, you confirm you have spoken to each team member and that they are happy with the safety and logistics information below.
+    </p>
+
+    <p>
+      This is a self-led relay challenge. By taking part, you confirm that you and your team members are responsible for your own safety, planning, navigation, equipment, fitness to take part, and wellbeing throughout your leg(s).
+      You should take appropriate precautions for coastal path conditions, weather, tides, and terrain, and you are responsible for following relevant laws and guidance, including road safety where applicable.
+    </p>
+
+    <p>
+      A kit list will be sent out in advance of the event.
+    </p>
+
+    <p>
+      Teams should plan their own transport to and from the start and finish of their legs. Whilst there may be transport available to help, this cannot be guaranteed for every single leg transition at this time.
+    </p>
+
+    <p>
+      The organisers and associated volunteers do not provide supervision, medical cover, or safety support on the route. Participation is voluntary and undertaken at your own risk.
+    </p>
+
+    <button type="button" id="closeSafety">Close</button>
+  </div>
+</div>
+
+<!-- Success modal -->
+<div class="modal-backdrop" id="successModal">
+  <div class="modal">
+    <h2>Thank You</h2>
+    <p>Your team details have been submitted.</p>
+    <p>Click continue to view the confirmed signups.</p>
+    <button type="button" id="closeSuccess">Continue</button>
+  </div>
+</div>
+
+<script>
+/* Menu */
+const menuBtn = document.getElementById('menuBtn');
+const menu = document.getElementById('site-menu');
+menuBtn.addEventListener('click', () => menu.classList.toggle('open'));
+document.addEventListener('click', (e) => {
+  if (!menu.contains(e.target) && !menuBtn.contains(e.target)) menu.classList.remove('open');
+});
+
+/* Modals */
+const safetyModal = document.getElementById('safetyModal');
+document.getElementById('openSafety').addEventListener('click', () => { safetyModal.style.display = 'flex'; });
+document.getElementById('closeSafety').addEventListener('click', () => { safetyModal.style.display = 'none'; });
+
+const successModal = document.getElementById('successModal');
+document.getElementById('closeSuccess').addEventListener('click', () => {
+  successModal.style.display = 'none';
+  window.location.href = 'signup-status.html';
+});
+
+/* Helpers */
+function getToken() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('token') || '';
+}
+
+function setError(msg) {
+  const el = document.getElementById('loadError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function buildGroupSizeOptions(selectEl, current) {
+  selectEl.innerHTML = '';
+  for (let i = 2; i <= 50; i++) {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = String(i);
+    if (i === current) opt.selected = true;
+    selectEl.appendChild(opt);
+  }
+}
+
+function memberBlock(index, existing) {
+  const wrap = document.createElement('div');
+  wrap.className = 'member-card';
+  wrap.dataset.memberIndex = String(index);
+
+  const title = document.createElement('p');
+  title.className = 'member-head';
+  title.textContent = `Team Member ${index}`;
+  wrap.appendChild(title);
+
+  function field(id, label, type='text', value='') {
+    const d = document.createElement('div');
+    d.className = 'field';
+    const l = document.createElement('label');
+    l.setAttribute('for', id);
+    l.textContent = label;
+    const inp = document.createElement('input');
+    inp.id = id;
+    inp.type = type;
+    inp.required = true;
+    inp.value = value || '';
+    d.appendChild(l);
+    d.appendChild(inp);
+    return d;
+  }
+
+  const base = existing || {};
+
+  wrap.appendChild(field(`m${index}_first`, 'First name', 'text', base.first_name));
+  wrap.appendChild(field(`m${index}_last`, 'Last name', 'text', base.last_name));
+  wrap.appendChild(field(`m${index}_email`, 'E-mail address', 'email', base.email));
+  wrap.appendChild(field(`m${index}_phone`, 'Phone number', 'text', base.phone));
+  wrap.appendChild(field(`m${index}_ecname`, 'Emergency contact name', 'text', base.emergency_contact_name));
+  wrap.appendChild(field(`m${index}_ecphone`, 'Emergency contact number', 'text', base.emergency_contact_phone));
+
+  return wrap;
+}
+
+function syncMemberBlocks(targetSize, existingMembersByIndex) {
+  const container = document.getElementById('membersContainer');
+  const currentBlocks = Array.from(container.querySelectorAll('.member-card'));
+  const currentIdx = new Set(currentBlocks.map(b => parseInt(b.dataset.memberIndex, 10)));
+
+  // Remove blocks > targetSize
+  currentBlocks.forEach(b => {
+    const idx = parseInt(b.dataset.memberIndex, 10);
+    if (idx > targetSize) b.remove();
+  });
+
+  // Add blocks 2..targetSize (leader handled separately)
+  for (let i = 2; i <= targetSize; i++) {
+    if (!currentIdx.has(i)) {
+      const existing = existingMembersByIndex[String(i)] || null;
+      container.appendChild(memberBlock(i, existing));
+    }
+  }
+
+  // Ensure correct order
+  const all = Array.from(container.querySelectorAll('.member-card'));
+  all.sort((a,b)=>parseInt(a.dataset.memberIndex,10)-parseInt(b.dataset.memberIndex,10));
+  container.innerHTML = '';
+  all.forEach(el => container.appendChild(el));
+}
+
+function validateRequiredFields(formEl) {
+  const required = Array.from(formEl.querySelectorAll('[required]'));
+  for (const el of required) {
+    if (!String(el.value || '').trim()) {
+      el.focus();
+      return false;
+    }
+  }
+  return true;
+}
+
+(async function init() {
+  const token = getToken();
+  if (!token) {
+    setError('Invalid link. Please use the unique link provided in your email.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`get_team_details.php?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+
+    if (!data || !data.success) {
+      setError((data && data.error) ? data.error : 'Unable to load team details.');
+      return;
+    }
+
+    const form = document.getElementById('teamForm');
+    form.style.display = 'grid';
+
+    // Legs pills
+    const legsPills = document.getElementById('legsPills');
+    legsPills.innerHTML = '';
+    (data.confirmed_legs || []).forEach(n => {
+      const span = document.createElement('span');
+      span.className = 'pill';
+      span.textContent = `Leg ${n}`;
+      legsPills.appendChild(span);
+    });
+
+    // Pre-fill leader fields
+    document.getElementById('leaderFirstName').value = data.team_leader_first_name || '';
+    document.getElementById('leaderLastName').value = data.team_leader_surname || '';
+    document.getElementById('leaderEmail').value = data.email || '';
+    document.getElementById('leaderPhone').value = data.phone || '';
+
+    // Existing members map
+    const existingMembersByIndex = {};
+    (data.members || []).forEach(m => { existingMembersByIndex[String(m.member_index)] = m; });
+
+    // Pre-fill leader emergency contact if already present
+    if (existingMembersByIndex['1']) {
+      document.getElementById('leaderECName').value = existingMembersByIndex['1'].emergency_contact_name || '';
+      document.getElementById('leaderECPhone').value = existingMembersByIndex['1'].emergency_contact_phone || '';
+    }
+
+    // Team name
+    document.getElementById('teamName').value = data.team_name || '';
+
+    // Group size
+    const groupSizeSelect = document.getElementById('groupSizeSelect');
+    const currentSize = Math.max(2, parseInt(data.group_size || 2, 10) || 2);
+    buildGroupSizeOptions(groupSizeSelect, currentSize);
+
+    // Build members
+    syncMemberBlocks(currentSize, existingMembersByIndex);
+
+    groupSizeSelect.addEventListener('change', () => {
+      const size = Math.max(2, parseInt(groupSizeSelect.value, 10) || 2);
+      syncMemberBlocks(size, existingMembersByIndex);
+    });
+
+    // Submit
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const safetyAccepted = document.getElementById('safetyAccepted');
+      if (!safetyAccepted.checked) {
+        safetyModal.style.display = 'flex';
+        return;
+      }
+
+      if (!validateRequiredFields(form)) {
+        alert('Please complete all required fields before submitting.');
+        return;
+      }
+
+      const size = Math.max(2, parseInt(groupSizeSelect.value, 10) || 2);
+
+      const members = [];
+      // Member 1 (leader)
+      members.push({
+        member_index: 1,
+        first_name: document.getElementById('leaderFirstName').value.trim(),
+        last_name: document.getElementById('leaderLastName').value.trim(),
+        email: document.getElementById('leaderEmail').value.trim(),
+        phone: document.getElementById('leaderPhone').value.trim(),
+        emergency_contact_name: document.getElementById('leaderECName').value.trim(),
+        emergency_contact_phone: document.getElementById('leaderECPhone').value.trim()
+      });
+
+      for (let i = 2; i <= size; i++) {
+        members.push({
+          member_index: i,
+          first_name: document.getElementById(`m${i}_first`).value.trim(),
+          last_name: document.getElementById(`m${i}_last`).value.trim(),
+          email: document.getElementById(`m${i}_email`).value.trim(),
+          phone: document.getElementById(`m${i}_phone`).value.trim(),
+          emergency_contact_name: document.getElementById(`m${i}_ecname`).value.trim(),
+          emergency_contact_phone: document.getElementById(`m${i}_ecphone`).value.trim()
+        });
+      }
+
+      const payload = {
+        token,
+        team_name: (document.getElementById('teamName').value || '').trim(),
+        group_size: size,
+        members
+      };
+
+      try {
+        const r = await fetch('submit_team_details.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const out = await r.json();
+        if (out && out.success) {
+          successModal.style.display = 'flex';
+          return;
+        }
+
+        alert((out && out.error) ? out.error : 'Error submitting team details.');
+      } catch (err) {
+        alert('Error submitting team details.');
+      }
+    });
+
+  } catch (err) {
+    setError('Unable to load team details.');
+  }
+})();
+</script>
+
+</body>
+</html>
