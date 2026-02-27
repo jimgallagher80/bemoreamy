@@ -37,18 +37,61 @@ if (!isset($_SESSION['admin_logged_in'])):
 exit;
 endif;
 
-/* -------- EMAIL FUNCTION -------- */
+/* -------- UTIL -------- */
 
 function sendEmail($to, $subject, $message) {
     $headers = "From: Be More Amy <noreply@bemoreamy.com>\r\n";
-    $headers .= "Reply-To: noreply@bemoreamy.com\r\n";
+    $headers .= "Reply-To: hello@bemoreamy.com\r\n";
     $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-    mail($to, $subject, $message, $headers);
+    @mail($to, $subject, $message, $headers);
 }
 
-function buildStatusEmailBody($signup, $legs) {
+function randomToken($len = 48) {
+    return bin2hex(random_bytes((int)($len/2)));
+}
+
+function ensureTeamDetailsToken(PDO $pdo, int $signupId): string {
+    // If token exists, return it
+    $q = $pdo->prepare("SELECT team_details_token FROM signups WHERE id = ?");
+    $q->execute([$signupId]);
+    $existing = $q->fetchColumn();
+    if ($existing) return (string)$existing;
+
+    // Create token (retry on rare collision)
+    for ($i=0; $i<5; $i++) {
+        $token = randomToken(48);
+        try {
+            $u = $pdo->prepare("
+                UPDATE signups
+                SET team_details_token = ?, team_details_token_created_at = NOW()
+                WHERE id = ? AND (team_details_token IS NULL OR team_details_token = '')
+            ");
+            $u->execute([$token, $signupId]);
+
+            // confirm
+            $q->execute([$signupId]);
+            $final = $q->fetchColumn();
+            if ($final) return (string)$final;
+
+        } catch (Exception $e) {
+            // collision -> loop
+        }
+    }
+
+    // last attempt to read whatever is there
+    $q->execute([$signupId]);
+    $final = $q->fetchColumn();
+    return $final ? (string)$final : '';
+}
+
+function buildStatusEmailBody(PDO $pdo, array $signup, array $legs) {
     $lines = [];
     $hasWaitlist = false;
+
+    $hasConfirmed = false;
+    foreach ($legs as $row) {
+        if ($row['status'] === 'confirmed') { $hasConfirmed = true; break; }
+    }
 
     foreach ($legs as $row) {
         $legNum = (int)$row['leg_number'];
@@ -84,6 +127,16 @@ function buildStatusEmailBody($signup, $legs) {
         $body .= "If we have recorded your interest for a leg that is currently taken, we will be in touch should that leg become available due to the other team pulling out.\n\n";
     }
 
+    // Only include team-details link if at least one confirmed leg
+    if ($hasConfirmed) {
+        $token = ensureTeamDetailsToken($pdo, (int)$signup['id']);
+        if ($token) {
+            $body .= "Next step: please provide your full team details using your unique link:\n";
+            $body .= "https://bemoreamy.com/team-details.html?token=" . urlencode($token) . "\n\n";
+            $body .= "This link is unique to you. Please do not share it.\n\n";
+        }
+    }
+
     $body .= "You can view the confirmed signups here: https://bemoreamy.com/signup-status.html\n\n";
     $body .= "Be More Amy Team";
 
@@ -97,16 +150,12 @@ $flash = '';
 if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
     $signupId = (int)$_POST['signup_id'];
 
-    // apply[leg_number] = 1  (checkboxes)
     $apply = $_POST['apply'] ?? [];
-    // decision[leg_number] = approve|reject|skip
     $decisions = $_POST['decision'] ?? [];
-    // reason[leg_number] = text
     $reasons = $_POST['reason'] ?? [];
 
     if ($signupId > 0 && is_array($decisions) && is_array($apply)) {
 
-        // Load signup
         $s = $pdo->prepare("SELECT * FROM signups WHERE id = ?");
         $s->execute([$signupId]);
         $signup = $s->fetch(PDO::FETCH_ASSOC);
@@ -117,10 +166,7 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
             try {
                 foreach ($decisions as $legKey => $decision) {
 
-                    // Only process legs that were ticked
-                    if (!isset($apply[$legKey])) {
-                        continue;
-                    }
+                    if (!isset($apply[$legKey])) continue;
 
                     $legNum = (int)$legKey;
                     $decision = trim((string)$decision);
@@ -129,7 +175,6 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
                     if ($decision === 'skip' || $decision === '') continue;
 
                     if ($decision === 'approve') {
-                        // Is leg already taken by someone else?
                         $t = $pdo->prepare("
                             SELECT COUNT(*)
                             FROM signup_legs
@@ -152,9 +197,7 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
 
                     if ($decision === 'reject') {
                         $reason = trim((string)($reasons[$legKey] ?? ''));
-                        if ($reason === '') {
-                            $reason = 'Rejected by admin';
-                        }
+                        if ($reason === '') $reason = 'Rejected by admin';
 
                         $u = $pdo->prepare("
                             UPDATE signup_legs
@@ -165,12 +208,10 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
                     }
                 }
 
-                // Keep parent signup status as pending (container)
                 $pdo->prepare("UPDATE signups SET status = 'pending' WHERE id = ?")->execute([$signupId]);
 
                 $pdo->commit();
 
-                // Send ONE email after all decisions applied
                 $legsStmt = $pdo->prepare("
                     SELECT leg_number, status, rejection_reason
                     FROM signup_legs
@@ -181,7 +222,7 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
                 $legs = $legsStmt->fetchAll(PDO::FETCH_ASSOC);
 
                 $subject = "BE MORE AMY: Update on your leg selection(s)";
-                $message = buildStatusEmailBody($signup, $legs);
+                $message = buildStatusEmailBody($pdo, $signup, $legs);
                 sendEmail($signup['email'], $subject, $message);
 
                 $flash = "Updated signup #{$signupId}. One email sent to the applicant.";
@@ -200,29 +241,18 @@ $filter_status = $_GET['status'] ?? 'all';
 $filter_leg = $_GET['leg'] ?? 'all';
 
 $allowed_status = ['all','pending','confirmed','waitlist','rejected'];
-if (!in_array($filter_status, $allowed_status, true)) {
-    $filter_status = 'all';
-}
+if (!in_array($filter_status, $allowed_status, true)) $filter_status = 'all';
 
 if ($filter_leg !== 'all') {
     $filter_leg = (string)(int)$filter_leg;
-    if ($filter_leg === '0') {
-        $filter_leg = 'all';
-    }
+    if ($filter_leg === '0') $filter_leg = 'all';
 }
 
 $where = [];
 $params = [];
 
-if ($filter_status !== 'all') {
-    $where[] = "sl.status = ?";
-    $params[] = $filter_status;
-}
-
-if ($filter_leg !== 'all') {
-    $where[] = "sl.leg_number = ?";
-    $params[] = (int)$filter_leg;
-}
+if ($filter_status !== 'all') { $where[] = "sl.status = ?"; $params[] = $filter_status; }
+if ($filter_leg !== 'all') { $where[] = "sl.leg_number = ?"; $params[] = (int)$filter_leg; }
 
 $where_sql = count($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
@@ -259,13 +289,11 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// legs list for dropdown filter
 $legs_stmt = $pdo->query("SELECT DISTINCT leg_number FROM signup_legs ORDER BY leg_number ASC");
 $leg_numbers = $legs_stmt->fetchAll(PDO::FETCH_COLUMN);
 
 $current_qs = http_build_query(['status' => $filter_status, 'leg' => $filter_leg]);
 
-// Group rows by signup_id for display
 $grouped = [];
 foreach ($rows as $r) {
     $sid = (int)$r['signup_id'];
@@ -294,12 +322,7 @@ textarea, input[type="text"] { width:100%; margin-top:6px; padding:8px; }
 .pill { display:inline-block; padding:2px 8px; border:1px solid #ccc; border-radius:999px; font-size:12px; margin-left:6px; }
 .pill-taken { border-color:#c00; color:#c00; }
 .pill-available { border-color:#090; color:#090; }
-.grid {
-  display:grid;
-  grid-template-columns: 24px 1fr 180px;
-  gap:10px;
-  align-items:start;
-}
+.grid { display:grid; grid-template-columns: 24px 1fr 180px; gap:10px; align-items:start; }
 select { padding:6px; width:100%; }
 </style>
 </head>
@@ -317,12 +340,11 @@ select { padding:6px; width:100%; }
     <div>
       <label>Status</label><br>
       <select name="status" style="padding:8px;">
-        <?php
-        foreach ($allowed_status as $st) {
+        <?php foreach ($allowed_status as $st):
           $sel = ($filter_status === $st) ? 'selected' : '';
-          echo "<option value='{$st}' {$sel}>{$st}</option>";
-        }
-        ?>
+          ?>
+          <option value="<?php echo htmlspecialchars($st); ?>" <?php echo $sel; ?>><?php echo htmlspecialchars($st); ?></option>
+        <?php endforeach; ?>
       </select>
     </div>
 
