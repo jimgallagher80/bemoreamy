@@ -7,6 +7,8 @@
   const GREY = "#6a6a6a";
 
   const LEG_SIGNUPS_URL = "get_leg_signups.php";
+  const TAKEN_LEGS_URL = "get_taken_legs.php";
+  let TAKEN_LEGS = new Set();
   let signupsByLeg = null; // loaded once, approved-only counts + names
 
   // Estimated set off and finish times per leg
@@ -64,6 +66,50 @@
     return `${hhmm} ${day} ${dd} ${mon}`;
   }
 
+  function parseLegDateTime(dateTimeStr) {
+    // "Sat 16 May 2026 08:00"
+    if (!dateTimeStr) return null;
+    const parts = String(dateTimeStr).trim().split(/\s+/);
+    if (parts.length < 5) return null;
+    const dd = parseInt(parts[1], 10);
+    const monStr = parts[2];
+    const yyyy = parseInt(parts[3], 10);
+    const hm = parts[4].split(":");
+    const hh = parseInt(hm[0], 10);
+    const mm = parseInt(hm[1], 10);
+
+    const months = {
+      Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+      Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+    };
+    const mon = months[monStr];
+    if (Number.isNaN(dd) || Number.isNaN(yyyy) || Number.isNaN(hh) || Number.isNaN(mm)) return null;
+    if (typeof mon !== "number") return null;
+
+    // Use UTC to avoid locale parsing issues
+    return new Date(Date.UTC(yyyy, mon, dd, hh, mm, 0));
+  }
+
+  function formatDurationShort(totalMinutes) {
+    if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return "—";
+    const mins = Math.round(totalMinutes);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h <= 0) return `${m}m`;
+    return `${h}h${String(m).padStart(2, "0")}`;
+  }
+
+  function getLegDurationShort(legNumber) {
+    const key = String(legNumber);
+    const t = (LEG_TIMES && LEG_TIMES[key]) ? LEG_TIMES[key] : null;
+    if (!t) return "—";
+    const a = parseLegDateTime(t.setoff);
+    const b = parseLegDateTime(t.finish);
+    if (!a || !b) return "—";
+    const mins = (b.getTime() - a.getTime()) / 60000;
+    return formatDurationShort(mins);
+  }
+
   function getLegTiming(legNumber) {
     const key = String(legNumber);
     const t = (LEG_TIMES && LEG_TIMES[key]) ? LEG_TIMES[key] : null;
@@ -83,6 +129,33 @@
     } catch (e) {
       return null;
     }
+  }
+
+  async function loadTakenLegs() {
+    try {
+      const res = await fetch(TAKEN_LEGS_URL, { cache: "no-store" });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.taken_legs)) {
+        TAKEN_LEGS = new Set(data.taken_legs.map((n) => String(n)));
+      } else {
+        TAKEN_LEGS = new Set();
+      }
+      return true;
+    } catch (e) {
+      TAKEN_LEGS = new Set();
+      return null;
+    }
+  }
+
+  function applyAvailabilityToSelect(selectEl) {
+    if (!selectEl) return;
+    Array.from(selectEl.options).forEach((opt) => {
+      if (!opt.value) return;
+      if (!opt.dataset.baseText) opt.dataset.baseText = opt.textContent;
+      const taken = TAKEN_LEGS.has(String(opt.value));
+      opt.textContent = opt.dataset.baseText + (taken ? " - Taken" : " - Available");
+    });
   }
 
   function getLegSignupInfo(legKey) {
@@ -218,146 +291,116 @@
 
   function setExpanded() {
     document.body.classList.add("compact-header");
-    panel.classList.remove("collapsed");
     panel.classList.add("expanded");
-    panelTip.style.display = "none";
+    panel.classList.remove("collapsed");
     panelExpanded.style.display = "block";
-  }
-
-  function clearFinishFlag() {
-    if (finishMarker) {
-      finishMarker.remove();
-      finishMarker = null;
-    }
-  }
-
-  function lineStyle(state) {
-    const isSelected = state === "selected";
-    const isDim = state === "dim";
-    const color = isSelected ? ORANGE : (isDim ? "#bcbcbc" : GREY);
-    const weight = isSelected ? 6 : 4;
-    return { color, weight, opacity: 0.95 };
-  }
-
-  function formatKm(km) {
-    const n = Number(km);
-    if (!Number.isFinite(n)) return "—";
-    return `${n.toFixed(1)} km`;
-  }
-
-  function formatM(m) {
-    const n = Number(m);
-    if (!Number.isFinite(n)) return "—";
-    return `${Math.round(n)} m`;
-  }
-
-  function asLink(url, text) {
-    const u = safe(url);
-    if (!u || u === "—") return "—";
-    return `<a href="${u}" target="_blank" rel="noopener">${text}</a>`;
-  }
-
-  function applySelectionStyles(selectedKey) {
-    for (const [k, layer] of layerByLeg.entries()) {
-      layer.setStyle(lineStyle(k === selectedKey ? "selected" : "dim"));
-    }
-    for (const [k, marker] of markerByLeg.entries()) {
-      marker.setIcon(diamondIcon(k, k === selectedKey ? "selected" : "dim"));
-    }
+    panelTip.style.display = "none";
   }
 
   function clearSelection(restoreView) {
+    if (selectedLegKey) {
+      const marker = markerByLeg.get(selectedLegKey);
+      if (marker) marker.setIcon(diamondIcon(selectedLegKey, "normal"));
+      const layer = layerByLeg.get(selectedLegKey);
+      if (layer) layer.setStyle(lineStyle("normal"));
+    }
+
     selectedLegKey = null;
     legSelect.value = "";
+
+    if (finishMarker) {
+      map.removeLayer(finishMarker);
+      finishMarker = null;
+    }
+
+    if (restoreView && lastSelectedCenter && lastSelectedZoom !== null) {
+      map.setView(lastSelectedCenter, lastSelectedZoom, { animate: true });
+    }
+
     setCollapsed();
-    clearFinishFlag();
-
-    for (const layer of layerByLeg.values()) layer.setStyle(lineStyle("normal"));
-    for (const [k, marker] of markerByLeg.entries()) marker.setIcon(diamondIcon(k, "normal"));
-
-    if (restoreView && lastSelectedCenter && Number.isFinite(lastSelectedZoom)) {
-      map.setView(lastSelectedCenter, lastSelectedZoom);
-    }
   }
 
-  function renderDetails(props) {
-    const leg = safe(props.leg);
-    const start = safe(props.start);
-    const end = safe(props.end);
-
-    panelLegTitle.textContent = `Leg ${leg}`;
-    panelSubtitle.textContent = (start !== "—" && end !== "—") ? `${start} to ${end}` : "";
-
-    const t = getLegTiming(props.leg);
-
-    detailsGrid.innerHTML = `
-      <div class="row"><div class="label">Distance</div><div class="value">${formatKm(props.distance_km)}</div></div>
-      <div class="row"><div class="label">Elevation gain</div><div class="value">${formatM(props.elevation_gain_m)}</div></div>
-      <div class="row"><div class="label">Difficulty</div><div class="value">${safe(props.difficulty)}</div></div>
-      <div class="row"><div class="label">Estimated set off time</div><div class="value">${t.setoff}</div></div>
-      <div class="row"><div class="label">Estimated finish time</div><div class="value">${t.finish}</div></div>
-      <div class="row"><div class="label">Strava route</div><div class="value">${asLink(props.strava_url, "Open")}</div></div>
-      <div class="row"><div class="label">Strava GPX</div><div class="value">${asLink(props.strava_gpx_url, "Download")}</div></div>
-    `;
-  }
-
-  function openPanelForLeg(legKey, centerAndZoom) {
-    selectedLegKey = String(legKey);
-
-    const props = propsByLeg.get(selectedLegKey);
-    if (!props) return;
-
-    setExpanded();
-    applySelectionStyles(selectedLegKey);
-    renderDetails(props);
-    const sv = document.getElementById("signupsValue");
-    if (sv && signupsByLeg) sv.innerHTML = renderSignupsValue(props.leg);
-
-    clearFinishFlag();
-    const endpoints = endpointsByLeg.get(selectedLegKey);
-    if (endpoints && Array.isArray(endpoints.end)) {
-      finishMarker = L.marker(endpoints.end, { icon: finishIcon() }).addTo(map);
-    } else {
-      const finishLat = props.finish_lat;
-      const finishLng = props.finish_lng;
-      if (finishLat && finishLng) {
-        finishMarker = L.marker([finishLat, finishLng], { icon: finishIcon() }).addTo(map);
-      }
-    }
-
-    legSelect.value = selectedLegKey;
-
-    if (centerAndZoom) {
-      const layer = layerByLeg.get(selectedLegKey);
-      if (layer) {
-        map.fitBounds(layer.getBounds(), { padding: [35, 35] });
-      }
-    }
+  function lineStyle(mode) {
+    if (mode === "selected") return { color: ORANGE, weight: 6, opacity: 1 };
+    if (mode === "dim") return { color: GREY, weight: 4, opacity: 0.55 };
+    return { color: GREY, weight: 4, opacity: 0.9 };
   }
 
   function getFeatureEndpoints(feature) {
     try {
-      const g = feature && feature.geometry;
-      if (!g) return null;
-
-      // GeoJSON uses [lng, lat]
-      const toLatLng = (c) => [c[1], c[0]];
-
-      if (g.type === "LineString" && Array.isArray(g.coordinates) && g.coordinates.length) {
-        const coords = g.coordinates;
-        return { start: toLatLng(coords[0]), end: toLatLng(coords[coords.length - 1]) };
-      }
-
-      if (g.type === "MultiLineString" && Array.isArray(g.coordinates) && g.coordinates.length) {
-        const firstLine = g.coordinates[0];
-        const lastLine = g.coordinates[g.coordinates.length - 1];
-        if (!firstLine || !firstLine.length || !lastLine || !lastLine.length) return null;
-        return { start: toLatLng(firstLine[0]), end: toLatLng(lastLine[lastLine.length - 1]) };
-      }
-
-      return null;
+      const coords = feature.geometry && feature.geometry.coordinates;
+      if (!coords || !coords.length) return null;
+      const first = coords[0];
+      const last = coords[coords.length - 1];
+      if (!first || !last) return null;
+      return { start: [first[1], first[0]], end: [last[1], last[0]] };
     } catch (e) {
       return null;
+    }
+  }
+
+  function setFinishMarker(legKey) {
+    const endpoints = endpointsByLeg.get(String(legKey));
+    if (!endpoints) return;
+
+    if (finishMarker) {
+      map.removeLayer(finishMarker);
+      finishMarker = null;
+    }
+
+    finishMarker = L.marker(endpoints.end, { icon: finishIcon() }).addTo(map);
+  }
+
+  function openPanelForLeg(legKey, zoomToLeg) {
+    const key = String(legKey);
+    const props = propsByLeg.get(key);
+
+    if (!props) return;
+
+    if (selectedLegKey && selectedLegKey !== key) {
+      const prevMarker = markerByLeg.get(selectedLegKey);
+      if (prevMarker) prevMarker.setIcon(diamondIcon(selectedLegKey, "dim"));
+      const prevLayer = layerByLeg.get(selectedLegKey);
+      if (prevLayer) prevLayer.setStyle(lineStyle("dim"));
+    }
+
+    selectedLegKey = key;
+
+    const marker = markerByLeg.get(key);
+    if (marker) marker.setIcon(diamondIcon(key, "selected"));
+
+    const layer = layerByLeg.get(key);
+    if (layer) layer.setStyle(lineStyle("selected"));
+
+    legSelect.value = key;
+
+    const timing = getLegTiming(key);
+    const distance = props.distance_km ? `${Number(props.distance_km).toFixed(1)} km` : "—";
+    const elev = props.elevation_gain_m ? `${Math.round(Number(props.elevation_gain_m))} m` : "—";
+
+    panelLegTitle.textContent = `Leg ${key}`;
+    panelSubtitle.textContent = `${safe(props.start)} → ${safe(props.end)}`;
+
+    detailsGrid.innerHTML = `
+      <div class="row"><div class="label">Start</div><div class="value">${safe(props.start)}</div></div>
+      <div class="row"><div class="label">Finish</div><div class="value">${safe(props.end)}</div></div>
+      <div class="row"><div class="label">Distance</div><div class="value">${distance}</div></div>
+      <div class="row"><div class="label">Elevation gain</div><div class="value">${elev}</div></div>
+      <div class="row"><div class="label">Difficulty</div><div class="value">${safe(props.difficulty)}</div></div>
+      <div class="row"><div class="label">Signed up</div><div class="value" id="signupsValue">${renderSignupsValue(key)}</div></div>
+      <div class="row"><div class="label">Estimated set off time</div><div class="value">${timing.setoff}</div></div>
+      <div class="row"><div class="label">Estimated finish time</div><div class="value">${timing.finish}</div></div>
+    `;
+
+    setFinishMarker(key);
+
+    setExpanded();
+
+    if (zoomToLeg && layer) {
+      const bounds = layer.getBounds();
+      if (bounds && bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [22, 22] });
+      }
     }
   }
 
@@ -401,7 +444,13 @@
 
         const opt = document.createElement("option");
         opt.value = legKey;
-        opt.textContent = `Leg ${legKey}`;
+        const timing = getLegTiming(legKey);
+        const duration = getLegDurationShort(legKey);
+
+        const startName = (p && p.start) ? p.start : "—";
+        const endName = (p && p.end) ? p.end : "—";
+        opt.textContent = `Leg ${legKey}: ${startName} (${timing.setoff}) → ${endName} (${duration})`;
+        opt.dataset.baseText = opt.textContent;
         legSelect.appendChild(opt);
       },
     }).addTo(map);
@@ -435,6 +484,7 @@
 
   Promise.all([
     loadGeojson(),
+    loadTakenLegs(),
     loadLegSignups().then((d) => {
       signupsByLeg = d;
       if (selectedLegKey) {
@@ -444,7 +494,10 @@
       }
     })
   ])
-    .then(() => wireUI())
+    .then(() => {
+      applyAvailabilityToSelect(legSelect);
+      wireUI();
+    })
     .catch((err) => {
       console.error(err);
       panelTip.textContent = "Couldn’t load the route. Please try again.";
