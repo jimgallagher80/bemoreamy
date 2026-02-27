@@ -1,27 +1,40 @@
 <?php
 header('Content-Type: application/json');
 
-try {
-    require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/db.php';
 
-    // A leg is considered taken if it has at least one CONFIRMED record
+try {
+
     $stmt = $pdo->query("
-        SELECT DISTINCT leg_number
-        FROM signup_legs
-        WHERE status = 'confirmed'
-        ORDER BY leg_number ASC
+        SELECT 
+            sl.leg_number,
+            s.team_name,
+            s.team_leader_first_name,
+            s.team_leader_surname
+        FROM signup_legs sl
+        JOIN signups s ON s.id = sl.signup_id
+        WHERE sl.status = 'confirmed'
     ");
 
-    $legs = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode([
-        'success' => true,
-        'taken_legs' => array_map('intval', $legs)
-    ]);
+    $taken = [];
+
+    foreach ($rows as $row) {
+
+        $teamName = trim((string)$row['team_name']);
+
+        if ($teamName === '') {
+            $teamName = $row['team_leader_first_name'] . ' ' .
+                        $row['team_leader_surname'] . "'s Team";
+        }
+
+        $taken[(int)$row['leg_number']] = $teamName;
+    }
+
+    echo json_encode($taken);
+
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Failed to load taken legs'
-    ]);
+    echo json_encode([]);
 }
