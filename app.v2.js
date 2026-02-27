@@ -294,7 +294,6 @@
       <div class="row"><div class="label">Distance</div><div class="value">${formatKm(props.distance_km)}</div></div>
       <div class="row"><div class="label">Elevation gain</div><div class="value">${formatM(props.elevation_gain_m)}</div></div>
       <div class="row"><div class="label">Difficulty</div><div class="value">${safe(props.difficulty)}</div></div>
-      <div class="row"><div class="label">Signed up</div><div class="value" id="signupsValue">${renderSignupsValue(props.leg)}</div></div>
       <div class="row"><div class="label">Estimated set off time</div><div class="value">${t.setoff}</div></div>
       <div class="row"><div class="label">Estimated finish time</div><div class="value">${t.finish}</div></div>
       <div class="row"><div class="label">Strava route</div><div class="value">${asLink(props.strava_url, "Open")}</div></div>
