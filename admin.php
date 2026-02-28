@@ -401,9 +401,9 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
 
           <div class="decision">
             <select name="decision[<?php echo $legNum; ?>]" data-leg="<?php echo $legNum; ?>">
-              <option value="skip" <?php echo ($st === \'confirmed\' || $st === \'rejected\') ? \'\' : \'selected\'; ?>>Pending</option>
-                  <option value="approve" <?php echo ($st === \'confirmed\') ? \'selected\' : \'\'; ?>>Approve</option>
-                  <option value="reject" <?php echo ($st === \'rejected\') ? \'selected\' : \'\'; ?>>Reject</option>
+              <option value="skip" <?php echo ($st === "pending") ? "selected" : ""; ?>>Pending</option>
+              <option value="approve" <?php echo ($st === "confirmed") ? "selected" : ""; ?>>Approve</option>
+              <option value="reject" <?php echo ($st === "rejected") ? "selected" : ""; ?>>Reject</option>
             </select>
             <input class="reason-input" type="text" name="reason[<?php echo $legNum; ?>]" placeholder="Rejection reason" data-reason-for="<?php echo $legNum; ?>">
           </div>
@@ -461,9 +461,9 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
 
               <div class="decision">
                 <select name="decision[<?php echo $legNum; ?>]" data-leg="<?php echo $legNum; ?>">
-                  <option value="skip" <?php echo ($st === \'confirmed\' || $st === \'rejected\') ? \'\' : \'selected\'; ?>>Pending</option>
-                  <option value="approve" <?php echo ($st === \'confirmed\') ? \'selected\' : \'\'; ?>>Approve</option>
-                  <option value="reject" <?php echo ($st === \'rejected\') ? \'selected\' : \'\'; ?>>Reject</option>
+              <option value="skip" <?php echo ($st === "pending") ? "selected" : ""; ?>>Pending</option>
+              <option value="approve" <?php echo ($st === "confirmed") ? "selected" : ""; ?>>Approve</option>
+              <option value="reject" <?php echo ($st === "rejected") ? "selected" : ""; ?>>Reject</option>
                 </select>
                 <input class="reason-input" type="text" name="reason[<?php echo $legNum; ?>]" placeholder="Rejection reason" data-reason-for="<?php echo $legNum; ?>">
               </div>
