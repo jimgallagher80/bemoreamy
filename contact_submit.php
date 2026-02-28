@@ -36,7 +36,7 @@ if (!$consent) {
 }
 
 // Recipient (kept server-side so it is not visible in public page source)
-$to = "jimgallagher@me.com";
+$to = "hello@bemoreamy.com";
 
 $fullSubject = "[Be More Amy] " . $subject;
 
