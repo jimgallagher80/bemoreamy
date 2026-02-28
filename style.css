@@ -207,6 +207,20 @@ body {
   filter: brightness(0.98);
 }
 
+/* Footer Social Logos */
+.bma-social-footer {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 40px 0 30px 0;
+}
+
+.bma-social-footer img {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+}
+
 /* Mobile tweaks */
 @media (max-width: 420px) {
   .header-inner { padding: 10px 12px; }
