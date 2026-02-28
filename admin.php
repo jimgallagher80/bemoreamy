@@ -150,11 +150,10 @@ $flash = '';
 if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
     $signupId = (int)$_POST['signup_id'];
 
-    $apply = $_POST['apply'] ?? [];
     $decisions = $_POST['decision'] ?? [];
     $reasons = $_POST['reason'] ?? [];
 
-    if ($signupId > 0 && is_array($decisions) && is_array($apply)) {
+    if ($signupId > 0 && is_array($decisions)) {
 
         $s = $pdo->prepare("SELECT * FROM signups WHERE id = ?");
         $s->execute([$signupId]);
@@ -165,8 +164,6 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
 
             try {
                 foreach ($decisions as $legKey => $decision) {
-
-                    if (!isset($apply[$legKey])) continue;
 
                     $legNum = (int)$legKey;
                     $decision = trim((string)$decision);
@@ -225,7 +222,10 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
                 $message = buildStatusEmailBody($pdo, $signup, $legs);
                 sendEmail($signup['email'], $subject, $message);
 
-                $flash = "Updated signup #{$signupId}. One email sent to the applicant.";
+                $nameForSent = trim((string)$signup['team_leader_first_name'] . ' ' . (string)$signup['team_leader_surname']);
+                $emailForSent = (string)$signup['email'];
+                header('Location: admin.php?sent=1&name=' . rawurlencode($nameForSent) . '&email=' . rawurlencode($emailForSent));
+                exit;
             } catch (Exception $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
                 $flash = "Error updating signup #{$signupId}.";
@@ -235,26 +235,14 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
     }
 }
 
-/* -------- FILTERS -------- */
+/* -------- DATA (NO FILTERS ON MAIN ADMIN VIEW) -------- */
 
-$filter_status = $_GET['status'] ?? 'all';
-$filter_leg = $_GET['leg'] ?? 'all';
-
-$allowed_status = ['all','pending','confirmed','waitlist','rejected'];
-if (!in_array($filter_status, $allowed_status, true)) $filter_status = 'all';
-
-if ($filter_leg !== 'all') {
-    $filter_leg = (string)(int)$filter_leg;
-    if ($filter_leg === '0') $filter_leg = 'all';
-}
-
-$where = [];
+$filter_status = 'all';
+$filter_leg = 'all';
+$where_sql = '';
 $params = [];
 
-if ($filter_status !== 'all') { $where[] = "sl.status = ?"; $params[] = $filter_status; }
-if ($filter_leg !== 'all') { $where[] = "sl.leg_number = ?"; $params[] = (int)$filter_leg; }
-
-$where_sql = count($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+$current_qs = '';
 
 $sql = "
     SELECT
@@ -311,7 +299,7 @@ foreach ($rows as $r) {
 body { font-family:sans-serif; padding:30px; }
 .signup { border:1px solid #ccc; padding:12px; margin-bottom:12px; }
 button { margin-right:8px; padding:6px 10px; }
-textarea, input[type="text"] { width:100%; margin-top:6px; padding:8px; }
+input[type="text"] { width:100%; margin-top:6px; padding:8px; }
 .status-confirmed { color:green; font-weight:700; }
 .status-pending { color:orange; font-weight:700; }
 .status-waitlist { color:#6b4e00; font-weight:700; }
@@ -321,9 +309,17 @@ textarea, input[type="text"] { width:100%; margin-top:6px; padding:8px; }
 .leg-row { border-top:1px solid #eee; padding-top:10px; margin-top:10px; }
 .pill { display:inline-block; padding:2px 8px; border:1px solid #ccc; border-radius:999px; font-size:12px; margin-left:6px; }
 .pill-taken { border-color:#c00; color:#c00; }
-.pill-available { border-color:#090; color:#090; }
-.grid { display:grid; grid-template-columns: 24px 1fr 180px; gap:10px; align-items:start; }
-select { padding:6px; width:100%; }
+.grid { display:grid; grid-template-columns: 1fr 220px; gap:10px; align-items:start; }
+.decision select { padding:6px; width:100%; }
+.reason-input { display:none; }
+.processed { border:1px solid #ddd; padding:10px; background:#f9f9f9; }
+.processed summary { cursor:pointer; font-weight:700; }
+.processed[open] { background:#fff; }
+@media (max-width: 640px) {
+  body { padding:18px; }
+  .grid { grid-template-columns: 1fr; }
+  .decision { margin-top:8px; }
+}
 </style>
 </head>
 <body>
@@ -335,49 +331,29 @@ select { padding:6px; width:100%; }
   <p style="background:#e8f5e9;border:1px solid #c8e6c9;padding:10px;"><?php echo htmlspecialchars($flash); ?></p>
 <?php endif; ?>
 
+<?php
+if (isset($_GET['sent']) && $_GET['sent'] === '1') {
+    $n = $_GET['name'] ?? '';
+    $e = $_GET['email'] ?? '';
+    $msg = "Email has been sent to {$n} at {$e}";
+    echo "<script>window.addEventListener('load', function(){ alert(" . json_encode($msg) . "); });</script>";
+}
+?>
+
 <div class="filters">
-  <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
-    <div>
-      <label>Status</label><br>
-      <select name="status" style="padding:8px;">
-        <?php foreach ($allowed_status as $st):
-          $sel = ($filter_status === $st) ? 'selected' : '';
-          ?>
-          <option value="<?php echo htmlspecialchars($st); ?>" <?php echo $sel; ?>><?php echo htmlspecialchars($st); ?></option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-
-    <div>
-      <label>Leg</label><br>
-      <select name="leg" style="padding:8px;">
-        <option value="all" <?php echo ($filter_leg === 'all') ? 'selected' : ''; ?>>All</option>
-        <?php foreach ($leg_numbers as $ln):
-          $ln = (int)$ln;
-          $sel = ((string)$ln === (string)$filter_leg) ? 'selected' : '';
-          ?>
-          <option value="<?php echo $ln; ?>" <?php echo $sel; ?>><?php echo $ln; ?></option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-
-    <div>
-      <button type="submit" style="padding:10px 14px;">Apply</button>
-      <a href="admin.php" style="margin-left:10px;">Reset</a>
-    </div>
-
+  <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
     <div style="margin-left:auto;">
-      <a href="admin_full_table.php?<?php echo $current_qs; ?>">Display full table</a> |
-      <a href="export_signups.php?<?php echo $current_qs; ?>">Export CSV</a>
+      <a href="admin_full_table.php">Display full table</a> |
+      <a href="export_signups.php">Export CSV</a>
     </div>
-  </form>
+  </div>
 </div>
 
-<?php if (empty($grouped)): ?>
-  <p>No signups found for the selected filters.</p>
+<?php if (empty($pending_grouped)): ?>
+  <p>No pending submissions.</p>
 <?php endif; ?>
 
-<?php foreach ($grouped as $sid => $items):
+<?php foreach ($pending_grouped as $sid => $items):
   $head = $items[0];
 ?>
 <div class="signup">
@@ -390,33 +366,20 @@ select { padding:6px; width:100%; }
     Safety accepted: <?php echo ((int)$head['safety_accepted'] === 1) ? 'Yes' : 'No'; ?>
   </div>
 
-  <form method="post" style="margin-top:12px;">
+  <form method="post" style="margin-top:10px;">
     <input type="hidden" name="signup_id" value="<?php echo (int)$sid; ?>">
 
     <?php foreach ($items as $r):
       $legNum = (int)$r['leg_number'];
-      $st = $r['leg_status'];
-
-      $statusClass = 'status-pending';
-      if ($st === 'confirmed') $statusClass = 'status-confirmed';
-      if ($st === 'waitlist') $statusClass = 'status-waitlist';
-      if ($st === 'rejected') $statusClass = 'status-rejected';
-
-      $takenByOther = ((int)$r['taken_by_other'] > 0);
-      $pillClass = $takenByOther ? 'pill pill-taken' : 'pill pill-available';
-      $pillText = $takenByOther ? 'Taken' : 'Available';
+      $st = (string)$r['leg_status'];
+      $statusClass = ($st === 'confirmed') ? 'status-confirmed' : (($st === 'rejected') ? 'status-rejected' : (($st === 'waitlist') ? 'status-waitlist' : 'status-pending'));
     ?>
       <div class="leg-row">
         <div class="grid">
           <div>
-            <input type="checkbox" name="apply[<?php echo $legNum; ?>]" value="1">
-          </div>
-
-          <div>
             <strong>Leg <?php echo $legNum; ?></strong>
-            <span class="<?php echo $pillClass; ?>"><?php echo $pillText; ?></span>
             <?php if ((int)$r['was_taken'] === 1): ?>
-              <span class="pill pill-taken">Was taken at submission</span>
+              <span class="pill pill-taken">Waitlist</span>
             <?php endif; ?>
             <div class="<?php echo $statusClass; ?>">Current status: <?php echo htmlspecialchars($st); ?></div>
             <?php if (!empty($r['rejection_reason'])): ?>
@@ -424,27 +387,112 @@ select { padding:6px; width:100%; }
             <?php endif; ?>
           </div>
 
-          <div>
-            <select name="decision[<?php echo $legNum; ?>]">
+          <div class="decision">
+            <select name="decision[<?php echo $legNum; ?>]" data-leg="<?php echo $legNum; ?>">
               <option value="skip">No change</option>
               <option value="approve">Approve</option>
               <option value="reject">Reject</option>
             </select>
-            <input type="text" name="reason[<?php echo $legNum; ?>]" placeholder="Rejection reason (if rejecting)">
+            <input class="reason-input" type="text" name="reason[<?php echo $legNum; ?>]" placeholder="Rejection reason" data-reason-for="<?php echo $legNum; ?>">
           </div>
         </div>
       </div>
     <?php endforeach; ?>
 
     <div style="margin-top:12px;">
-      <button type="submit" name="batch_update" value="1" style="padding:10px 14px;">Confirm Decisions &amp; Send One Email</button>
-      <div class="small" style="margin-top:6px;">
-        Tick the legs you are changing. Only ticked legs will be updated.
-      </div>
+      <button type="submit" name="batch_update" value="1" style="padding:10px 14px;">Confirm</button>
     </div>
   </form>
 </div>
 <?php endforeach; ?>
+
+<details class="processed">
+  <summary>Processed submissions (<?php echo (int)$processed_count; ?>)</summary>
+  <div style="margin-top:12px;">
+    <?php if (empty($processed_grouped)): ?>
+      <p class="small">No processed submissions yet.</p>
+    <?php endif; ?>
+
+    <?php foreach ($processed_grouped as $sid => $items):
+      $head = $items[0];
+    ?>
+    <div class="signup">
+      <strong>#<?php echo (int)$sid; ?> — <?php echo htmlspecialchars($head['team_leader_first_name'] . ' ' . $head['team_leader_surname']); ?></strong>
+      <div class="small">
+        Submitted: <?php echo htmlspecialchars($head['created_at']); ?><br>
+        Group size: <?php echo (int)$head['group_size']; ?><br>
+        Email: <?php echo htmlspecialchars($head['email']); ?><br>
+        Phone: <?php echo htmlspecialchars($head['phone']); ?><br>
+        Safety accepted: <?php echo ((int)$head['safety_accepted'] === 1) ? 'Yes' : 'No'; ?>
+      </div>
+
+      <form method="post" style="margin-top:10px;">
+        <input type="hidden" name="signup_id" value="<?php echo (int)$sid; ?>">
+
+        <?php foreach ($items as $r):
+          $legNum = (int)$r['leg_number'];
+          $st = (string)$r['leg_status'];
+          $statusClass = ($st === 'confirmed') ? 'status-confirmed' : (($st === 'rejected') ? 'status-rejected' : (($st === 'waitlist') ? 'status-waitlist' : 'status-pending'));
+        ?>
+          <div class="leg-row">
+            <div class="grid">
+              <div>
+                <strong>Leg <?php echo $legNum; ?></strong>
+                <?php if ((int)$r['was_taken'] === 1): ?>
+                  <span class="pill pill-taken">Waitlist</span>
+                <?php endif; ?>
+                <div class="<?php echo $statusClass; ?>">Current status: <?php echo htmlspecialchars($st); ?></div>
+                <?php if (!empty($r['rejection_reason'])): ?>
+                  <div class="small">Rejection reason: <?php echo htmlspecialchars($r['rejection_reason']); ?></div>
+                <?php endif; ?>
+              </div>
+
+              <div class="decision">
+                <select name="decision[<?php echo $legNum; ?>]" data-leg="<?php echo $legNum; ?>">
+                  <option value="skip">No change</option>
+                  <option value="approve">Approve</option>
+                  <option value="reject">Reject</option>
+                </select>
+                <input class="reason-input" type="text" name="reason[<?php echo $legNum; ?>]" placeholder="Rejection reason" data-reason-for="<?php echo $legNum; ?>">
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+
+        <div style="margin-top:12px;">
+          <button type="submit" name="batch_update" value="1" style="padding:10px 14px;">Confirm</button>
+        </div>
+      </form>
+    </div>
+    <?php endforeach; ?>
+  </div>
+</details>
+
+
+<script>
+(function(){
+  function syncReason(selectEl) {
+    var leg = selectEl.getAttribute('data-leg');
+    var input = document.querySelector('input[data-reason-for="' + leg + '"]');
+    if (!input) return;
+    if (selectEl.value === 'reject') {
+      input.style.display = 'block';
+    } else {
+      input.style.display = 'none';
+    }
+  }
+
+  document.addEventListener('change', function(e){
+    var t = e.target;
+    if (t && t.matches('select[data-leg]')) syncReason(t);
+  });
+
+  window.addEventListener('load', function(){
+    var selects = document.querySelectorAll('select[data-leg]');
+    selects.forEach(function(s){ syncReason(s); });
+  });
+})();
+</script>
 
 </body>
 </html>
