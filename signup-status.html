@@ -74,10 +74,11 @@ async function loadSignups() {
                 ${membersText}
             `;
         } else {
-            // Otherwise, keep the existing display style (team leader name only).
+            // Otherwise, show a placeholder team name and indicate details are awaited.
             div.innerHTML = `
                 <strong>Leg ${entry.leg_number}</strong><br>
-                <strong>${entry.team_leader_first_name} ${entry.team_leader_surname}</strong>
+                <strong>${entry.team_leader_first_name} ${entry.team_leader_surname}’s Team</strong><br>
+                Awaiting team name and team members details
             `;
         }
 
