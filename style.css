@@ -211,8 +211,10 @@ body {
 .bma-social-footer {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 15px;
-  margin: 40px 0 30px 0;
+  margin: 40px auto 30px auto;
+  width: 100%;
 }
 
 .bma-social-footer img {
@@ -221,7 +223,6 @@ body {
   object-fit: contain;
 }
 
-/* Larger GoFundMe logo */
 .bma-social-footer .gfm-logo {
   width: 90px;
   height: 45px;
