@@ -288,6 +288,18 @@ foreach ($rows as $r) {
     if (!isset($grouped[$sid])) $grouped[$sid] = [];
     $grouped[$sid][] = $r;
 }
+
+$pending_grouped = [];
+$processed_grouped = [];
+foreach ($grouped as $sid => $items) {
+    $allPending = true;
+    foreach ($items as $it) {
+        if ((string)$it['leg_status'] !== 'pending') { $allPending = false; break; }
+    }
+    if ($allPending) $pending_grouped[$sid] = $items;
+    else $processed_grouped[$sid] = $items;
+}
+$processed_count = count($processed_grouped);
 ?>
 
 <!doctype html>
@@ -473,7 +485,8 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
 (function(){
   function syncReason(selectEl) {
     var leg = selectEl.getAttribute('data-leg');
-    var input = document.querySelector('input[data-reason-for="' + leg + '"]');
+    var wrap = selectEl.closest ? selectEl.closest('.decision') : selectEl.parentNode;
+    var input = wrap ? wrap.querySelector('input[data-reason-for="' + leg + '"]') : null;
     if (!input) return;
     if (selectEl.value === 'reject') {
       input.style.display = 'block';
