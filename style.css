@@ -221,6 +221,13 @@ body {
   object-fit: contain;
 }
 
+/* Larger GoFundMe logo */
+.bma-social-footer .gfm-logo {
+  width: 90px;
+  height: 45px;
+}
+
+
 /* Mobile tweaks */
 @media (max-width: 420px) {
   .header-inner { padding: 10px 12px; }
