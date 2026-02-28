@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>South West Coastal Path — Route Map</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --text:#f2f2f2;
+      --muted:#b7b7b7;
+      --panel:rgba(18,18,18,.94);
+      --border:rgba(255,255,255,.10);
+      --orange:#ff7a00;
+      --shadow:0 16px 40px rgba(0,0,0,.35);
+      --radius:16px;
+      --beige:#FAEBC8;
+      --beigeBorder: rgba(0,0,0,0.06);
+      --textDark:#111;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+    }
+
+    /* Topbar */
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:1000;
+      background: var(--beige);
+      color: var(--textDark);
+      border-bottom:1px solid var(--beigeBorder);
+      padding: 0 12px;
+    }
+    .topbar-row{
+      position:relative;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      min-height: 126px;
+      padding: 10px 0 12px;
+    }
+
+    /* Centre brand */
+    .route-brand{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start; 
+      gap:6px;
+      padding: 0 64px;          
+      max-width: 100%;
+      text-align:center;
+    }
+    .route-brand img{
+      display:block;
+      width:100px;
+      height:100px;
+      object-fit:contain;
+      margin:0 auto;
+    }
+    .route-brand .title{
+      margin:0;
+      font-weight:800;
+      letter-spacing: .4px;
+      font-size: 30px;
+      line-height:1.05;
+      color: #000;
+    }
+    .route-brand .subtitle{
+      margin:0;
+      font-weight: 800;
+      font-size: 26px;
+      line-height:1.05;
+      color:#000;
+    }
+    .route-brand .dates{
+      margin:0;
+      font-weight:600;
+      font-size: 22px;
+      color:#000;
+      line-height:1.05;
+    }
+
+    /* Align menu + select to the vertical centre of the logo (not the whole header) */
+    .menu-wrap,
+    .controls{
+      position:absolute;
+      top: calc(50% - 18px);  /* bring up slightly */
+      transform: translateY(-50%);
+      z-index:1200;
+    }
+
+    .menu-wrap{ left:0; }
+    .controls{
+      right:0;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:8px;
+    }
+
+    .menu-button{
+      appearance:none;
+      border:none;
+      background:transparent;
+      padding:10px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+    }
+    .menu-button:focus{
+      outline:2px solid rgba(0,0,0,0.25);
+      outline-offset:3px;
+      border-radius:10px;
+    }
+
+    /* Dropdown (match other pages) */
+    .menu-dropdown{
+      position:absolute;
+      left:0;
+      top: calc(100% + 10px);
+      min-width: 210px;
+      background:#ffffff;
+      border:1px solid rgba(0,0,0,0.10);
+      border-radius:14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      padding:8px;
+      display:none;
+    }
+    .menu-dropdown.open{ display:block; }
+
+    .menu-dropdown a{
+      display:block;
+      padding:10px 12px;
+      border-radius:10px;
+      text-decoration:none;
+      color:#111;
+      font-size:15px;
+    }
+    .menu-dropdown a:hover,
+    .menu-dropdown a:focus{
+      background: rgba(250, 235, 200, 0.55);
+      outline:none;
+    }
+
+    .sr-only{
+      position:absolute !important;
+      width:1px !important;
+      height:1px !important;
+      padding:0 !important;
+      margin:-1px !important;
+      overflow:hidden !important;
+      clip:rect(0,0,0,0) !important;
+      white-space:nowrap !important;
+      border:0 !important;
+    }
+
+    /* Controls (right) */
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius: 14px;
+      border: 2px solid #000;
+      background: #fff;
+      color:#000;
+      font-weight: 800;
+      font-size: 15px;
+      line-height:1;
+      cursor:pointer;
+      text-decoration:none;
+      box-shadow: 0 4px 0 rgba(0,0,0,.06);
+    }
+    .pill:active{ transform: translateY(1px); }
+    .pill small{
+      font-weight:700;
+      font-size: 12px;
+      color: rgba(0,0,0,.6);
+    }
+    .select-wrap{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    select{
+      max-width: 220px;
+      padding:10px 12px;
+      border-radius: 14px;
+      border: 2px solid #000;
+      background: #fff;
+      color:#000;
+      font-weight:800;
+      font-size: 15px;
+      outline:none;
+      box-shadow: 0 4px 0 rgba(0,0,0,.06);
+    }
+
+    /* Map */
+    #map{
+      height: calc(100vh - 126px);
+      width:100%;
+    }
+
+    /* Legend */
+    .legend{
+      position:absolute;
+      left: 12px;
+      bottom: 12px;
+      z-index: 900;
+      background: rgba(255,255,255,.95);
+      border: 1px solid rgba(0,0,0,.10);
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.12);
+      padding: 10px 12px;
+      color:#111;
+      font-size: 13px;
+      line-height: 1.2;
+      max-width: 260px;
+    }
+    .legend .row{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:6px 0;
+    }
+    .swatch{
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,.18);
+      flex: 0 0 14px;
+    }
+    .swatch.available{ background: #2ecc71; }
+    .swatch.taken{ background: #e74c3c; }
+    .swatch.selected{ background: #ff7a00; }
+
+    /* Simple modal */
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index: 2000;
+      padding: 16px;
+    }
+    .modal-backdrop.open{ display:flex; }
+    .modal{
+      width:min(560px, 100%);
+      background:#fff;
+      color:#111;
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,.10);
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      padding: 16px 16px 14px;
+    }
+    .modal h2{
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .modal p{
+      margin: 0 0 12px;
+      font-size: 14px;
+      line-height: 1.35;
+      color: rgba(0,0,0,.75);
+    }
+    .modal .actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      margin-top: 12px;
+    }
+    .btn{
+      appearance:none;
+      border:none;
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-weight: 800;
+      cursor:pointer;
+    }
+    .btn.primary{
+      background: #000;
+      color:#fff;
+    }
+    .btn.ghost{
+      background: rgba(0,0,0,.06);
+      color:#111;
+    }
+
+    @media (max-width: 620px){
+      .route-brand .title{ font-size: 26px; }
+      .route-brand .subtitle{ font-size: 22px; }
+      .route-brand .dates{ font-size: 18px; }
+
+      select{ max-width: 180px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar" id="topbar">
+    <div class="topbar-row">
+
+      <!-- Menu (left) -->
+      <div class="menu-wrap">
+        <button
+          class="menu-button"
+          type="button"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-controls="site-menu"
+          id="menuBtn"
+          title="Menu"
+        >
+          <img src="menu.svg" alt="" width="22" height="22" aria-hidden="true" />
+          <span class="sr-only">Open menu</span>
+        </button>
+
+        <nav class="menu-dropdown" id="site-menu" aria-label="Site menu">
+          <a href="index.html">The Challenge</a>
+          <a href="amy.html">About Amy</a>
+          <a href="route2.html">The Route</a>
+          <a href="signup.html">Sign Up</a>
+          <a href="charities.html">Charities</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+
+      <!-- Centre logo + title + date -->
+      <div class="route-brand">
+        <a href="index.html" aria-label="Home" style="display:inline-block">
+          <img src="BMAlogo.svg" alt="Be More Amy logo" width="100" height="100" />
+        </a>
+
+        <div class="route-title">
+          <p class="title" style="margin:0;">BE MORE AMY</p>
+          <p class="subtitle" style="margin:0;">South West Coastal<br/>Path Relay Challenge</p>
+          <p class="dates" style="margin:0;">16th to 23rd May 2026</p>
+        </div>
+      </div>
+
+      <!-- Controls (right) -->
+      <div class="controls" aria-label="Route controls">
+        <a class="pill" href="signup-status.html">Confirmed signups</a>
+
+        <div class="select-wrap">
+          <label class="sr-only" for="legSelect">Jump to leg</label>
+          <select id="legSelect">
+            <option value="">Jump to leg…</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <div id="map" aria-label="Route map"></div>
+
+  <div class="legend" aria-label="Map legend">
+    <div class="row"><span class="swatch available"></span> Available</div>
+    <div class="row"><span class="swatch taken"></span> Taken</div>
+    <div class="row"><span class="swatch selected"></span> Selected</div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <h2 id="modalTitle">Leg details</h2>
+      <p id="modalBody">Loading…</p>
+      <div class="actions">
+        <button class="btn ghost" type="button" id="modalClose">Close</button>
+        <a class="btn primary" id="modalSignup" href="signup.html">Sign up</a>
+      </div>
+    </div>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script src="./app.v2.js"></script>
+
+  <script>
+    // Menu toggle
+    (function(){
+      const btn = document.getElementById('menuBtn');
+      const menu = document.getElementById('site-menu');
+      if(!btn || !menu) return;
+
+      function close(){
+        menu.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        const isOpen = menu.classList.toggle('open');
+        btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+      document.addEventListener('click', close);
+      document.addEventListener('keydown', function(e){
+        if(e.key === 'Escape') close();
+      });
+      menu.addEventListener('click', function(e){
+        e.stopPropagation();
+      });
+    })();
+  </script>
+</body>
+</html>
