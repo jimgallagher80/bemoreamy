@@ -86,6 +86,26 @@
 .linkish { text-decoration:underline; font-weight:800; cursor:pointer; }
 
 .intro-text { margin-bottom:16px; line-height:1.4; }
+
+/* Ensure all form controls stay inside the bordered form container (fixes iOS Safari width issue) */
+.field input,
+.field select,
+.field textarea,
+.legs-block select{
+  width: 100%;
+  max-width: 100%;
+  display: block;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Prevent long dropdown text from forcing the select wider on iPhone */
+.legs-block select{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 </style>
 </head>
 
