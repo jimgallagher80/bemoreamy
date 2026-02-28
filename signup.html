@@ -25,6 +25,13 @@
   font-size:16px;
 }
 
+/* iOS Safari: prevent long selected option text from forcing the select wider than its container */
+.field select{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
 .legs-block { border:2px solid rgba(0,0,0,0.12); border-radius:16px; padding:12px; }
 .legs-title { font-weight:800; margin-bottom:10px; }
 
@@ -345,6 +352,7 @@ async function loadLegInfo() {
     // leave LEG_INFO empty
   }
 }
+
 
 function createLegSelect(){
   const wrap = document.createElement('div');
