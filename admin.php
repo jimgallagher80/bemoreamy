@@ -401,9 +401,9 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
 
           <div class="decision">
             <select name="decision[<?php echo $legNum; ?>]" data-leg="<?php echo $legNum; ?>">
-              <option value="skip">No change</option>
-              <option value="approve">Approve</option>
-              <option value="reject">Reject</option>
+              <option value="skip" <?php echo ($st === \'confirmed\' || $st === \'rejected\') ? \'\' : \'selected\'; ?>>Pending</option>
+                  <option value="approve" <?php echo ($st === \'confirmed\') ? \'selected\' : \'\'; ?>>Approve</option>
+                  <option value="reject" <?php echo ($st === \'rejected\') ? \'selected\' : \'\'; ?>>Reject</option>
             </select>
             <input class="reason-input" type="text" name="reason[<?php echo $legNum; ?>]" placeholder="Rejection reason" data-reason-for="<?php echo $legNum; ?>">
           </div>
@@ -461,9 +461,9 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
 
               <div class="decision">
                 <select name="decision[<?php echo $legNum; ?>]" data-leg="<?php echo $legNum; ?>">
-                  <option value="skip">No change</option>
-                  <option value="approve">Approve</option>
-                  <option value="reject">Reject</option>
+                  <option value="skip" <?php echo ($st === \'confirmed\' || $st === \'rejected\') ? \'\' : \'selected\'; ?>>Pending</option>
+                  <option value="approve" <?php echo ($st === \'confirmed\') ? \'selected\' : \'\'; ?>>Approve</option>
+                  <option value="reject" <?php echo ($st === \'rejected\') ? \'selected\' : \'\'; ?>>Reject</option>
                 </select>
                 <input class="reason-input" type="text" name="reason[<?php echo $legNum; ?>]" placeholder="Rejection reason" data-reason-for="<?php echo $legNum; ?>">
               </div>
@@ -495,14 +495,56 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
     }
   }
 
+  function updateConfirmStateForForm(formEl){
+    if (!formEl) return;
+    var selects = formEl.querySelectorAll('select[data-leg]');
+    if (!selects || selects.length === 0) return;
+    var allDecided = true;
+    selects.forEach(function(s){
+      if (s.value === 'skip') allDecided = false;
+    });
+    var btn = formEl.querySelector('button[type="submit"]');
+    if (!btn) return;
+    btn.disabled = !allDecided;
+    if (btn.disabled) {
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
+    } else {
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+    }
+  }
+
+  function updateAllConfirmStates(){
+    document.querySelectorAll('form[action="admin.php"]').forEach(function(f){
+      updateConfirmStateForForm(f);
+    });
+  }
+
+
   document.addEventListener('change', function(e){
     var t = e.target;
-    if (t && t.matches('select[data-leg]')) syncReason(t);
+    if (t && t.matches('select[data-leg]')) { syncReason(t); updateConfirmStateForForm(t.form); }
+  });
+
+
+  document.addEventListener('submit', function(e){
+    var formEl = e.target;
+    if (!formEl || formEl.tagName !== 'FORM') return;
+    var selects = formEl.querySelectorAll('select[data-leg]');
+    if (!selects || selects.length === 0) return;
+    var allDecided = true;
+    selects.forEach(function(s){ if (s.value === 'skip') allDecided = false; });
+    if (!allDecided) {
+      e.preventDefault();
+      alert('Please set every leg to Approve or Reject before confirming.');
+    }
   });
 
   window.addEventListener('load', function(){
     var selects = document.querySelectorAll('select[data-leg]');
     selects.forEach(function(s){ syncReason(s); });
+    updateAllConfirmStates();
   });
 })();
 </script>
