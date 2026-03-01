@@ -37,10 +37,13 @@
       cursor: pointer;
     }
 
+    /* Make all thumbs the same displayed size */
     .gallery-thumb {
       display: block;
       width: 100%;
+      aspect-ratio: 1 / 1;
       height: auto;
+      object-fit: cover;
     }
 
     .gallery-caption {
@@ -50,13 +53,29 @@
       line-height: 1.3;
     }
 
+    .gallery-upload-wrap { margin-top: 18px; }
+
+    .gallery-upload-toggle {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.18);
+      background: #fff;
+      cursor: pointer;
+      font-weight: 700;
+      color: #000;
+    }
+
     .gallery-upload {
-      margin-top: 18px;
+      margin-top: 12px;
       background: #fff;
       border: 1px solid rgba(0,0,0,0.10);
       border-radius: 16px;
       padding: 14px;
+      display: none;
     }
+    .gallery-upload.open { display: block; }
+
     .gallery-upload h3 { margin: 0 0 10px 0; }
 
     .gallery-form-grid {
@@ -89,6 +108,7 @@
       background: #fff;
       cursor: pointer;
       font-weight: 700;
+      color: #000; /* ensure black text */
     }
     .gallery-actions button:disabled {
       opacity: 0.6;
@@ -216,52 +236,56 @@
       <div class="gallery-grid" id="galleryGrid" aria-live="polite"></div>
     </section>
 
-    <section class="gallery-upload" aria-label="Upload a photo">
-      <h3>Upload a photo</h3>
+    <section class="gallery-upload-wrap" aria-label="Upload a photo">
+      <button type="button" class="gallery-upload-toggle" id="toggleUploadBtn">Submit a photo</button>
 
-      <form id="uploadForm" enctype="multipart/form-data" novalidate>
-        <div class="gallery-form-grid">
-          <div>
-            <label for="uploader_name">Your name</label>
-            <input id="uploader_name" name="uploader_name" type="text" required />
+      <div class="gallery-upload" id="uploadPanel">
+        <h3>Upload a photo</h3>
+
+        <form id="uploadForm" enctype="multipart/form-data" novalidate>
+          <div class="gallery-form-grid">
+            <div>
+              <label for="uploader_name">Your name</label>
+              <input id="uploader_name" name="uploader_name" type="text" required />
+            </div>
+
+            <div>
+              <label for="uploader_email">Your email</label>
+              <input id="uploader_email" name="uploader_email" type="email" required />
+            </div>
+
+            <div>
+              <label for="caption">Caption (optional)</label>
+              <textarea id="caption" name="caption" placeholder="A short caption for the photo (optional)"></textarea>
+            </div>
+
+            <div>
+              <label for="photos">Photos (up to 5, max 10MB each)</label>
+              <input id="photos" name="photos[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required />
+              <div class="gallery-help">Accepted formats: JPG, PNG, WebP.</div>
+            </div>
+
+            <div>
+              <label style="font-weight:600;">
+                <input type="checkbox" name="consent_website" id="consent_website" required />
+                I confirm I am happy for this photo to be posted on the Be More Amy website
+              </label>
+            </div>
+
+            <div>
+              <label style="font-weight:600;">
+                <input type="checkbox" name="consent_media" id="consent_media" />
+                I confirm I am happy for this photo to be used on Be More Amy social media pages, and in local and national media
+              </label>
+            </div>
           </div>
 
-          <div>
-            <label for="uploader_email">Your email</label>
-            <input id="uploader_email" name="uploader_email" type="email" required />
+          <div class="gallery-actions">
+            <button type="submit" id="uploadBtn">Submit photo</button>
+            <div class="gallery-help" id="uploadMsg" aria-live="polite"></div>
           </div>
-
-          <div>
-            <label for="caption">Caption (optional)</label>
-            <textarea id="caption" name="caption" placeholder="A short caption for the photo (optional)"></textarea>
-          </div>
-
-          <div>
-            <label for="photo">Photo (max 10MB)</label>
-            <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" required />
-            <div class="gallery-help">Accepted formats: JPG, PNG, WebP.</div>
-          </div>
-
-          <div>
-            <label style="font-weight:600;">
-              <input type="checkbox" name="consent_website" id="consent_website" required />
-              I confirm I am happy for this photo to be posted on the Be More Amy website
-            </label>
-          </div>
-
-          <div>
-            <label style="font-weight:600;">
-              <input type="checkbox" name="consent_media" id="consent_media" />
-              I confirm I am happy for this photo to be used on Be More Amy social media pages, and in local and national media
-            </label>
-          </div>
-        </div>
-
-        <div class="gallery-actions">
-          <button type="submit" id="uploadBtn">Submit photo</button>
-          <div class="gallery-help" id="uploadMsg" aria-live="polite"></div>
-        </div>
-      </form>
+        </form>
+      </div>
     </section>
 
     <section class="quick-links" aria-label="Quick links">
@@ -399,15 +423,32 @@
         }
       }
 
+      // Upload panel toggle
+      const toggleBtn = document.getElementById('toggleUploadBtn');
+      const panel = document.getElementById('uploadPanel');
+
+      toggleBtn.addEventListener('click', function () {
+        const isOpen = panel.classList.toggle('open');
+        toggleBtn.textContent = isOpen ? 'Close upload form' : 'Submit a photo';
+      });
+
       // Upload
       const form = document.getElementById('uploadForm');
       const uploadMsg = document.getElementById('uploadMsg');
       const uploadBtn = document.getElementById('uploadBtn');
+      const photosInput = document.getElementById('photos');
 
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         uploadMsg.textContent = '';
         uploadBtn.disabled = true;
+
+        // Client-side guard (server enforces too)
+        if (photosInput && photosInput.files && photosInput.files.length > 5) {
+          uploadMsg.textContent = 'You can upload up to 5 photos per submission.';
+          uploadBtn.disabled = false;
+          return;
+        }
 
         try {
           const fd = new FormData(form);
@@ -427,6 +468,10 @@
           uploadMsg.textContent = data.message ? data.message : 'Thanks — your photo is pending approval.';
           form.reset();
           uploadBtn.disabled = false;
+
+          // Close the panel after successful submit
+          panel.classList.remove('open');
+          toggleBtn.textContent = 'Submit a photo';
 
           // Reload gallery (won’t show until approved, but keeps the page fresh)
           loadGallery();
