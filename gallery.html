@@ -6,6 +6,143 @@
   <title>BE MORE AMY — Gallery</title>
 
   <link rel="stylesheet" href="style.css?v=12" />
+
+  <style>
+    /* Gallery layout (page-local only) */
+    .gallery-section { margin-top: 16px; }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    @media (min-width: 820px) {
+      .gallery-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    .gallery-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.10);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .gallery-thumb-btn {
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .gallery-thumb {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .gallery-caption {
+      padding: 8px 10px 10px 10px;
+      font-size: 14px;
+      color: rgba(0,0,0,0.85);
+      line-height: 1.3;
+    }
+
+    .gallery-upload {
+      margin-top: 18px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.10);
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .gallery-upload h3 { margin: 0 0 10px 0; }
+
+    .gallery-form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .gallery-upload label { display:block; font-weight: 600; margin: 0 0 6px 0; }
+    .gallery-upload input[type="text"],
+    .gallery-upload input[type="email"],
+    .gallery-upload textarea,
+    .gallery-upload input[type="file"] {
+      width: 100%;
+      max-width: 100%;
+      display: block;
+      box-sizing: border-box;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.18);
+      font: inherit;
+    }
+    .gallery-upload textarea { min-height: 90px; resize: vertical; }
+    .gallery-help { font-size: 12px; color: rgba(0,0,0,0.70); margin-top: 6px; }
+    .gallery-actions { margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .gallery-actions button {
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.18);
+      background: #fff;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .gallery-actions button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Lightbox */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox-inner {
+      position: relative;
+      max-width: min(1100px, 96vw);
+      max-height: 92vh;
+    }
+    .lightbox-img {
+      display: block;
+      max-width: 100%;
+      max-height: 92vh;
+      border-radius: 12px;
+      background: #111;
+    }
+    .lightbox-close {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.70);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 40px;
+      text-align: centre;
+    }
+    .lightbox-close span { display:inline-block; transform: translateY(-1px); }
+    .lightbox-caption {
+      margin-top: 10px;
+      color: rgba(255,255,255,0.92);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+  </style>
 </head>
 
 <body>
@@ -65,23 +202,83 @@
 
   <!-- Page Content -->
   <main class="page">
+
     <section class="intro" aria-label="Gallery">
       <p><strong>Gallery</strong></p>
 
       <p>
-        This page will become a gallery of photos, stories, and moments from training and from the relay itself.
+        Photos submitted here will appear once approved by the Be More Amy team.
       </p>
+    </section>
 
-      <p>
-        For now, it is a holding page while we prepare the layout and decide how to organise albums.
-      </p>
+    <section class="gallery-section" aria-label="Photo gallery">
+      <div id="galleryMsg" class="gallery-help" style="margin-bottom:10px;"></div>
+      <div class="gallery-grid" id="galleryGrid" aria-live="polite"></div>
+    </section>
+
+    <section class="gallery-upload" aria-label="Upload a photo">
+      <h3>Upload a photo</h3>
+
+      <form id="uploadForm" enctype="multipart/form-data" novalidate>
+        <div class="gallery-form-grid">
+          <div>
+            <label for="uploader_name">Your name</label>
+            <input id="uploader_name" name="uploader_name" type="text" required />
+          </div>
+
+          <div>
+            <label for="uploader_email">Your email</label>
+            <input id="uploader_email" name="uploader_email" type="email" required />
+          </div>
+
+          <div>
+            <label for="caption">Caption (optional)</label>
+            <textarea id="caption" name="caption" placeholder="A short caption for the photo (optional)"></textarea>
+          </div>
+
+          <div>
+            <label for="photo">Photo (max 10MB)</label>
+            <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" required />
+            <div class="gallery-help">Accepted formats: JPG, PNG, WebP.</div>
+          </div>
+
+          <div>
+            <label style="font-weight:600;">
+              <input type="checkbox" name="consent_website" id="consent_website" required />
+              I confirm I am happy for this photo to be posted on the Be More Amy website
+            </label>
+          </div>
+
+          <div>
+            <label style="font-weight:600;">
+              <input type="checkbox" name="consent_media" id="consent_media" />
+              I confirm I am happy for this photo to be used on Be More Amy social media pages, and in local and national media
+            </label>
+          </div>
+        </div>
+
+        <div class="gallery-actions">
+          <button type="submit" id="uploadBtn">Submit photo</button>
+          <div class="gallery-help" id="uploadMsg" aria-live="polite"></div>
+        </div>
+      </form>
     </section>
 
     <section class="quick-links" aria-label="Quick links">
       <a class="card-link" href="index.html">Home</a>
-  
     </section>
   </main>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <div class="lightbox-inner">
+      <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Close">
+        <span>X</span>
+      </button>
+      <img class="lightbox-img" id="lightboxImg" alt="">
+      <div class="lightbox-caption" id="lightboxCaption"></div>
+    </div>
+  </div>
 
   <!-- Menu behaviour -->
   <script>
@@ -114,6 +311,135 @@
     })();
   </script>
 
+  <script>
+    (function () {
+      const grid = document.getElementById('galleryGrid');
+      const msg = document.getElementById('galleryMsg');
+
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightboxImg');
+      const lightboxCaption = document.getElementById('lightboxCaption');
+      const lightboxClose = document.getElementById('lightboxClose');
+
+      function openLightbox(imageUrl, captionText) {
+        lightboxImg.src = imageUrl;
+        lightboxImg.alt = captionText ? captionText : 'Gallery photo';
+        lightboxCaption.textContent = captionText ? captionText : '';
+        lightbox.classList.add('open');
+        lightbox.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove('open');
+        lightbox.setAttribute('aria-hidden', 'true');
+        lightboxImg.src = '';
+        lightboxCaption.textContent = '';
+      }
+
+      lightboxClose.addEventListener('click', closeLightbox);
+      lightbox.addEventListener('click', function (e) {
+        if (e.target === lightbox) closeLightbox();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeLightbox();
+      });
+
+      async function loadGallery() {
+        msg.textContent = '';
+        grid.innerHTML = '';
+
+        try {
+          const res = await fetch('get_gallery_photos.php');
+          const data = await res.json();
+
+          if (!data || !data.success) {
+            msg.textContent = 'Gallery is unavailable at the moment.';
+            return;
+          }
+
+          const photos = Array.isArray(data.photos) ? data.photos : [];
+          if (photos.length === 0) {
+            msg.textContent = 'No approved photos yet.';
+            return;
+          }
+
+          photos.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'gallery-card';
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'gallery-thumb-btn';
+
+            const img = document.createElement('img');
+            img.className = 'gallery-thumb';
+            img.src = p.thumb_url;
+            img.alt = p.caption ? p.caption : 'Gallery photo';
+            img.loading = 'lazy';
+
+            btn.appendChild(img);
+
+            btn.addEventListener('click', function () {
+              openLightbox(p.image_url, p.caption || '');
+            });
+
+            card.appendChild(btn);
+
+            if (p.caption && String(p.caption).trim() !== '') {
+              const cap = document.createElement('div');
+              cap.className = 'gallery-caption';
+              cap.textContent = p.caption;
+              card.appendChild(cap);
+            }
+
+            grid.appendChild(card);
+          });
+        } catch (e) {
+          msg.textContent = 'Gallery is unavailable at the moment.';
+        }
+      }
+
+      // Upload
+      const form = document.getElementById('uploadForm');
+      const uploadMsg = document.getElementById('uploadMsg');
+      const uploadBtn = document.getElementById('uploadBtn');
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        uploadMsg.textContent = '';
+        uploadBtn.disabled = true;
+
+        try {
+          const fd = new FormData(form);
+          const res = await fetch('submit_gallery_upload.php', {
+            method: 'POST',
+            body: fd
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || !data || !data.success) {
+            uploadMsg.textContent = (data && data.error) ? data.error : 'There was a problem submitting your photo.';
+            uploadBtn.disabled = false;
+            return;
+          }
+
+          uploadMsg.textContent = data.message ? data.message : 'Thanks — your photo is pending approval.';
+          form.reset();
+          uploadBtn.disabled = false;
+
+          // Reload gallery (won’t show until approved, but keeps the page fresh)
+          loadGallery();
+        } catch (err) {
+          uploadMsg.textContent = 'There was a problem submitting your photo.';
+          uploadBtn.disabled = false;
+        }
+      });
+
+      loadGallery();
+    })();
+  </script>
+
 <!-- Fundraising & Social Links -->
 <div class="bma-social-footer">
   <a href="https://www.gofundme.com/en-gb" target="_blank" rel="noopener">
@@ -132,6 +458,6 @@
     <img src="bma_linkedin_logo.svg" alt="LinkedIn">
   </a>
 </div>
-  
+
 </body>
 </html>
