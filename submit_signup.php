@@ -48,9 +48,9 @@ if ($leaderFirst === '' || $leaderLast === '' || $email === '' || $phone === '')
     echo json_encode(['success' => false, 'error' => 'Please complete all fields']);
     exit;
 }
-if ($groupSize < 1 || $groupSize > 100) {
+if ($groupSize < 2 || $groupSize > 100) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Please enter a valid group size']);
+    echo json_encode(['success' => false, 'error' => 'Group size must be at least 2']);
     exit;
 }
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
