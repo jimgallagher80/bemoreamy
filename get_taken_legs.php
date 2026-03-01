@@ -8,7 +8,7 @@ try {
     $stmt = $pdo->query("
         SELECT DISTINCT leg_number
         FROM signup_legs
-        WHERE status = 'confirmed'
+        WHERE status IN ('pending', 'confirmed')
         ORDER BY leg_number ASC
     ");
 
