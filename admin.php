@@ -235,6 +235,54 @@ if (isset($_POST['batch_update']) && isset($_POST['signup_id'])) {
     }
 }
 
+/* -------- GALLERY MODERATION ACTIONS -------- */
+
+if (isset($_POST['gallery_action']) && isset($_POST['gallery_id'])) {
+    $galleryId = (int)$_POST['gallery_id'];
+
+    if ($galleryId > 0) {
+        if ($_POST['gallery_action'] === 'approve') {
+            try {
+                $u = $pdo->prepare("UPDATE gallery_photos SET status = 'approved' WHERE id = ?");
+                $u->execute([$galleryId]);
+                $flash = "Gallery photo #{$galleryId} approved.";
+            } catch (Exception $e) {
+                $flash = "Error approving gallery photo #{$galleryId}.";
+                error_log("Gallery approve failed: " . $e->getMessage());
+            }
+        }
+
+        if ($_POST['gallery_action'] === 'reject') {
+            try {
+                // Load filenames
+                $q = $pdo->prepare("SELECT filename, thumb_filename FROM gallery_photos WHERE id = ? AND status = 'pending'");
+                $q->execute([$galleryId]);
+                $row = $q->fetch(PDO::FETCH_ASSOC);
+
+                if ($row) {
+                    $fullPath = __DIR__ . '/gallery/' . (string)$row['filename'];
+                    $thumbPath = __DIR__ . '/gallery/thumbs/' . (string)$row['thumb_filename'];
+
+                    // Delete DB row
+                    $d = $pdo->prepare("DELETE FROM gallery_photos WHERE id = ?");
+                    $d->execute([$galleryId]);
+
+                    // Delete files
+                    @unlink($fullPath);
+                    @unlink($thumbPath);
+
+                    $flash = "Gallery photo #{$galleryId} rejected and deleted.";
+                } else {
+                    $flash = "Gallery photo #{$galleryId} not found (or not pending).";
+                }
+            } catch (Exception $e) {
+                $flash = "Error rejecting gallery photo #{$galleryId}.";
+                error_log("Gallery reject failed: " . $e->getMessage());
+            }
+        }
+    }
+}
+
 /* -------- DATA (NO FILTERS ON MAIN ADMIN VIEW) -------- */
 
 $filter_status = 'all';
@@ -257,6 +305,7 @@ $sql = "
         sl.leg_number,
         sl.status AS leg_status,
         sl.was_taken,
+        sl.approved_at,
         sl.approved_at,
         sl.rejected_at,
         sl.rejection_reason,
@@ -300,6 +349,23 @@ foreach ($grouped as $sid => $items) {
     else $processed_grouped[$sid] = $items;
 }
 $processed_count = count($processed_grouped);
+
+/* -------- GALLERY DATA -------- */
+
+$gallery_pending = [];
+try {
+    $g = $pdo->query("
+        SELECT id, filename, thumb_filename, caption, uploader_name, uploader_email, consent_website, consent_media, uploaded_at
+        FROM gallery_photos
+        WHERE status = 'pending'
+        ORDER BY uploaded_at DESC
+    ");
+    $gallery_pending = $g->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    // If table not created yet, admin still loads
+    error_log("Gallery pending load failed: " . $e->getMessage());
+}
+
 ?>
 
 <!doctype html>
@@ -332,6 +398,12 @@ input[type="text"] { width:100%; margin-top:6px; padding:8px; }
   .grid { grid-template-columns: 1fr; }
   .decision { margin-top:8px; }
 }
+
+/* Gallery admin (minimal additions) */
+.gallery-admin-card { border:1px solid #ccc; padding:12px; margin-bottom:12px; display:flex; gap:12px; align-items:flex-start; }
+.gallery-admin-thumb { width:120px; height:auto; border-radius:10px; border:1px solid rgba(0,0,0,0.15); display:block; }
+.gallery-admin-meta { flex: 1; }
+.gallery-admin-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 </style>
 </head>
 <body>
@@ -480,6 +552,54 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
   </div>
 </details>
 
+<!-- GALLERY ADMIN SECTION -->
+<details class="processed" style="margin-top:16px;">
+  <summary>Gallery submissions pending approval (<?php echo (int)count($gallery_pending); ?>)</summary>
+
+  <div style="margin-top:12px;">
+    <?php if (empty($gallery_pending)): ?>
+      <p class="small">No pending gallery submissions.</p>
+    <?php endif; ?>
+
+    <?php foreach ($gallery_pending as $p): ?>
+      <div class="gallery-admin-card">
+        <div>
+          <img class="gallery-admin-thumb" src="<?php echo htmlspecialchars('/gallery/thumbs/' . $p['thumb_filename']); ?>" alt="">
+        </div>
+
+        <div class="gallery-admin-meta">
+          <strong>#<?php echo (int)$p['id']; ?></strong>
+          <div class="small">
+            Submitted: <?php echo htmlspecialchars($p['uploaded_at']); ?><br>
+            Name: <?php echo htmlspecialchars($p['uploader_name']); ?><br>
+            Email: <?php echo htmlspecialchars($p['uploader_email']); ?><br>
+            Consent (website): <?php echo ((int)$p['consent_website'] === 1) ? 'Yes' : 'No'; ?><br>
+            Consent (social/media): <?php echo ((int)$p['consent_media'] === 1) ? 'Yes' : 'No'; ?>
+          </div>
+
+          <?php if (!empty($p['caption'])): ?>
+            <div style="margin-top:8px;">
+              <div class="small" style="font-weight:700;">Caption:</div>
+              <div><?php echo htmlspecialchars($p['caption']); ?></div>
+            </div>
+          <?php endif; ?>
+
+          <div class="gallery-admin-actions">
+            <form method="post" style="margin:0;">
+              <input type="hidden" name="gallery_id" value="<?php echo (int)$p['id']; ?>">
+              <button type="submit" name="gallery_action" value="approve" style="padding:10px 14px;">Approve</button>
+            </form>
+
+            <form method="post" style="margin:0;" onsubmit="return confirm('Reject and delete this submission?');">
+              <input type="hidden" name="gallery_id" value="<?php echo (int)$p['id']; ?>">
+              <button type="submit" name="gallery_action" value="reject" style="padding:10px 14px;">Reject</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</details>
 
 <script>
 (function(){
@@ -521,12 +641,10 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
     });
   }
 
-
   document.addEventListener('change', function(e){
     var t = e.target;
     if (t && t.matches('select[data-leg]')) { syncReason(t); updateConfirmStateForForm(t.form); }
   });
-
 
   document.addEventListener('submit', function(e){
     var formEl = e.target;
