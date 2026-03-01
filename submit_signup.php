@@ -26,6 +26,13 @@ function clean($v) {
     return trim((string)$v);
 }
 
+function sendEmail($to, $subject, $message) {
+    $headers = "From: Be More Amy <noreply@bemoreamy.com>\r\n";
+    $headers .= "Reply-To: hello@bemoreamy.com\r\n";
+    $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    return @mail($to, $subject, $message, $headers);
+}
+
 $leaderFirst = clean($data['team_leader_first_name'] ?? '');
 $leaderLast  = clean($data['team_leader_surname'] ?? '');
 $groupSizeRaw = $data['group_size'] ?? '';
@@ -102,6 +109,27 @@ try {
     }
 
     $pdo->commit();
+
+    // Notify admin of new pending signup
+    $adminEmail = 'hello@bemoreamy.com';
+    $subject = 'BE MORE AMY: New signup pending approval';
+    $bodyLines = [];
+    $bodyLines[] = "A new signup has been submitted and is awaiting admin approval.";
+    $bodyLines[] = "";
+    $bodyLines[] = "Team leader: {$leaderFirst} {$leaderLast}";
+    $bodyLines[] = "Email: {$email}";
+    $bodyLines[] = "Phone: {$phone}";
+    $bodyLines[] = "Group size: {$groupSize}";
+    $bodyLines[] = "Legs requested: " . implode(', ', $legs);
+    $bodyLines[] = "Signup ID: {$signupId}";
+    $bodyLines[] = "Submitted: " . gmdate('Y-m-d H:i') . " UTC";
+    $bodyLines[] = "";
+    $bodyLines[] = "Review in admin.php";
+    $body = implode("\n", $bodyLines);
+
+    if (!sendEmail($adminEmail, $subject, $body)) {
+        error_log('Admin notification email failed for signup ID ' . $signupId);
+    }
 
     echo json_encode([
         'success' => true,
