@@ -117,38 +117,36 @@ if ($consentWebsite !== 1) {
     exit;
 }
 
-if (!isset($_FILES['photo'])) {
+// Accept either the old single input name (photo) or the new multiple input name (photos[])
+$files = null;
+
+if (isset($_FILES['photos']) && is_array($_FILES['photos']['name'])) {
+    // Multiple upload
+    $files = $_FILES['photos'];
+} elseif (isset($_FILES['photo'])) {
+    // Single upload (backwards compatible)
+    $files = [
+        'name' => [$_FILES['photo']['name'] ?? ''],
+        'type' => [$_FILES['photo']['type'] ?? ''],
+        'tmp_name' => [$_FILES['photo']['tmp_name'] ?? ''],
+        'error' => [$_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE],
+        'size' => [$_FILES['photo']['size'] ?? 0],
+    ];
+} else {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Please choose a photo to upload.']);
     exit;
 }
 
-$f = $_FILES['photo'];
-
-if (!is_array($f) || $f['error'] !== UPLOAD_ERR_OK) {
+$count = count($files['name']);
+if ($count < 1) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Upload failed. Please try again.']);
+    echo json_encode(['success' => false, 'error' => 'Please choose a photo to upload.']);
     exit;
 }
-
-// Max 10MB
-if ((int)$f['size'] > 10 * 1024 * 1024) {
+if ($count > 5) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'File is too large. Maximum size is 10MB.']);
-    exit;
-}
-
-$tmpPath = (string)$f['tmp_name'];
-
-// Determine MIME safely
-$finfo = finfo_open(FILEINFO_MIME_TYPE);
-$mime = $finfo ? finfo_file($finfo, $tmpPath) : '';
-if ($finfo) finfo_close($finfo);
-
-$ext = getExtFromMime($mime);
-if ($ext === '') {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Unsupported file type. Please upload a JPG, PNG, or WebP image.']);
+    echo json_encode(['success' => false, 'error' => 'You can upload up to 5 photos per submission.']);
     exit;
 }
 
@@ -158,53 +156,96 @@ $thumbDir = __DIR__ . '/gallery/thumbs';
 ensureDir($fullDir);
 ensureDir($thumbDir);
 
-$filename = safeRandomName($ext);
-$thumbFilename = safeRandomName($ext);
+$inserted = 0;
+$savedFiles = []; // for rollback if DB fails
+$captionForDb = ($caption === '') ? null : $caption;
 
-$fullPath = $fullDir . '/' . $filename;
-$thumbPath = $thumbDir . '/' . $thumbFilename;
-
-// Move upload into place
-if (!@move_uploaded_file($tmpPath, $fullPath)) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Could not save the uploaded file.']);
-    exit;
-}
-
-// Create thumbnail
-if (!makeThumbnail($fullPath, $thumbPath, $ext, 900)) {
-    @unlink($fullPath);
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Could not create thumbnail.']);
-    exit;
-}
-
-// Store in DB (pending)
 try {
+    $pdo->beginTransaction();
+
     $stmt = $pdo->prepare("
         INSERT INTO gallery_photos
         (filename, thumb_filename, caption, uploader_name, uploader_email, consent_website, consent_media, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
     ");
-    $stmt->execute([
-        $filename,
-        $thumbFilename,
-        ($caption === '') ? null : $caption,
-        $name,
-        $email,
-        $consentWebsite,
-        $consentMedia
-    ]);
+
+    for ($i = 0; $i < $count; $i++) {
+        $err = (int)$files['error'][$i];
+        if ($err !== UPLOAD_ERR_OK) {
+            throw new Exception('Upload failed. Please try again.');
+        }
+
+        $size = (int)$files['size'][$i];
+
+        // Max 10MB per photo
+        if ($size > 10 * 1024 * 1024) {
+            throw new Exception('One of the files is too large. Maximum size is 10MB per photo.');
+        }
+
+        $tmpPath = (string)$files['tmp_name'][$i];
+        if ($tmpPath === '' || !is_uploaded_file($tmpPath)) {
+            throw new Exception('Upload failed. Please try again.');
+        }
+
+        // Determine MIME safely
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = $finfo ? finfo_file($finfo, $tmpPath) : '';
+        if ($finfo) finfo_close($finfo);
+
+        $ext = getExtFromMime($mime);
+        if ($ext === '') {
+            throw new Exception('Unsupported file type. Please upload JPG, PNG, or WebP images only.');
+        }
+
+        $filename = safeRandomName($ext);
+        $thumbFilename = safeRandomName($ext);
+
+        $fullPath = $fullDir . '/' . $filename;
+        $thumbPath = $thumbDir . '/' . $thumbFilename;
+
+        // Move upload into place
+        if (!@move_uploaded_file($tmpPath, $fullPath)) {
+            throw new Exception('Could not save the uploaded file.');
+        }
+
+        // Create thumbnail
+        if (!makeThumbnail($fullPath, $thumbPath, $ext, 900)) {
+            @unlink($fullPath);
+            throw new Exception('Could not create thumbnail.');
+        }
+
+        // Store in DB (pending)
+        $stmt->execute([
+            $filename,
+            $thumbFilename,
+            $captionForDb,
+            $name,
+            $email,
+            $consentWebsite,
+            $consentMedia
+        ]);
+
+        $savedFiles[] = [$fullPath, $thumbPath];
+        $inserted++;
+    }
+
+    $pdo->commit();
 
     echo json_encode([
         'success' => true,
-        'message' => 'Thanks — your photo has been submitted and is pending approval.'
+        'message' => ($inserted === 1)
+            ? 'Thanks — your photo has been submitted and is pending approval.'
+            : "Thanks — your {$inserted} photos have been submitted and are pending approval."
     ]);
 } catch (Exception $e) {
-    // Rollback file save if DB fails
-    @unlink($fullPath);
-    @unlink($thumbPath);
-    error_log('Gallery upload DB insert failed: ' . $e->getMessage());
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Server error. Please try again.']);
+    if ($pdo->inTransaction()) $pdo->rollBack();
+
+    // Cleanup any files saved before failure
+    foreach ($savedFiles as $pair) {
+        @unlink($pair[0]);
+        @unlink($pair[1]);
+    }
+
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
