@@ -51,13 +51,11 @@ function randomToken($len = 48) {
 }
 
 function ensureTeamDetailsToken(PDO $pdo, int $signupId): string {
-    // If token exists, return it
     $q = $pdo->prepare("SELECT team_details_token FROM signups WHERE id = ?");
     $q->execute([$signupId]);
     $existing = $q->fetchColumn();
     if ($existing) return (string)$existing;
 
-    // Create token (retry on rare collision)
     for ($i=0; $i<5; $i++) {
         $token = randomToken(48);
         try {
@@ -68,7 +66,6 @@ function ensureTeamDetailsToken(PDO $pdo, int $signupId): string {
             ");
             $u->execute([$token, $signupId]);
 
-            // confirm
             $q->execute([$signupId]);
             $final = $q->fetchColumn();
             if ($final) return (string)$final;
@@ -78,7 +75,6 @@ function ensureTeamDetailsToken(PDO $pdo, int $signupId): string {
         }
     }
 
-    // last attempt to read whatever is there
     $q->execute([$signupId]);
     $final = $q->fetchColumn();
     return $final ? (string)$final : '';
@@ -127,7 +123,6 @@ function buildStatusEmailBody(PDO $pdo, array $signup, array $legs) {
         $body .= "If we have recorded your interest for a leg that is currently taken, we will be in touch should that leg become available due to the other team pulling out.\n\n";
     }
 
-    // Only include team-details link if at least one confirmed leg
     if ($hasConfirmed) {
         $token = ensureTeamDetailsToken($pdo, (int)$signup['id']);
         if ($token) {
@@ -241,9 +236,11 @@ if (isset($_POST['gallery_action']) && isset($_POST['gallery_id'])) {
     $galleryId = (int)$_POST['gallery_id'];
 
     if ($galleryId > 0) {
+
+        // Approve pending -> approved
         if ($_POST['gallery_action'] === 'approve') {
             try {
-                $u = $pdo->prepare("UPDATE gallery_photos SET status = 'approved' WHERE id = ?");
+                $u = $pdo->prepare("UPDATE gallery_photos SET status = 'approved' WHERE id = ? AND status = 'pending'");
                 $u->execute([$galleryId]);
                 $flash = "Gallery photo #{$galleryId} approved.";
             } catch (Exception $e) {
@@ -252,9 +249,9 @@ if (isset($_POST['gallery_action']) && isset($_POST['gallery_id'])) {
             }
         }
 
+        // Reject pending -> hard delete (DB + files)
         if ($_POST['gallery_action'] === 'reject') {
             try {
-                // Load filenames
                 $q = $pdo->prepare("SELECT filename, thumb_filename FROM gallery_photos WHERE id = ? AND status = 'pending'");
                 $q->execute([$galleryId]);
                 $row = $q->fetch(PDO::FETCH_ASSOC);
@@ -263,11 +260,9 @@ if (isset($_POST['gallery_action']) && isset($_POST['gallery_id'])) {
                     $fullPath = __DIR__ . '/gallery/' . (string)$row['filename'];
                     $thumbPath = __DIR__ . '/gallery/thumbs/' . (string)$row['thumb_filename'];
 
-                    // Delete DB row
                     $d = $pdo->prepare("DELETE FROM gallery_photos WHERE id = ?");
                     $d->execute([$galleryId]);
 
-                    // Delete files
                     @unlink($fullPath);
                     @unlink($thumbPath);
 
@@ -280,10 +275,34 @@ if (isset($_POST['gallery_action']) && isset($_POST['gallery_id'])) {
                 error_log("Gallery reject failed: " . $e->getMessage());
             }
         }
+
+        // Archive approved -> archived (soft delete)
+        if ($_POST['gallery_action'] === 'archive') {
+            try {
+                $u = $pdo->prepare("UPDATE gallery_photos SET status = 'archived' WHERE id = ? AND status = 'approved'");
+                $u->execute([$galleryId]);
+                $flash = "Gallery photo #{$galleryId} archived.";
+            } catch (Exception $e) {
+                $flash = "Error archiving gallery photo #{$galleryId}.";
+                error_log("Gallery archive failed: " . $e->getMessage());
+            }
+        }
+
+        // Restore archived -> approved
+        if ($_POST['gallery_action'] === 'restore') {
+            try {
+                $u = $pdo->prepare("UPDATE gallery_photos SET status = 'approved' WHERE id = ? AND status = 'archived'");
+                $u->execute([$galleryId]);
+                $flash = "Gallery photo #{$galleryId} restored.";
+            } catch (Exception $e) {
+                $flash = "Error restoring gallery photo #{$galleryId}.";
+                error_log("Gallery restore failed: " . $e->getMessage());
+            }
+        }
     }
 }
 
-/* -------- DATA (NO FILTERS ON MAIN ADMIN VIEW) -------- */
+/* -------- DATA (SIGNUPS) -------- */
 
 $filter_status = 'all';
 $filter_leg = 'all';
@@ -353,6 +372,9 @@ $processed_count = count($processed_grouped);
 /* -------- GALLERY DATA -------- */
 
 $gallery_pending = [];
+$gallery_approved = [];
+$gallery_archived = [];
+
 try {
     $g = $pdo->query("
         SELECT id, filename, thumb_filename, caption, uploader_name, uploader_email, consent_website, consent_media, uploaded_at
@@ -361,9 +383,27 @@ try {
         ORDER BY uploaded_at DESC
     ");
     $gallery_pending = $g->fetchAll(PDO::FETCH_ASSOC);
+
+    $g2 = $pdo->query("
+        SELECT id, filename, thumb_filename, caption, uploader_name, uploader_email, consent_website, consent_media, uploaded_at
+        FROM gallery_photos
+        WHERE status = 'approved'
+        ORDER BY uploaded_at DESC
+        LIMIT 200
+    ");
+    $gallery_approved = $g2->fetchAll(PDO::FETCH_ASSOC);
+
+    $g3 = $pdo->query("
+        SELECT id, filename, thumb_filename, caption, uploader_name, uploader_email, consent_website, consent_media, uploaded_at
+        FROM gallery_photos
+        WHERE status = 'archived'
+        ORDER BY uploaded_at DESC
+        LIMIT 200
+    ");
+    $gallery_archived = $g3->fetchAll(PDO::FETCH_ASSOC);
+
 } catch (Exception $e) {
-    // If table not created yet, admin still loads
-    error_log("Gallery pending load failed: " . $e->getMessage());
+    error_log("Gallery load failed: " . $e->getMessage());
 }
 
 ?>
@@ -399,7 +439,7 @@ input[type="text"] { width:100%; margin-top:6px; padding:8px; }
   .decision { margin-top:8px; }
 }
 
-/* Gallery admin (minimal additions) */
+/* Gallery admin */
 .gallery-admin-card { border:1px solid #ccc; padding:12px; margin-bottom:12px; display:flex; gap:12px; align-items:flex-start; }
 .gallery-admin-thumb { width:120px; height:auto; border-radius:10px; border:1px solid rgba(0,0,0,0.15); display:block; }
 .gallery-admin-meta { flex: 1; }
@@ -533,9 +573,9 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
 
               <div class="decision">
                 <select name="decision[<?php echo $legNum; ?>]" data-leg="<?php echo $legNum; ?>">
-              <option value="skip" <?php echo ($st === "pending") ? "selected" : ""; ?>>Pending</option>
-              <option value="approve" <?php echo ($st === "confirmed") ? "selected" : ""; ?>>Approve</option>
-              <option value="reject" <?php echo ($st === "rejected") ? "selected" : ""; ?>>Reject</option>
+                  <option value="skip" <?php echo ($st === "pending") ? "selected" : ""; ?>>Pending</option>
+                  <option value="approve" <?php echo ($st === "confirmed") ? "selected" : ""; ?>>Approve</option>
+                  <option value="reject" <?php echo ($st === "rejected") ? "selected" : ""; ?>>Reject</option>
                 </select>
                 <input class="reason-input" type="text" name="reason[<?php echo $legNum; ?>]" placeholder="Rejection reason" data-reason-for="<?php echo $legNum; ?>">
               </div>
@@ -552,7 +592,7 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
   </div>
 </details>
 
-<!-- GALLERY ADMIN SECTION -->
+<!-- GALLERY ADMIN SECTION: PENDING -->
 <details class="processed" style="margin-top:16px;">
   <summary>Gallery submissions pending approval (<?php echo (int)count($gallery_pending); ?>)</summary>
 
@@ -590,9 +630,97 @@ if (isset($_GET['sent']) && $_GET['sent'] === '1') {
               <button type="submit" name="gallery_action" value="approve" style="padding:10px 14px;">Approve</button>
             </form>
 
-            <form method="post" style="margin:0;" onsubmit="return confirm('Reject and delete this submission?');">
+            <form method="post" style="margin:0;" onsubmit="return confirm('Reject and permanently delete this submission?');">
               <input type="hidden" name="gallery_id" value="<?php echo (int)$p['id']; ?>">
               <button type="submit" name="gallery_action" value="reject" style="padding:10px 14px;">Reject</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</details>
+
+<!-- GALLERY ADMIN SECTION: APPROVED -->
+<details class="processed" style="margin-top:16px;">
+  <summary>Gallery approved photos (<?php echo (int)count($gallery_approved); ?> shown)</summary>
+
+  <div style="margin-top:12px;">
+    <?php if (empty($gallery_approved)): ?>
+      <p class="small">No approved gallery photos.</p>
+    <?php endif; ?>
+
+    <?php foreach ($gallery_approved as $p): ?>
+      <div class="gallery-admin-card">
+        <div>
+          <img class="gallery-admin-thumb" src="<?php echo htmlspecialchars('/gallery/thumbs/' . $p['thumb_filename']); ?>" alt="">
+        </div>
+
+        <div class="gallery-admin-meta">
+          <strong>#<?php echo (int)$p['id']; ?></strong>
+          <div class="small">
+            Uploaded: <?php echo htmlspecialchars($p['uploaded_at']); ?><br>
+            Name: <?php echo htmlspecialchars($p['uploader_name']); ?><br>
+            Email: <?php echo htmlspecialchars($p['uploader_email']); ?><br>
+            Consent (website): <?php echo ((int)$p['consent_website'] === 1) ? 'Yes' : 'No'; ?><br>
+            Consent (social/media): <?php echo ((int)$p['consent_media'] === 1) ? 'Yes' : 'No'; ?>
+          </div>
+
+          <?php if (!empty($p['caption'])): ?>
+            <div style="margin-top:8px;">
+              <div class="small" style="font-weight:700;">Caption:</div>
+              <div><?php echo htmlspecialchars($p['caption']); ?></div>
+            </div>
+          <?php endif; ?>
+
+          <div class="gallery-admin-actions">
+            <form method="post" style="margin:0;" onsubmit="return confirm('Archive this photo? It will be removed from the public gallery but can be restored later.');">
+              <input type="hidden" name="gallery_id" value="<?php echo (int)$p['id']; ?>">
+              <button type="submit" name="gallery_action" value="archive" style="padding:10px 14px;">Archive</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</details>
+
+<!-- GALLERY ADMIN SECTION: ARCHIVED -->
+<details class="processed" style="margin-top:16px;">
+  <summary>Gallery archived photos (<?php echo (int)count($gallery_archived); ?> shown)</summary>
+
+  <div style="margin-top:12px;">
+    <?php if (empty($gallery_archived)): ?>
+      <p class="small">No archived gallery photos.</p>
+    <?php endif; ?>
+
+    <?php foreach ($gallery_archived as $p): ?>
+      <div class="gallery-admin-card">
+        <div>
+          <img class="gallery-admin-thumb" src="<?php echo htmlspecialchars('/gallery/thumbs/' . $p['thumb_filename']); ?>" alt="">
+        </div>
+
+        <div class="gallery-admin-meta">
+          <strong>#<?php echo (int)$p['id']; ?></strong>
+          <div class="small">
+            Uploaded: <?php echo htmlspecialchars($p['uploaded_at']); ?><br>
+            Name: <?php echo htmlspecialchars($p['uploader_name']); ?><br>
+            Email: <?php echo htmlspecialchars($p['uploader_email']); ?><br>
+            Consent (website): <?php echo ((int)$p['consent_website'] === 1) ? 'Yes' : 'No'; ?><br>
+            Consent (social/media): <?php echo ((int)$p['consent_media'] === 1) ? 'Yes' : 'No'; ?>
+          </div>
+
+          <?php if (!empty($p['caption'])): ?>
+            <div style="margin-top:8px;">
+              <div class="small" style="font-weight:700;">Caption:</div>
+              <div><?php echo htmlspecialchars($p['caption']); ?></div>
+            </div>
+          <?php endif; ?>
+
+          <div class="gallery-admin-actions">
+            <form method="post" style="margin:0;" onsubmit="return confirm('Restore this photo to the public gallery?');">
+              <input type="hidden" name="gallery_id" value="<?php echo (int)$p['id']; ?>">
+              <button type="submit" name="gallery_action" value="restore" style="padding:10px 14px;">Restore</button>
             </form>
           </div>
         </div>
