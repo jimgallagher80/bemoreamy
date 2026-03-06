@@ -60,6 +60,21 @@
       display: block;
     }
 
+    .home-intro {
+      width: 100%;
+      max-width: 780px;
+      margin: 0 0 12px 0;
+      text-align: center;
+      font-weight: 800;
+      font-size: 16px;
+      line-height: 1.2;
+      color: #111;
+    }
+
+    .home-intro p {
+      margin: 0;
+    }
+
     .home-nav {
       width: 100%;
       max-width: 780px;
@@ -101,6 +116,7 @@
       .home { padding-top: 26px; }
       .home-title { font-size: 22px; }
       .home-dates { font-size: 16px; }
+      .home-intro { font-size: 16px; }
 
       .home-logo { margin: 6px 0 14px 0; }
       .home-logo img { width: min(52vw, 360px); }
@@ -122,6 +138,10 @@
 <body>
   <main class="home" aria-label="Be More Amy home">
 
+    <div class="home-logo" aria-label="Be More Amy logo">
+      <img src="BMAlogo.svg" alt="Be More Amy" />
+    </div>
+
     <div class="home-top">
       <p class="home-title">
         South West Coastal<br />
@@ -130,8 +150,10 @@
       <p class="home-dates">16th to 23rd May 2026</p>
     </div>
 
-    <div class="home-logo" aria-label="Be More Amy logo">
-      <img src="BMAlogo.svg" alt="Be More Amy" />
+    <div class="home-intro">
+      <p>
+        This 630-mile relay of the South West Coast Path, split into 68 legs and running non-stop from 16 to 23 May 2026, is being undertaken in memory of Cdr Amy Gilmore MBE to raise money for four great charities. The route is usually completed anti-clockwise, but we are taking it on in reverse, starting at Studland at 8am on 16 May and finishing at Bossington around noon on 23 May.
+      </p>
     </div>
 
     <nav class="home-nav" aria-label="Primary navigation">
