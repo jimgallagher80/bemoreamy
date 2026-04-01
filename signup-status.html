@@ -45,9 +45,129 @@ Loading…
 </main>
 
 <script>
-async function loadSignups() {
-    const res = await fetch('get_signups.php');
+const LEG_TIMES = {
+    "1":{"setoff":"Sat 16 May 2026 08:00","finish":"Sat 16 May 2026 10:27"},
+    "2":{"setoff":"Sat 16 May 2026 10:27","finish":"Sat 16 May 2026 13:44"},
+    "3":{"setoff":"Sat 16 May 2026 13:44","finish":"Sat 16 May 2026 16:22"},
+    "4":{"setoff":"Sat 16 May 2026 16:22","finish":"Sat 16 May 2026 18:33"},
+    "5":{"setoff":"Sat 16 May 2026 18:33","finish":"Sat 16 May 2026 20:01"},
+    "6":{"setoff":"Sat 16 May 2026 20:01","finish":"Sat 16 May 2026 21:51"},
+    "7":{"setoff":"Sat 16 May 2026 21:51","finish":"Sat 16 May 2026 23:41"},
+    "8":{"setoff":"Sat 16 May 2026 23:41","finish":"Sun 17 May 2026 02:14"},
+    "9":{"setoff":"Sun 17 May 2026 02:14","finish":"Sun 17 May 2026 04:48"},
+    "10":{"setoff":"Sun 17 May 2026 04:48","finish":"Sun 17 May 2026 07:00"},
+    "11":{"setoff":"Sun 17 May 2026 07:00","finish":"Sun 17 May 2026 09:19"},
+    "12":{"setoff":"Sun 17 May 2026 09:19","finish":"Sun 17 May 2026 11:53"},
+    "13":{"setoff":"Sun 17 May 2026 11:53","finish":"Sun 17 May 2026 15:03"},
+    "14":{"setoff":"Sun 17 May 2026 15:03","finish":"Sun 17 May 2026 16:45"},
+    "15":{"setoff":"Sun 17 May 2026 16:45","finish":"Sun 17 May 2026 19:26"},
+    "16":{"setoff":"Sun 17 May 2026 19:26","finish":"Sun 17 May 2026 21:31"},
+    "17":{"setoff":"Sun 17 May 2026 21:31","finish":"Sun 17 May 2026 23:06"},
+    "18":{"setoff":"Sun 17 May 2026 23:06","finish":"Mon 18 May 2026 01:39"},
+    "19":{"setoff":"Mon 18 May 2026 01:39","finish":"Mon 18 May 2026 04:35"},
+    "20":{"setoff":"Mon 18 May 2026 04:35","finish":"Mon 18 May 2026 07:42"},
+    "21":{"setoff":"Mon 18 May 2026 07:42","finish":"Mon 18 May 2026 10:48"},
+    "22":{"setoff":"Mon 18 May 2026 10:48","finish":"Mon 18 May 2026 12:31"},
+    "23":{"setoff":"Mon 18 May 2026 12:31","finish":"Mon 18 May 2026 14:50"},
+    "24":{"setoff":"Mon 18 May 2026 14:50","finish":"Mon 18 May 2026 17:45"},
+    "25":{"setoff":"Mon 18 May 2026 17:45","finish":"Mon 18 May 2026 19:02"},
+    "26":{"setoff":"Mon 18 May 2026 19:02","finish":"Mon 18 May 2026 21:47"},
+    "27":{"setoff":"Mon 18 May 2026 21:47","finish":"Tue 19 May 2026 00:35"},
+    "28":{"setoff":"Tue 19 May 2026 00:35","finish":"Tue 19 May 2026 04:15"},
+    "29":{"setoff":"Tue 19 May 2026 04:15","finish":"Tue 19 May 2026 06:37"},
+    "30":{"setoff":"Tue 19 May 2026 06:37","finish":"Tue 19 May 2026 09:13"},
+    "31":{"setoff":"Tue 19 May 2026 09:13","finish":"Tue 19 May 2026 12:41"},
+    "32":{"setoff":"Tue 19 May 2026 12:41","finish":"Tue 19 May 2026 14:53"},
+    "33":{"setoff":"Tue 19 May 2026 14:53","finish":"Tue 19 May 2026 16:28"},
+    "34":{"setoff":"Tue 19 May 2026 16:28","finish":"Tue 19 May 2026 19:02"},
+    "35":{"setoff":"Tue 19 May 2026 19:02","finish":"Tue 19 May 2026 21:28"},
+    "36":{"setoff":"Tue 19 May 2026 21:28","finish":"Wed 20 May 2026 00:24"},
+    "37":{"setoff":"Wed 20 May 2026 00:24","finish":"Wed 20 May 2026 03:12"},
+    "38":{"setoff":"Wed 20 May 2026 03:12","finish":"Wed 20 May 2026 06:15"},
+    "39":{"setoff":"Wed 20 May 2026 06:15","finish":"Wed 20 May 2026 08:56"},
+    "40":{"setoff":"Wed 20 May 2026 08:56","finish":"Wed 20 May 2026 11:51"},
+    "41":{"setoff":"Wed 20 May 2026 11:51","finish":"Wed 20 May 2026 14:25"},
+    "42":{"setoff":"Wed 20 May 2026 14:25","finish":"Wed 20 May 2026 16:51"},
+    "43":{"setoff":"Wed 20 May 2026 16:51","finish":"Wed 20 May 2026 20:31"},
+    "44":{"setoff":"Wed 20 May 2026 20:31","finish":"Wed 20 May 2026 22:57"},
+    "45":{"setoff":"Wed 20 May 2026 22:57","finish":"Thu 21 May 2026 01:31"},
+    "46":{"setoff":"Thu 21 May 2026 01:31","finish":"Thu 21 May 2026 04:05"},
+    "47":{"setoff":"Thu 21 May 2026 04:05","finish":"Thu 21 May 2026 07:00"},
+    "48":{"setoff":"Thu 21 May 2026 07:00","finish":"Thu 21 May 2026 09:34"},
+    "49":{"setoff":"Thu 21 May 2026 09:34","finish":"Thu 21 May 2026 12:30"},
+    "50":{"setoff":"Thu 21 May 2026 12:30","finish":"Thu 21 May 2026 14:56"},
+    "51":{"setoff":"Thu 21 May 2026 14:56","finish":"Thu 21 May 2026 17:19"},
+    "52":{"setoff":"Thu 21 May 2026 17:19","finish":"Thu 21 May 2026 20:36"},
+    "53":{"setoff":"Thu 21 May 2026 20:36","finish":"Thu 21 May 2026 22:33"},
+    "54":{"setoff":"Thu 21 May 2026 22:33","finish":"Fri 22 May 2026 00:52"},
+    "55":{"setoff":"Fri 22 May 2026 00:52","finish":"Fri 22 May 2026 03:55"},
+    "56":{"setoff":"Fri 22 May 2026 03:55","finish":"Fri 22 May 2026 07:13"},
+    "57":{"setoff":"Fri 22 May 2026 07:13","finish":"Fri 22 May 2026 09:39"},
+    "58":{"setoff":"Fri 22 May 2026 09:39","finish":"Fri 22 May 2026 12:57"},
+    "59":{"setoff":"Fri 22 May 2026 12:57","finish":"Fri 22 May 2026 15:38"},
+    "60":{"setoff":"Fri 22 May 2026 15:38","finish":"Fri 22 May 2026 17:49"},
+    "61":{"setoff":"Fri 22 May 2026 17:49","finish":"Fri 22 May 2026 20:08"},
+    "62":{"setoff":"Fri 22 May 2026 20:08","finish":"Fri 22 May 2026 22:35"},
+    "63":{"setoff":"Fri 22 May 2026 22:35","finish":"Sat 23 May 2026 01:16"},
+    "64":{"setoff":"Sat 23 May 2026 01:16","finish":"Sat 23 May 2026 04:19"},
+    "65":{"setoff":"Sat 23 May 2026 04:19","finish":"Sat 23 May 2026 07:36"},
+    "66":{"setoff":"Sat 23 May 2026 07:36","finish":"Sat 23 May 2026 10:10"},
+    "67":{"setoff":"Sat 23 May 2026 10:10","finish":"Sat 23 May 2026 12:11"},
+    "68":{"setoff":"Sat 23 May 2026 12:11","finish":"Sat 23 May 2026 14:00"}
+};
+
+function formatLegTimeShort(dateTimeStr) {
+    if (!dateTimeStr) return '—';
+    const parts = String(dateTimeStr).trim().split(/\s+/);
+    if (parts.length < 5) return dateTimeStr;
+    const day = parts[0];
+    const dd = parts[1];
+    const mon = parts[2];
+    const time = parts[4];
+    const hhmm = String(time).replace(':', '');
+    return `${hhmm} ${day} ${dd} ${mon}`;
+}
+
+function getLegTiming(legNumber) {
+    const key = String(legNumber);
+    const t = LEG_TIMES[key] || null;
+    return {
+        setoff: t ? formatLegTimeShort(t.setoff) : '—',
+        finish: t ? formatLegTimeShort(t.finish) : '—'
+    };
+}
+
+async function loadLegMeta() {
+    const res = await fetch('ALL_COASTAL_LEGS_ENRICHED.geojson');
     const data = await res.json();
+    const meta = {};
+
+    (data.features || []).forEach(feature => {
+        const props = feature.properties || {};
+        meta[String(props.leg)] = {
+            start: props.start || '—',
+            end: props.end || '—'
+        };
+    });
+
+    return meta;
+}
+
+function getLegSummary(legNumber, legMeta) {
+    const timing = getLegTiming(legNumber);
+    const meta = legMeta[String(legNumber)] || {};
+    const start = meta.start || '—';
+    const end = meta.end || '—';
+    return `Leg ${legNumber}, ${timing.setoff} to ${timing.finish}, ${start} to ${end}`;
+}
+
+async function loadSignups() {
+    const [signupsRes, legMeta] = await Promise.all([
+        fetch('get_signups.php'),
+        loadLegMeta()
+    ]);
+
+    const data = await signupsRes.json();
 
     const container = document.getElementById('signupList');
     container.innerHTML = '';
@@ -60,8 +180,8 @@ async function loadSignups() {
     data.forEach(entry => {
         const div = document.createElement('div');
         div.className = 'signup-entry';
+        const legSummary = getLegSummary(entry.leg_number, legMeta);
 
-        // If team details have been submitted, show team name + member list.
         if (entry.has_team_details) {
             const membersText = (entry.members || []).map(m => {
                 const name = `${m.first_name} ${m.last_name}`;
@@ -69,14 +189,13 @@ async function loadSignups() {
             }).join(', ');
 
             div.innerHTML = `
-                <strong>Leg ${entry.leg_number}</strong><br>
+                <strong>${legSummary}</strong><br>
                 <strong>${entry.display_team_name}</strong><br>
                 ${membersText}
             `;
         } else {
-            // Otherwise, show a placeholder team name and indicate details are awaited.
             div.innerHTML = `
-                <strong>Leg ${entry.leg_number}</strong><br>
+                <strong>${legSummary}</strong><br>
                 <strong>${entry.team_leader_first_name} ${entry.team_leader_surname}’s Team</strong><br>
                 Awaiting team name and team members details
             `;
