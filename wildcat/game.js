@@ -31,7 +31,7 @@
   let gameState = "menu";
   let lastTime = 0;
   let groundY = 0;
-  let worldSpeed = 290;
+  let cruiseWorldSpeed = 290;
   let targetWorldSpeed = 0;
   let effectiveWorldSpeed = 0;
   let isTabletMode = false;
@@ -44,15 +44,16 @@
     vy: 0,
     gravity: 930,
     flapImpulse: -300,
-    maxFall: 700,
+    maxFall: 720,
     fuel: 100,
     maxFuel: 100,
-    fuelBurnRate: 7.2,
-    refuelRate: 32,
+    fuelBurnRate: 2.3,
+    refuelRate: 26,
     landed: true,
     crashed: false,
     airborneStarted: false,
-    angle: 0
+    angle: 0,
+    engineOut: false
   };
 
   const world = {
@@ -66,8 +67,7 @@
     obstacles: [],
     platforms: [],
     stars: [],
-    seaPhase: 0,
-    fuelOutFalling: false
+    seaPhase: 0
   };
 
   function getRect() {
@@ -106,7 +106,7 @@
         el.webkitRequestFullscreen();
       }
     } catch {
-      // Ignore. iPhone Safari may refuse or handle differently.
+      // Ignore browser refusal.
     }
   }
 
@@ -133,6 +133,7 @@
     player.crashed = false;
     player.airborneStarted = false;
     player.angle = 0;
+    player.engineOut = false;
   }
 
   function resetWorld() {
@@ -147,7 +148,6 @@
     world.platforms = [];
     world.stars = [];
     world.seaPhase = 0;
-    world.fuelOutFalling = false;
 
     targetWorldSpeed = 0;
     effectiveWorldSpeed = 0;
@@ -184,7 +184,8 @@
       motionPhase: Math.random() * Math.PI * 2,
       motionAmp: moving ? 5 : 0,
       passed: false,
-      startPad: false
+      startPad: false,
+      used: false
     };
     updatePlatformDeck(p);
     return p;
@@ -292,7 +293,6 @@
 
   function spawnObstacle() {
     const rect = getRect();
-
     const airborneWeights = ["cloud", "cloud", "balloon", "balloon", "heli", "jet"];
     const groundWeights = ["tree", "tree", "tree", "building"];
 
@@ -387,12 +387,13 @@
 
   function flap() {
     if (gameState !== "playing") return;
+    if (player.engineOut) return;
 
     if (player.landed) {
       player.landed = false;
       player.airborneStarted = true;
       player.vy = player.flapImpulse;
-      targetWorldSpeed = worldSpeed;
+      targetWorldSpeed = cruiseWorldSpeed;
       return;
     }
 
@@ -464,12 +465,49 @@
     renderStoredScores();
   }
 
+  function getNearestLandingAssistPlatform() {
+    let nearest = null;
+    let nearestDx = Infinity;
+
+    for (const p of world.platforms) {
+      if (p.used) continue;
+      const padCentre = p.deckX + p.refuelZoneW * 0.5;
+      const dx = padCentre - (player.x + player.w * 0.5);
+
+      if (dx >= -40 && dx < nearestDx) {
+        nearestDx = dx;
+        nearest = p;
+      }
+    }
+
+    return { platform: nearest, dx: nearestDx };
+  }
+
   function update(dt) {
     if (gameState !== "playing") return;
 
     const rect = getRect();
     if (!rect.width || !rect.height || !groundY) return;
 
+    const assist = getNearestLandingAssistPlatform();
+    const assistPlatform = assist.platform;
+    const assistDx = assist.dx;
+
+    let desiredSpeed = 0;
+    if (player.landed && !player.airborneStarted) {
+      desiredSpeed = 0;
+    } else if (player.landed) {
+      desiredSpeed = 18;
+    } else {
+      desiredSpeed = cruiseWorldSpeed;
+
+      if (assistPlatform && assistDx < 260) {
+        const t = Math.max(0, Math.min(1, assistDx / 260));
+        desiredSpeed = 85 + (cruiseWorldSpeed - 85) * t;
+      }
+    }
+
+    targetWorldSpeed = desiredSpeed;
     effectiveWorldSpeed += (targetWorldSpeed - effectiveWorldSpeed) * Math.min(1, dt * 2.8);
     world.seaPhase += dt * 1.6;
 
@@ -483,7 +521,7 @@
       player.fuel -= player.fuelBurnRate * dt;
       if (player.fuel <= 0) {
         player.fuel = 0;
-        world.fuelOutFalling = true;
+        player.engineOut = true;
       }
 
       world.nextObstacleSpawn -= effectiveWorldSpeed * dt;
@@ -504,6 +542,9 @@
       if (player.airborneStarted) {
         player.fuel += player.refuelRate * dt;
         player.fuel = Math.min(player.fuel, player.maxFuel);
+        if (player.fuel > 8) {
+          player.engineOut = false;
+        }
       }
     }
 
@@ -602,6 +643,8 @@
 
     if (player.landed) {
       targetAngle = 0;
+    } else if (player.engineOut) {
+      targetAngle = 0.24;
     } else if (player.vy < -80) {
       targetAngle = -0.2;
     } else if (player.vy > 130) {
@@ -652,32 +695,32 @@
 
     for (const p of world.platforms) {
       const landingZone = {
-        x: p.deckX,
-        y: p.deckY,
-        w: p.refuelZoneW,
-        h: 14
+        x: p.deckX - 8,
+        y: p.deckY - 2,
+        w: p.refuelZoneW + 16,
+        h: 18
       };
 
       const centreX = pb.x + pb.w * 0.5;
       const overLandingZone = centreX > landingZone.x && centreX < landingZone.x + landingZone.w;
-      const touchingDeck = pb.y + pb.h >= landingZone.y - 2 && pb.y + pb.h <= landingZone.y + 18;
+      const touchingDeck = pb.y + pb.h >= landingZone.y - 2 && pb.y + pb.h <= landingZone.y + 20;
 
       if (overLandingZone && touchingDeck && player.vy >= 0) {
         const speed = Math.abs(player.vy);
 
-        if (speed > 330) {
+        if (speed > 250) {
           gameOver();
           return;
         }
 
-        player.y = landingZone.y - player.h + 2;
+        player.y = p.deckY - player.h + 2;
         player.vy = 0;
         player.landed = true;
-        targetWorldSpeed = 20;
+        p.used = true;
 
         let quality = "Safe";
-        if (speed < 100) quality = "Perfect";
-        else if (speed < 180) quality = "Good";
+        if (speed < 80) quality = "Perfect";
+        else if (speed < 150) quality = "Good";
 
         world.bestLandingQuality = rankLandingQuality(world.bestLandingQuality, quality);
 
