@@ -10,12 +10,10 @@
   const playBtn = document.getElementById("playBtn");
   const playAgainBtn = document.getElementById("playAgainBtn");
   const backToMenuBtn = document.getElementById("backToMenuBtn");
-  const pauseBtn = document.getElementById("pauseBtn");
 
   const distanceValue = document.getElementById("distanceValue");
   const scoreValue = document.getElementById("scoreValue");
   const fuelFill = document.getElementById("fuelFill");
-  const statusValue = document.getElementById("statusValue");
 
   const finalScore = document.getElementById("finalScore");
   const finalDistance = document.getElementById("finalDistance");
@@ -33,7 +31,7 @@
   let gameState = "menu";
   let lastTime = 0;
   let groundY = 0;
-  let worldSpeed = 320;
+  let worldSpeed = 290;
   let targetWorldSpeed = 0;
   let effectiveWorldSpeed = 0;
   let isTabletMode = false;
@@ -41,16 +39,16 @@
   const player = {
     x: 0,
     y: 0,
-    w: 110,
-    h: 44,
+    w: 78,
+    h: 30,
     vy: 0,
-    gravity: 1050,
-    flapImpulse: -340,
-    maxFall: 820,
+    gravity: 930,
+    flapImpulse: -300,
+    maxFall: 700,
     fuel: 100,
     maxFuel: 100,
-    fuelBurnRate: 8,
-    refuelRate: 34,
+    fuelBurnRate: 7.2,
+    refuelRate: 32,
     landed: true,
     crashed: false,
     airborneStarted: false,
@@ -63,8 +61,8 @@
     successfulLandings: 0,
     bestLandingQuality: "None",
     obstaclesCleared: 0,
-    nextObstacleSpawn: 700,
-    nextPlatformSpawn: 1700,
+    nextObstacleSpawn: 900,
+    nextPlatformSpawn: 1800,
     obstacles: [],
     platforms: [],
     stars: [],
@@ -98,6 +96,20 @@
     }
   }
 
+  async function tryFullscreen() {
+    const el = document.documentElement;
+    try {
+      if (document.fullscreenElement) return;
+      if (el.requestFullscreen) {
+        await el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+    } catch {
+      // Ignore. iPhone Safari may refuse or handle differently.
+    }
+  }
+
   function resizeCanvas() {
     const rect = getRect();
     if (!rect.width || !rect.height) return false;
@@ -107,14 +119,14 @@
     canvas.height = Math.round(rect.height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    groundY = rect.height * 0.83;
+    groundY = rect.height * 0.9;
     return true;
   }
 
   function resetPlayer() {
-    player.x = isTabletMode ? 300 : 220;
-    player.w = isTabletMode ? 128 : 110;
-    player.h = isTabletMode ? 52 : 44;
+    player.x = isTabletMode ? 240 : 150;
+    player.w = isTabletMode ? 88 : 78;
+    player.h = isTabletMode ? 34 : 30;
     player.vy = 0;
     player.fuel = player.maxFuel;
     player.landed = true;
@@ -129,8 +141,8 @@
     world.successfulLandings = 0;
     world.bestLandingQuality = "None";
     world.obstaclesCleared = 0;
-    world.nextObstacleSpawn = 700;
-    world.nextPlatformSpawn = 1700;
+    world.nextObstacleSpawn = 1000;
+    world.nextPlatformSpawn = 2200;
     world.obstacles = [];
     world.platforms = [];
     world.stars = [];
@@ -151,7 +163,7 @@
     for (let i = 0; i < count; i++) {
       world.stars.push({
         x: Math.random() * rect.width,
-        y: Math.random() * rect.height * 0.45,
+        y: Math.random() * rect.height * 0.42,
         r: Math.random() * 2 + 1,
         speed: Math.random() * 10 + 6
       });
@@ -163,14 +175,14 @@
     const p = {
       type,
       x,
-      y: groundY - 24,
-      w: type === "ship" ? (isTabletMode ? 260 : 220) : (isTabletMode ? 300 : 250),
-      h: type === "ship" ? (isTabletMode ? 78 : 64) : (isTabletMode ? 105 : 88),
+      y: groundY - 20,
+      w: type === "ship" ? (isTabletMode ? 230 : 195) : (isTabletMode ? 260 : 220),
+      h: type === "ship" ? (isTabletMode ? 70 : 58) : (isTabletMode ? 90 : 74),
       deckX: 0,
       deckY: 0,
-      refuelZoneW: type === "ship" ? (isTabletMode ? 140 : 120) : (isTabletMode ? 160 : 140),
+      refuelZoneW: type === "ship" ? (isTabletMode ? 120 : 102) : (isTabletMode ? 130 : 112),
       motionPhase: Math.random() * Math.PI * 2,
-      motionAmp: moving ? 8 : 0,
+      motionAmp: moving ? 5 : 0,
       passed: false,
       startPad: false
     };
@@ -180,11 +192,11 @@
 
   function updatePlatformDeck(p) {
     p.deckX = p.x + p.w * 0.5 - p.refuelZoneW * 0.5;
-    p.deckY = p.y - 12;
+    p.deckY = p.y - 10;
   }
 
   function seedStartPlatform() {
-    const start = createPlatform(player.x - 70, "ship");
+    const start = createPlatform(player.x - 45, "ship");
     start.startPad = true;
     start.motionAmp = 0;
     updatePlatformDeck(start);
@@ -195,24 +207,28 @@
     const rect = getRect();
 
     if (type === "cloud") {
+      const w = isTabletMode ? 150 : 124;
+      const h = isTabletMode ? 74 : 60;
       return {
         type,
         x,
-        y: rect.height * (0.14 + Math.random() * 0.25),
-        w: isTabletMode ? 180 : 150,
-        h: isTabletMode ? 90 : 72,
+        y: rect.height * (0.12 + Math.random() * 0.22),
+        w,
+        h,
         speedMul: 1,
         passed: false
       };
     }
 
     if (type === "balloon") {
+      const w = isTabletMode ? 72 : 58;
+      const h = isTabletMode ? 98 : 82;
       return {
         type,
         x,
-        y: rect.height * (0.15 + Math.random() * 0.38),
-        w: isTabletMode ? 90 : 72,
-        h: isTabletMode ? 120 : 96,
+        y: rect.height * (0.16 + Math.random() * 0.34),
+        w,
+        h,
         speedMul: 1,
         bob: Math.random() * Math.PI * 2,
         passed: false
@@ -220,32 +236,36 @@
     }
 
     if (type === "heli") {
+      const w = isTabletMode ? 95 : 80;
+      const h = isTabletMode ? 38 : 30;
       return {
         type,
         x,
-        y: rect.height * (0.18 + Math.random() * 0.38),
-        w: isTabletMode ? 120 : 96,
-        h: isTabletMode ? 48 : 40,
-        speedMul: 1.5,
+        y: rect.height * (0.18 + Math.random() * 0.36),
+        w,
+        h,
+        speedMul: 1.45,
         passed: false
       };
     }
 
     if (type === "jet") {
+      const w = isTabletMode ? 98 : 82;
+      const h = isTabletMode ? 30 : 24;
       return {
         type,
         x,
-        y: rect.height * (0.12 + Math.random() * 0.3),
-        w: isTabletMode ? 120 : 100,
-        h: isTabletMode ? 42 : 34,
-        speedMul: 2.1,
+        y: rect.height * (0.1 + Math.random() * 0.28),
+        w,
+        h,
+        speedMul: 1.9,
         passed: false
       };
     }
 
     if (type === "tree") {
-      const h = isTabletMode ? 200 : 150;
-      const w = isTabletMode ? 80 : 62;
+      const h = isTabletMode ? 120 : 95;
+      const w = isTabletMode ? 48 : 38;
       return {
         type,
         x,
@@ -257,8 +277,8 @@
       };
     }
 
-    const h = isTabletMode ? 280 : 220;
-    const w = isTabletMode ? 120 : 95;
+    const h = isTabletMode ? 160 : 128;
+    const w = isTabletMode ? 74 : 60;
     return {
       type: "building",
       x,
@@ -272,15 +292,33 @@
 
   function spawnObstacle() {
     const rect = getRect();
-    const weighted = ["cloud", "cloud", "balloon", "heli", "jet", "tree", "tree", "building", "building"];
-    const type = weighted[Math.floor(Math.random() * weighted.length)];
-    world.obstacles.push(createObstacle(type, rect.width + 220));
+
+    const airborneWeights = ["cloud", "cloud", "balloon", "balloon", "heli", "jet"];
+    const groundWeights = ["tree", "tree", "tree", "building"];
+
+    const chooseGround = Math.random() < 0.35;
+    const pool = chooseGround ? groundWeights : airborneWeights;
+    const type = pool[Math.floor(Math.random() * pool.length)];
+
+    const obstacle = createObstacle(type, rect.width + 180);
+
+    if (type === "building") {
+      obstacle.h *= 0.9;
+      obstacle.y = groundY - obstacle.h;
+    }
+
+    if (type === "tree") {
+      obstacle.h *= 0.95;
+      obstacle.y = groundY - obstacle.h;
+    }
+
+    world.obstacles.push(obstacle);
   }
 
   function spawnPlatform() {
     const rect = getRect();
-    const type = Math.random() < 0.5 ? "ship" : "island";
-    world.platforms.push(createPlatform(rect.width + 320, type));
+    const type = Math.random() < 0.55 ? "ship" : "island";
+    world.platforms.push(createPlatform(rect.width + 340, type));
   }
 
   function waitForPlayableArea(maxAttempts = 20) {
@@ -315,6 +353,8 @@
       return;
     }
 
+    await tryFullscreen();
+
     startScreen.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
     gameUi.classList.remove("hidden");
@@ -333,8 +373,6 @@
     player.y = startPlatform.deckY - player.h + 2;
 
     gameState = "playing";
-    statusValue.textContent = "Ready";
-    pauseBtn.textContent = "Pause";
     updateHud();
     draw();
   }
@@ -347,18 +385,6 @@
     renderStoredScores();
   }
 
-  function pauseGame() {
-    if (gameState === "playing") {
-      gameState = "paused";
-      pauseBtn.textContent = "Resume";
-      statusValue.textContent = "Paused";
-    } else if (gameState === "paused") {
-      gameState = "playing";
-      pauseBtn.textContent = "Pause";
-      statusValue.textContent = player.landed ? "Ready" : "Flying";
-    }
-  }
-
   function flap() {
     if (gameState !== "playing") return;
 
@@ -367,7 +393,6 @@
       player.airborneStarted = true;
       player.vy = player.flapImpulse;
       targetWorldSpeed = worldSpeed;
-      statusValue.textContent = "Flying";
       return;
     }
 
@@ -445,8 +470,8 @@
     const rect = getRect();
     if (!rect.width || !rect.height || !groundY) return;
 
-    effectiveWorldSpeed += (targetWorldSpeed - effectiveWorldSpeed) * Math.min(1, dt * 2.6);
-    world.seaPhase += dt * 1.8;
+    effectiveWorldSpeed += (targetWorldSpeed - effectiveWorldSpeed) * Math.min(1, dt * 2.8);
+    world.seaPhase += dt * 1.6;
 
     if (!player.landed) {
       player.vy += player.gravity * dt;
@@ -461,19 +486,17 @@
         world.fuelOutFalling = true;
       }
 
-      statusValue.textContent = world.fuelOutFalling ? "Out of fuel" : "Flying";
-
       world.nextObstacleSpawn -= effectiveWorldSpeed * dt;
       world.nextPlatformSpawn -= effectiveWorldSpeed * dt;
 
       if (world.nextObstacleSpawn <= 0) {
         spawnObstacle();
-        world.nextObstacleSpawn = 320 + Math.random() * 360;
+        world.nextObstacleSpawn = 430 + Math.random() * 260;
       }
 
       if (world.nextPlatformSpawn <= 0) {
         spawnPlatform();
-        world.nextPlatformSpawn = 1300 + Math.random() * 900;
+        world.nextPlatformSpawn = 1600 + Math.random() * 900;
       }
     } else {
       player.vy = 0;
@@ -481,9 +504,6 @@
       if (player.airborneStarted) {
         player.fuel += player.refuelRate * dt;
         player.fuel = Math.min(player.fuel, player.maxFuel);
-        statusValue.textContent = "Refuelling";
-      } else {
-        statusValue.textContent = "Ready";
       }
     }
 
@@ -492,12 +512,12 @@
     updateObstacles(dt);
     updatePlayerAngle(dt);
 
-    if (player.y < 20) {
-      player.y = 20;
-      player.vy = 80;
+    if (player.y < 18) {
+      player.y = 18;
+      player.vy = 50;
     }
 
-    if (!player.landed && player.y + player.h >= groundY + 36) {
+    if (!player.landed && player.y + player.h >= groundY + 26) {
       gameOver();
       return;
     }
@@ -524,7 +544,7 @@
       s.x -= (s.speed + effectiveWorldSpeed * 0.03) * dt;
       if (s.x < -5) {
         s.x = rect.width + 5;
-        s.y = Math.random() * rect.height * 0.45;
+        s.y = Math.random() * rect.height * 0.42;
       }
     });
   }
@@ -538,12 +558,10 @@
       }
 
       if (p.type === "ship" && p.motionAmp > 0) {
-        p.motionPhase += dt * 1.5;
-        p.y = groundY - 24 + Math.sin(p.motionPhase) * p.motionAmp;
-      } else if (p.type === "ship") {
-        p.y = groundY - 24;
+        p.motionPhase += dt * 1.4;
+        p.y = groundY - 20 + Math.sin(p.motionPhase) * p.motionAmp;
       } else {
-        p.y = groundY - 24;
+        p.y = groundY - 20;
       }
 
       updatePlatformDeck(p);
@@ -552,7 +570,7 @@
         p.passed = true;
       }
 
-      if (p.x + p.w < -120) {
+      if (p.x + p.w < -140) {
         world.platforms.splice(i, 1);
       }
     }
@@ -565,7 +583,7 @@
 
       if (o.type === "balloon") {
         o.bob += dt * 2;
-        o.y += Math.sin(o.bob) * 18 * dt;
+        o.y += Math.sin(o.bob) * 12 * dt;
       }
 
       if (!o.passed && o.x + o.w < player.x) {
@@ -584,12 +602,12 @@
 
     if (player.landed) {
       targetAngle = 0;
-    } else if (player.vy < -100) {
-      targetAngle = -0.22;
-    } else if (player.vy > 170) {
-      targetAngle = 0.2;
+    } else if (player.vy < -80) {
+      targetAngle = -0.2;
+    } else if (player.vy > 130) {
+      targetAngle = 0.16;
     } else {
-      targetAngle = 0.1;
+      targetAngle = 0.08;
     }
 
     player.angle += (targetAngle - player.angle) * Math.min(1, dt * 8);
@@ -597,10 +615,10 @@
 
   function getPlayerBox() {
     return {
-      x: player.x + 12,
-      y: player.y + 8,
-      w: player.w - 24,
-      h: player.h - 16
+      x: player.x + 10,
+      y: player.y + 6,
+      w: player.w - 20,
+      h: player.h - 12
     };
   }
 
@@ -647,7 +665,7 @@
       if (overLandingZone && touchingDeck && player.vy >= 0) {
         const speed = Math.abs(player.vy);
 
-        if (speed > 380) {
+        if (speed > 330) {
           gameOver();
           return;
         }
@@ -655,11 +673,11 @@
         player.y = landingZone.y - player.h + 2;
         player.vy = 0;
         player.landed = true;
-        targetWorldSpeed = 28;
+        targetWorldSpeed = 20;
 
         let quality = "Safe";
-        if (speed < 120) quality = "Perfect";
-        else if (speed < 220) quality = "Good";
+        if (speed < 100) quality = "Perfect";
+        else if (speed < 180) quality = "Good";
 
         world.bestLandingQuality = rankLandingQuality(world.bestLandingQuality, quality);
 
@@ -680,7 +698,7 @@
   function updateHud() {
     distanceValue.textContent = `${Math.round(world.distance).toLocaleString()} m`;
     scoreValue.textContent = `${Math.round(world.score).toLocaleString()}`;
-    fuelFill.style.transform = `scaleX(${Math.max(0, player.fuel / player.maxFuel)})`;
+    fuelFill.style.transform = `scaleY(${Math.max(0, player.fuel / player.maxFuel)})`;
   }
 
   function draw() {
@@ -711,27 +729,17 @@
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
     });
-
-    if (isTabletMode) {
-      ctx.fillStyle = "rgba(255,255,255,0.06)";
-      for (let i = 0; i < 6; i++) {
-        ctx.beginPath();
-        const y = 90 + i * 38;
-        ctx.ellipse(220 + i * 180, y, 170, 28, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
   }
 
   function drawCloudBands(rect) {
-    ctx.fillStyle = "rgba(255,255,255,0.09)";
+    ctx.fillStyle = "rgba(255,255,255,0.07)";
     for (let i = 0; i < 4; i++) {
       ctx.beginPath();
       ctx.ellipse(
         rect.width * (0.18 + i * 0.24),
-        rect.height * (0.18 + (i % 2) * 0.05),
+        rect.height * (0.16 + (i % 2) * 0.05),
         rect.width * 0.15,
-        rect.height * 0.04,
+        rect.height * 0.035,
         0,
         0,
         Math.PI * 2
@@ -754,10 +762,10 @@
     for (let row = 0; row < 3; row++) {
       ctx.beginPath();
       ctx.strokeStyle = row === 0 ? "rgba(255,255,255,0.24)" : "rgba(255,255,255,0.14)";
-      const yBase = seaTop + 22 + row * 18;
+      const yBase = seaTop + 16 + row * 14;
       for (let i = 0; i <= waveCount; i++) {
         const x = (rect.width / waveCount) * i;
-        const y = yBase + Math.sin((i * 0.9) + world.seaPhase * (1.5 + row * 0.4)) * (6 + row * 2);
+        const y = yBase + Math.sin((i * 0.9) + world.seaPhase * (1.4 + row * 0.35)) * (4 + row * 1.5);
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
@@ -779,26 +787,26 @@
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
     ctx.lineTo(p.x + p.w * 0.9, p.y);
-    ctx.lineTo(p.x + p.w, p.y + 24);
-    ctx.lineTo(p.x + p.w * 0.18, p.y + 24);
+    ctx.lineTo(p.x + p.w, p.y + 20);
+    ctx.lineTo(p.x + p.w * 0.18, p.y + 20);
     ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle = "#8c9aaa";
-    ctx.fillRect(p.x + p.w * 0.16, p.y - 20, p.w * 0.28, 20);
+    ctx.fillRect(p.x + p.w * 0.16, p.y - 16, p.w * 0.24, 16);
 
     ctx.fillStyle = "#36424f";
-    ctx.fillRect(p.deckX, p.deckY, p.refuelZoneW, 12);
+    ctx.fillRect(p.deckX, p.deckY, p.refuelZoneW, 10);
 
     ctx.strokeStyle = "#f4f7fb";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 6);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 26);
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 6);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 26);
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 16);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 16);
+    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 5);
+    ctx.lineTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 21);
+    ctx.moveTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 5);
+    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 21);
+    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 13);
+    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 13);
     ctx.stroke();
 
     ctx.restore();
@@ -809,27 +817,27 @@
 
     ctx.fillStyle = "#9f845c";
     ctx.beginPath();
-    ctx.ellipse(p.x + p.w * 0.5, p.y + 16, p.w * 0.52, 38, 0, 0, Math.PI * 2);
+    ctx.ellipse(p.x + p.w * 0.5, p.y + 12, p.w * 0.52, 30, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = "#609653";
     ctx.beginPath();
-    ctx.ellipse(p.x + p.w * 0.5, p.y + 2, p.w * 0.46, 28, 0, 0, Math.PI * 2);
+    ctx.ellipse(p.x + p.w * 0.5, p.y, p.w * 0.46, 22, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = "#3d4f57";
-    roundRect(ctx, p.deckX - 8, p.deckY - 2, p.refuelZoneW + 16, 18, 8);
+    roundRect(ctx, p.deckX - 6, p.deckY - 2, p.refuelZoneW + 12, 16, 7);
     ctx.fill();
 
     ctx.strokeStyle = "#f4f7fb";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 6);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 26);
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 6);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 26);
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 16);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 16);
+    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 5);
+    ctx.lineTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 21);
+    ctx.moveTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 5);
+    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 21);
+    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 13);
+    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 13);
     ctx.stroke();
 
     ctx.restore();
@@ -856,15 +864,15 @@
     ctx.fill();
 
     ctx.fillStyle = "#1f242b";
-    ctx.fillRect(o.x + o.w * 0.14, o.y + o.h * 0.55, o.w * 0.72, o.h * 0.22);
+    ctx.fillRect(o.x + o.w * 0.14, o.y + o.h * 0.55, o.w * 0.72, o.h * 0.2);
 
     ctx.strokeStyle = "#ffd166";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(o.x + o.w * 0.45, o.y + o.h * 0.75);
-    ctx.lineTo(o.x + o.w * 0.38, o.y + o.h * 0.95);
-    ctx.lineTo(o.x + o.w * 0.52, o.y + o.h * 0.95);
-    ctx.lineTo(o.x + o.w * 0.44, o.y + o.h * 1.15);
+    ctx.moveTo(o.x + o.w * 0.45, o.y + o.h * 0.72);
+    ctx.lineTo(o.x + o.w * 0.4, o.y + o.h * 0.9);
+    ctx.lineTo(o.x + o.w * 0.5, o.y + o.h * 0.9);
+    ctx.lineTo(o.x + o.w * 0.44, o.y + o.h * 1.06);
     ctx.stroke();
     ctx.restore();
   }
@@ -880,13 +888,13 @@
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(o.x + o.w * 0.4, o.y + o.h * 0.55);
-    ctx.lineTo(o.x + o.w * 0.46, o.y + o.h * 0.8);
+    ctx.lineTo(o.x + o.w * 0.46, o.y + o.h * 0.78);
     ctx.moveTo(o.x + o.w * 0.6, o.y + o.h * 0.55);
-    ctx.lineTo(o.x + o.w * 0.54, o.y + o.h * 0.8);
+    ctx.lineTo(o.x + o.w * 0.54, o.y + o.h * 0.78);
     ctx.stroke();
 
     ctx.fillStyle = "#60422f";
-    ctx.fillRect(o.x + o.w * 0.4, o.y + o.h * 0.8, o.w * 0.2, o.h * 0.12);
+    ctx.fillRect(o.x + o.w * 0.42, o.y + o.h * 0.78, o.w * 0.16, o.h * 0.1);
     ctx.restore();
   }
 
@@ -911,20 +919,20 @@
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillRect(o.x + o.w * 0.35, o.y + o.h * 0.15, o.w * 0.12, o.h * 0.7);
+    ctx.fillRect(o.x + o.w * 0.35, o.y + o.h * 0.18, o.w * 0.12, o.h * 0.64);
     ctx.restore();
   }
 
   function drawTree(o) {
     ctx.save();
     ctx.fillStyle = "#6f4a2d";
-    ctx.fillRect(o.x + o.w * 0.42, o.y + o.h * 0.6, o.w * 0.16, o.h * 0.4);
+    ctx.fillRect(o.x + o.w * 0.42, o.y + o.h * 0.64, o.w * 0.16, o.h * 0.36);
 
     ctx.fillStyle = "#2f7b44";
     ctx.beginPath();
     ctx.moveTo(o.x + o.w * 0.5, o.y);
-    ctx.lineTo(o.x + o.w * 0.1, o.y + o.h * 0.58);
-    ctx.lineTo(o.x + o.w * 0.9, o.y + o.h * 0.58);
+    ctx.lineTo(o.x + o.w * 0.1, o.y + o.h * 0.62);
+    ctx.lineTo(o.x + o.w * 0.9, o.y + o.h * 0.62);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
@@ -936,16 +944,16 @@
     ctx.fillRect(o.x, o.y, o.w, o.h);
 
     ctx.fillStyle = "#9fb4c6";
-    const cols = 3;
-    const rows = 6;
-    const winW = o.w / 6;
-    const winH = o.h / 12;
+    const cols = 2;
+    const rows = 5;
+    const winW = o.w / 7;
+    const winH = o.h / 14;
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         ctx.fillRect(
-          o.x + 12 + c * (winW + 10),
-          o.y + 12 + r * (winH + 12),
+          o.x + 10 + c * (winW + 10),
+          o.y + 10 + r * (winH + 10),
           winW,
           winH
         );
@@ -963,10 +971,10 @@
 
     ctx.save();
 
-    ctx.globalAlpha = 0.22;
+    ctx.globalAlpha = 0.18;
     ctx.fillStyle = "#000";
     ctx.beginPath();
-    ctx.ellipse(x + w * 0.42, groundY + 18, w * 0.5, 11, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + w * 0.42, groundY + 14, w * 0.42, 8, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
 
@@ -974,33 +982,33 @@
     ctx.rotate(player.angle);
 
     ctx.fillStyle = "#e7eef5";
-    ctx.fillRect(-w * 0.36, -h * 0.26, w * 0.54, h * 0.48);
-    ctx.fillRect(w * 0.14, -h * 0.14, w * 0.24, h * 0.12);
+    ctx.fillRect(-w * 0.36, -h * 0.24, w * 0.54, h * 0.46);
+    ctx.fillRect(w * 0.14, -h * 0.12, w * 0.22, h * 0.1);
 
     ctx.fillStyle = "#9fd1ff";
-    ctx.fillRect(-w * 0.28, -h * 0.2, w * 0.18, h * 0.16);
+    ctx.fillRect(-w * 0.28, -h * 0.18, w * 0.18, h * 0.14);
 
     ctx.fillStyle = "#333";
-    ctx.fillRect(-w * 0.42, -h * 0.38, w * 0.72, h * 0.06);
-    ctx.fillRect(w * 0.24, -h * 0.42, w * 0.07, h * 0.28);
+    ctx.fillRect(-w * 0.42, -h * 0.36, w * 0.72, h * 0.06);
+    ctx.fillRect(w * 0.24, -h * 0.4, w * 0.07, h * 0.26);
 
     ctx.strokeStyle = "#333";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(-w * 0.28, h * 0.28);
-    ctx.lineTo(w * 0.2, h * 0.28);
-    ctx.moveTo(-w * 0.25, h * 0.28);
-    ctx.lineTo(-w * 0.32, h * 0.44);
-    ctx.moveTo(w * 0.17, h * 0.28);
-    ctx.lineTo(w * 0.24, h * 0.44);
+    ctx.moveTo(-w * 0.28, h * 0.26);
+    ctx.lineTo(w * 0.18, h * 0.26);
+    ctx.moveTo(-w * 0.24, h * 0.26);
+    ctx.lineTo(-w * 0.3, h * 0.4);
+    ctx.moveTo(w * 0.15, h * 0.26);
+    ctx.lineTo(w * 0.22, h * 0.4);
     ctx.stroke();
 
     if (!player.landed) {
       ctx.strokeStyle = "#111";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(-w * 0.48, -h * 0.35);
-      ctx.lineTo(w * 0.42, -h * 0.35);
+      ctx.moveTo(-w * 0.48, -h * 0.34);
+      ctx.lineTo(w * 0.42, -h * 0.34);
       ctx.stroke();
     }
 
@@ -1043,11 +1051,6 @@
       e.preventDefault();
       flap();
     }
-
-    if (e.code === "KeyP" && (gameState === "playing" || gameState === "paused")) {
-      e.preventDefault();
-      pauseGame();
-    }
   }
 
   function init() {
@@ -1057,7 +1060,6 @@
     playBtn.addEventListener("click", startGame);
     playAgainBtn.addEventListener("click", startGame);
     backToMenuBtn.addEventListener("click", showMenu);
-    pauseBtn.addEventListener("click", pauseGame);
 
     window.addEventListener("resize", () => {
       updateOrientationOverlay();
