@@ -12,33 +12,33 @@
 <body>
   <div id="app">
     <div id="rotateOverlay" class="overlay hidden">
-      <div class="overlay-card">
+      <div class="overlay-card tiny-card">
         <div class="rotate-icon">📱↻</div>
-        <h1>Rotate your device</h1>
-        <p>Wildcat Hop is played in landscape mode.</p>
+        <h1>Rotate device</h1>
+        <p>Play in landscape.</p>
       </div>
     </div>
 
     <section id="startScreen" class="screen">
-      <div class="menu-card">
+      <div class="menu-card tiny-card">
         <h1>Wildcat Hop</h1>
-        <p class="subtitle">Tap or press space to hop. Land on ships and islands to refuel.</p>
+        <p class="subtitle">Tap to fly. Land to refuel.</p>
 
         <div class="controls-row">
-          <div><strong>Phone / tablet:</strong> tap</div>
-          <div><strong>Computer:</strong> space bar</div>
+          <div>Phone/tablet: tap</div>
+          <div>Computer: space bar</div>
         </div>
 
         <button id="playBtn" class="btn btn-primary" type="button">Play</button>
 
-        <div class="score-row">
-          <div class="score-box">
-            <div class="score-box-label">Your Best</div>
-            <div id="personalBest" class="score-box-value">0</div>
+        <div class="mini-scores">
+          <div class="mini-box">
+            <div class="mini-label">Best</div>
+            <div id="personalBest" class="mini-value">0</div>
           </div>
 
-          <div class="score-box">
-            <div class="score-box-label">Local Top 10</div>
+          <div class="mini-box">
+            <div class="mini-label">Top 10</div>
             <ol id="localLeaderboard" class="leaderboard"></ol>
           </div>
         </div>
@@ -47,32 +47,23 @@
 
     <section id="gameUi" class="hidden">
       <div id="hud">
-        <div class="hud-group left">
+        <div class="hud-stack">
           <div class="hud-pill">
             <span class="hud-label">Distance</span>
             <span id="distanceValue" class="hud-value">0 m</span>
           </div>
+
           <div class="hud-pill">
             <span class="hud-label">Score</span>
             <span id="scoreValue" class="hud-value">0</span>
           </div>
-        </div>
 
-        <div class="hud-group centre">
-          <div class="fuel-wrap">
-            <div class="fuel-label">Fuel</div>
-            <div class="fuel-bar">
-              <div id="fuelFill" class="fuel-fill"></div>
+          <div class="fuel-panel">
+            <div class="hud-label">Fuel</div>
+            <div class="fuel-vertical">
+              <div id="fuelFill" class="fuel-fill-vertical"></div>
             </div>
           </div>
-        </div>
-
-        <div class="hud-group right">
-          <div class="hud-pill">
-            <span class="hud-label">Status</span>
-            <span id="statusValue" class="hud-value">Ready</span>
-          </div>
-          <button id="pauseBtn" class="btn btn-secondary btn-small" type="button">Pause</button>
         </div>
       </div>
 
@@ -82,12 +73,12 @@
     </section>
 
     <section id="gameOverScreen" class="screen hidden">
-      <div class="menu-card compact">
+      <div class="menu-card tiny-card">
         <h1>Game Over</h1>
 
         <div class="results-grid">
           <div class="result-card">
-            <div class="result-label">Final Score</div>
+            <div class="result-label">Score</div>
             <div id="finalScore" class="result-value">0</div>
           </div>
           <div class="result-card">
@@ -99,7 +90,7 @@
             <div id="finalLandings" class="result-value">0</div>
           </div>
           <div class="result-card">
-            <div class="result-label">Best Landing</div>
+            <div class="result-label">Best landing</div>
             <div id="finalLandingQuality" class="result-value">None</div>
           </div>
         </div>
@@ -108,7 +99,7 @@
 
         <div class="button-row">
           <button id="playAgainBtn" class="btn btn-primary" type="button">Play Again</button>
-          <button id="backToMenuBtn" class="btn btn-secondary" type="button">Main Menu</button>
+          <button id="backToMenuBtn" class="btn btn-secondary" type="button">Menu</button>
         </div>
       </div>
     </section>
