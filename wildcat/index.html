@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <title>Helicopter Passage</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="rotateOverlay" class="overlay hidden">
+      <div class="overlay-card">
+        <div class="rotate-icon">📱↻</div>
+        <h1>Rotate your device</h1>
+        <p>This game is played in landscape mode.</p>
+      </div>
+    </div>
+
+    <div id="startScreen" class="screen">
+      <div class="screen-card">
+        <h1>Helicopter Passage</h1>
+        <p class="subtitle">
+          Hold to climb. Release to descend. Land on ships and islands to refuel.
+        </p>
+
+        <div class="controls-box">
+          <div><strong>Mobile / Tablet:</strong> touch and hold</div>
+          <div><strong>Computer:</strong> hold space bar</div>
+        </div>
+
+        <div class="start-actions">
+          <button id="playBtn" class="btn btn-primary">Play</button>
+        </div>
+
+        <div class="score-panels">
+          <div class="score-panel">
+            <h2>Your Best</h2>
+            <div id="personalBest">0</div>
+          </div>
+          <div class="score-panel">
+            <h2>Local Top 10</h2>
+            <ol id="localLeaderboard" class="leaderboard"></ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="gameUi" class="hidden">
+      <header id="hud">
+        <div class="hud-left">
+          <div class="hud-block">
+            <div class="hud-label">Distance</div>
+            <div id="distanceValue" class="hud-value">0 m</div>
+          </div>
+          <div class="hud-block">
+            <div class="hud-label">Score</div>
+            <div id="scoreValue" class="hud-value">0</div>
+          </div>
+        </div>
+
+        <div class="hud-centre">
+          <div class="fuel-wrap">
+            <div class="fuel-label">Fuel</div>
+            <div class="fuel-bar">
+              <div id="fuelFill" class="fuel-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-right">
+          <div class="hud-block small">
+            <div class="hud-label">Status</div>
+            <div id="statusValue" class="hud-value">Flying</div>
+          </div>
+          <button id="pauseBtn" class="btn btn-secondary small-btn" type="button">Pause</button>
+        </div>
+      </header>
+
+      <main id="gameShell">
+        <canvas id="gameCanvas" width="1600" height="900" aria-label="Game canvas"></canvas>
+      </main>
+    </div>
+
+    <div id="gameOverScreen" class="screen hidden">
+      <div class="screen-card">
+        <h1>Game Over</h1>
+
+        <div class="results-grid">
+          <div class="result-item">
+            <div class="result-label">Final Score</div>
+            <div id="finalScore" class="result-value">0</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Distance</div>
+            <div id="finalDistance" class="result-value">0 m</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Successful Landings</div>
+            <div id="finalLandings" class="result-value">0</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Best Landing</div>
+            <div id="finalLandingQuality" class="result-value">None</div>
+          </div>
+        </div>
+
+        <div id="newPersonalBest" class="notice hidden">New personal best</div>
+
+        <div class="start-actions">
+          <button id="playAgainBtn" class="btn btn-primary">Play Again</button>
+          <button id="backToMenuBtn" class="btn btn-secondary">Main Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
