@@ -26,38 +26,35 @@
   const localLeaderboardEl = document.getElementById("localLeaderboard");
 
   const STORAGE_KEYS = {
-    personalBest: "heliPassage:personalBest",
-    localTop10: "heliPassage:localTop10"
+    personalBest: "wildcatHop:personalBest",
+    localTop10: "wildcatHop:localTop10"
   };
-
-  const BASE_WIDTH = 1600;
-  const BASE_HEIGHT = 900;
 
   let gameState = "menu";
   let lastTime = 0;
-  let inputHeld = false;
-  let worldSpeed = 360;
-  let targetWorldSpeed = 360;
-  let effectiveWorldSpeed = 360;
+  let groundY = 0;
+  let worldSpeed = 320;
+  let targetWorldSpeed = 0;
+  let effectiveWorldSpeed = 0;
   let isTabletMode = false;
-  let isDesktopMode = false;
-  let groundY = 760;
 
   const player = {
-    x: 280,
-    y: 320,
+    x: 0,
+    y: 0,
     w: 110,
     h: 44,
     vy: 0,
-    gravity: 1100,
-    thrust: -1400,
-    maxFall: 900,
+    gravity: 1050,
+    flapImpulse: -340,
+    maxFall: 820,
     fuel: 100,
     maxFuel: 100,
-    fuelBurnRate: 9,
-    refuelRate: 36,
-    landed: false,
-    crashed: false
+    fuelBurnRate: 8,
+    refuelRate: 34,
+    landed: true,
+    crashed: false,
+    airborneStarted: false,
+    angle: 0
   };
 
   const world = {
@@ -66,9 +63,8 @@
     successfulLandings: 0,
     bestLandingQuality: "None",
     obstaclesCleared: 0,
-    nextObstacleSpawn: 0,
-    nextPlatformSpawn: 1400,
-    skyObjects: [],
+    nextObstacleSpawn: 700,
+    nextPlatformSpawn: 1700,
     obstacles: [],
     platforms: [],
     stars: [],
@@ -76,21 +72,21 @@
     fuelOutFalling: false
   };
 
+  function getRect() {
+    return canvas.getBoundingClientRect();
+  }
+
   function getDeviceMode() {
     const width = window.innerWidth;
     const height = window.innerHeight;
     const landscape = width > height;
     const coarse = window.matchMedia("(pointer: coarse)").matches;
-
-    isDesktopMode = !coarse;
     isTabletMode = coarse && Math.max(width, height) >= 1000;
-
     return { width, height, landscape, coarse };
   }
 
   function shouldRequireLandscape() {
-    const { coarse } = getDeviceMode();
-    return coarse;
+    return getDeviceMode().coarse;
   }
 
   function updateOrientationOverlay() {
@@ -103,26 +99,28 @@
   }
 
   function resizeCanvas() {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = getRect();
+    if (!rect.width || !rect.height) return false;
 
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
-
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    groundY = rect.height * 0.84;
+    groundY = rect.height * 0.83;
+    return true;
   }
 
   function resetPlayer() {
-    player.x = isTabletMode ? 340 : 280;
-    player.y = isTabletMode ? 300 : 320;
-    player.w = isTabletMode ? 130 : 110;
+    player.x = isTabletMode ? 300 : 220;
+    player.w = isTabletMode ? 128 : 110;
     player.h = isTabletMode ? 52 : 44;
     player.vy = 0;
     player.fuel = player.maxFuel;
-    player.landed = false;
+    player.landed = true;
     player.crashed = false;
+    player.airborneStarted = false;
+    player.angle = 0;
   }
 
   function resetWorld() {
@@ -131,24 +129,24 @@
     world.successfulLandings = 0;
     world.bestLandingQuality = "None";
     world.obstaclesCleared = 0;
-    world.nextObstacleSpawn = 420;
-    world.nextPlatformSpawn = 1500;
-    world.skyObjects = [];
+    world.nextObstacleSpawn = 700;
+    world.nextPlatformSpawn = 1700;
     world.obstacles = [];
     world.platforms = [];
     world.stars = [];
     world.seaPhase = 0;
     world.fuelOutFalling = false;
-    targetWorldSpeed = 360;
-    effectiveWorldSpeed = 360;
-    worldSpeed = 360;
-    seedBackgroundStars();
-    seedInitialPlatforms();
+
+    targetWorldSpeed = 0;
+    effectiveWorldSpeed = 0;
+
+    seedStars();
+    seedStartPlatform();
   }
 
-  function seedBackgroundStars() {
-    world.stars.length = 0;
-    const rect = canvas.getBoundingClientRect();
+  function seedStars() {
+    const rect = getRect();
+    world.stars = [];
     const count = isTabletMode ? 16 : 10;
     for (let i = 0; i < count; i++) {
       world.stars.push({
@@ -160,121 +158,41 @@
     }
   }
 
-  function seedInitialPlatforms() {
-    const rect = canvas.getBoundingClientRect();
-    world.platforms.push(createPlatform(rect.width + 500, "ship"));
-    world.platforms.push(createPlatform(rect.width + 1700, "island"));
+  function createPlatform(x, type) {
+    const moving = type === "ship";
+    const p = {
+      type,
+      x,
+      y: groundY - 24,
+      w: type === "ship" ? (isTabletMode ? 260 : 220) : (isTabletMode ? 300 : 250),
+      h: type === "ship" ? (isTabletMode ? 78 : 64) : (isTabletMode ? 105 : 88),
+      deckX: 0,
+      deckY: 0,
+      refuelZoneW: type === "ship" ? (isTabletMode ? 140 : 120) : (isTabletMode ? 160 : 140),
+      motionPhase: Math.random() * Math.PI * 2,
+      motionAmp: moving ? 8 : 0,
+      passed: false,
+      startPad: false
+    };
+    updatePlatformDeck(p);
+    return p;
   }
 
-  function startGame() {
-    if (shouldRequireLandscape() && window.innerWidth <= window.innerHeight) {
-      updateOrientationOverlay();
-      return;
-    }
-
-    resizeCanvas();
-    resetPlayer();
-    resetWorld();
-
-    gameState = "playing";
-    startScreen.classList.add("hidden");
-    gameOverScreen.classList.add("hidden");
-    gameUi.classList.remove("hidden");
-    statusValue.textContent = "Flying";
-    pauseBtn.textContent = "Pause";
+  function updatePlatformDeck(p) {
+    p.deckX = p.x + p.w * 0.5 - p.refuelZoneW * 0.5;
+    p.deckY = p.y - 12;
   }
 
-  function showMenu() {
-    gameState = "menu";
-    gameUi.classList.add("hidden");
-    gameOverScreen.classList.add("hidden");
-    startScreen.classList.remove("hidden");
-    renderStoredScores();
-  }
-
-  function pauseGame() {
-    if (gameState === "playing") {
-      gameState = "paused";
-      pauseBtn.textContent = "Resume";
-      statusValue.textContent = "Paused";
-    } else if (gameState === "paused") {
-      gameState = "playing";
-      pauseBtn.textContent = "Pause";
-      statusValue.textContent = "Flying";
-    }
-  }
-
-  function gameOver() {
-    gameState = "gameover";
-    player.crashed = true;
-
-    const score = Math.round(world.score);
-    const distance = Math.round(world.distance);
-    const personalBest = Number(localStorage.getItem(STORAGE_KEYS.personalBest) || 0);
-
-    finalScore.textContent = score.toLocaleString();
-    finalDistance.textContent = `${distance.toLocaleString()} m`;
-    finalLandings.textContent = world.successfulLandings;
-    finalLandingQuality.textContent = world.bestLandingQuality;
-
-    if (score > personalBest) {
-      localStorage.setItem(STORAGE_KEYS.personalBest, String(score));
-      newPersonalBest.classList.remove("hidden");
-    } else {
-      newPersonalBest.classList.add("hidden");
-    }
-
-    saveLocalLeaderboard(score, distance, world.successfulLandings);
-
-    gameUi.classList.add("hidden");
-    gameOverScreen.classList.remove("hidden");
-    renderStoredScores();
-  }
-
-  function saveLocalLeaderboard(score, distance, landings) {
-    const entries = getLocalLeaderboard();
-    entries.push({
-      name: "You",
-      score,
-      distance,
-      landings
-    });
-    entries.sort((a, b) => b.score - a.score);
-    const trimmed = entries.slice(0, 10);
-    localStorage.setItem(STORAGE_KEYS.localTop10, JSON.stringify(trimmed));
-  }
-
-  function getLocalLeaderboard() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.localTop10) || "[]");
-    } catch {
-      return [];
-    }
-  }
-
-  function renderStoredScores() {
-    const pb = Number(localStorage.getItem(STORAGE_KEYS.personalBest) || 0);
-    personalBestEl.textContent = pb.toLocaleString();
-
-    const entries = getLocalLeaderboard();
-    localLeaderboardEl.innerHTML = "";
-
-    if (!entries.length) {
-      const li = document.createElement("li");
-      li.textContent = "No scores yet";
-      localLeaderboardEl.appendChild(li);
-      return;
-    }
-
-    entries.forEach((entry) => {
-      const li = document.createElement("li");
-      li.textContent = `${entry.name} — ${entry.score.toLocaleString()}`;
-      localLeaderboardEl.appendChild(li);
-    });
+  function seedStartPlatform() {
+    const start = createPlatform(player.x - 70, "ship");
+    start.startPad = true;
+    start.motionAmp = 0;
+    updatePlatformDeck(start);
+    world.platforms.push(start);
   }
 
   function createObstacle(type, x) {
-    const rect = canvas.getBoundingClientRect();
+    const rect = getRect();
 
     if (type === "cloud") {
       return {
@@ -308,7 +226,7 @@
         y: rect.height * (0.18 + Math.random() * 0.38),
         w: isTabletMode ? 120 : 96,
         h: isTabletMode ? 48 : 40,
-        speedMul: 1.55,
+        speedMul: 1.5,
         passed: false
       };
     }
@@ -317,89 +235,225 @@
       return {
         type,
         x,
-        y: rect.height * (0.12 + Math.random() * 0.32),
+        y: rect.height * (0.12 + Math.random() * 0.3),
         w: isTabletMode ? 120 : 100,
         h: isTabletMode ? 42 : 34,
-        speedMul: 2.2,
+        speedMul: 2.1,
         passed: false
       };
     }
 
     if (type === "tree") {
+      const h = isTabletMode ? 200 : 150;
+      const w = isTabletMode ? 80 : 62;
       return {
         type,
         x,
-        w: isTabletMode ? 80 : 62,
-        h: isTabletMode ? 200 : 150,
-        y: groundY - (isTabletMode ? 200 : 150),
+        y: groundY - h,
+        w,
+        h,
         speedMul: 1,
         passed: false
       };
     }
 
+    const h = isTabletMode ? 280 : 220;
+    const w = isTabletMode ? 120 : 95;
     return {
       type: "building",
       x,
-      w: isTabletMode ? 120 : 95,
-      h: isTabletMode ? 280 : 220,
-      y: groundY - (isTabletMode ? 280 : 220),
+      y: groundY - h,
+      w,
+      h,
       speedMul: 1,
       passed: false
     };
   }
 
-  function createPlatform(x, type) {
-    const rect = canvas.getBoundingClientRect();
-    const baseY = groundY - 24;
-    const moving = type === "ship";
-
-    return {
-      type,
-      x,
-      y: moving ? baseY + Math.random() * 16 : baseY,
-      w: type === "ship" ? (isTabletMode ? 260 : 220) : (isTabletMode ? 300 : 250),
-      h: type === "ship" ? (isTabletMode ? 78 : 64) : (isTabletMode ? 105 : 88),
-      deckX: 0,
-      deckY: 0,
-      refuelZoneW: type === "ship" ? (isTabletMode ? 140 : 120) : (isTabletMode ? 160 : 140),
-      motionPhase: Math.random() * Math.PI * 2,
-      motionAmp: moving ? 8 : 0,
-      passed: false,
-      used: false
-    };
-  }
-
   function spawnObstacle() {
-    const rect = canvas.getBoundingClientRect();
-    const types = ["cloud", "balloon", "heli", "jet", "tree", "building"];
+    const rect = getRect();
     const weighted = ["cloud", "cloud", "balloon", "heli", "jet", "tree", "tree", "building", "building"];
     const type = weighted[Math.floor(Math.random() * weighted.length)];
-    world.obstacles.push(createObstacle(type, rect.width + 200));
+    world.obstacles.push(createObstacle(type, rect.width + 220));
   }
 
   function spawnPlatform() {
-    const rect = canvas.getBoundingClientRect();
+    const rect = getRect();
     const type = Math.random() < 0.5 ? "ship" : "island";
-    world.platforms.push(createPlatform(rect.width + 300, type));
+    world.platforms.push(createPlatform(rect.width + 320, type));
+  }
+
+  function waitForPlayableArea(maxAttempts = 20) {
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+
+      function check() {
+        attempts += 1;
+        const ok = resizeCanvas();
+        const rect = getRect();
+
+        if (ok && rect.width > 50 && rect.height > 50) {
+          resolve();
+          return;
+        }
+
+        if (attempts >= maxAttempts) {
+          reject(new Error("Game area not ready"));
+          return;
+        }
+
+        requestAnimationFrame(check);
+      }
+
+      requestAnimationFrame(check);
+    });
+  }
+
+  async function startGame() {
+    if (shouldRequireLandscape() && window.innerWidth <= window.innerHeight) {
+      updateOrientationOverlay();
+      return;
+    }
+
+    startScreen.classList.add("hidden");
+    gameOverScreen.classList.add("hidden");
+    gameUi.classList.remove("hidden");
+
+    try {
+      await waitForPlayableArea();
+    } catch {
+      showMenu();
+      return;
+    }
+
+    resetPlayer();
+    resetWorld();
+
+    const startPlatform = world.platforms[0];
+    player.y = startPlatform.deckY - player.h + 2;
+
+    gameState = "playing";
+    statusValue.textContent = "Ready";
+    pauseBtn.textContent = "Pause";
+    updateHud();
+    draw();
+  }
+
+  function showMenu() {
+    gameState = "menu";
+    gameUi.classList.add("hidden");
+    gameOverScreen.classList.add("hidden");
+    startScreen.classList.remove("hidden");
+    renderStoredScores();
+  }
+
+  function pauseGame() {
+    if (gameState === "playing") {
+      gameState = "paused";
+      pauseBtn.textContent = "Resume";
+      statusValue.textContent = "Paused";
+    } else if (gameState === "paused") {
+      gameState = "playing";
+      pauseBtn.textContent = "Pause";
+      statusValue.textContent = player.landed ? "Ready" : "Flying";
+    }
+  }
+
+  function flap() {
+    if (gameState !== "playing") return;
+
+    if (player.landed) {
+      player.landed = false;
+      player.airborneStarted = true;
+      player.vy = player.flapImpulse;
+      targetWorldSpeed = worldSpeed;
+      statusValue.textContent = "Flying";
+      return;
+    }
+
+    player.vy = player.flapImpulse;
+  }
+
+  function getLocalLeaderboard() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.localTop10) || "[]");
+    } catch {
+      return [];
+    }
+  }
+
+  function saveLocalLeaderboard(score, distance, landings) {
+    const entries = getLocalLeaderboard();
+    entries.push({ name: "You", score, distance, landings });
+    entries.sort((a, b) => b.score - a.score);
+    localStorage.setItem(STORAGE_KEYS.localTop10, JSON.stringify(entries.slice(0, 10)));
+  }
+
+  function renderStoredScores() {
+    const pb = Number(localStorage.getItem(STORAGE_KEYS.personalBest) || 0);
+    personalBestEl.textContent = pb.toLocaleString();
+
+    const entries = getLocalLeaderboard();
+    localLeaderboardEl.innerHTML = "";
+
+    if (!entries.length) {
+      const li = document.createElement("li");
+      li.textContent = "No scores yet";
+      localLeaderboardEl.appendChild(li);
+      return;
+    }
+
+    entries.forEach((entry) => {
+      const li = document.createElement("li");
+      li.textContent = `${entry.name} — ${entry.score.toLocaleString()}`;
+      localLeaderboardEl.appendChild(li);
+    });
+  }
+
+  function gameOver() {
+    if (gameState === "gameover") return;
+
+    gameState = "gameover";
+    player.crashed = true;
+
+    const score = Math.round(world.score);
+    const distance = Math.round(world.distance);
+    const personalBest = Number(localStorage.getItem(STORAGE_KEYS.personalBest) || 0);
+
+    finalScore.textContent = score.toLocaleString();
+    finalDistance.textContent = `${distance.toLocaleString()} m`;
+    finalLandings.textContent = world.successfulLandings;
+    finalLandingQuality.textContent = world.bestLandingQuality;
+
+    if (score > personalBest) {
+      localStorage.setItem(STORAGE_KEYS.personalBest, String(score));
+      newPersonalBest.classList.remove("hidden");
+    } else {
+      newPersonalBest.classList.add("hidden");
+    }
+
+    saveLocalLeaderboard(score, distance, world.successfulLandings);
+
+    gameUi.classList.add("hidden");
+    gameOverScreen.classList.remove("hidden");
+    renderStoredScores();
   }
 
   function update(dt) {
     if (gameState !== "playing") return;
 
-    const rect = canvas.getBoundingClientRect();
+    const rect = getRect();
+    if (!rect.width || !rect.height || !groundY) return;
 
-    effectiveWorldSpeed += (targetWorldSpeed - effectiveWorldSpeed) * Math.min(1, dt * 2.5);
-    world.distance += effectiveWorldSpeed * dt * 0.1;
+    effectiveWorldSpeed += (targetWorldSpeed - effectiveWorldSpeed) * Math.min(1, dt * 2.6);
     world.seaPhase += dt * 1.8;
 
     if (!player.landed) {
-      if (inputHeld && player.fuel > 0) {
-        player.vy += player.thrust * dt;
-      }
-
       player.vy += player.gravity * dt;
       player.vy = Math.min(player.vy, player.maxFall);
       player.y += player.vy * dt;
+
+      world.distance += effectiveWorldSpeed * dt * 0.1;
 
       player.fuel -= player.fuelBurnRate * dt;
       if (player.fuel <= 0) {
@@ -407,50 +461,43 @@
         world.fuelOutFalling = true;
       }
 
-      if (world.fuelOutFalling) {
-        statusValue.textContent = "Out of fuel";
-      } else {
-        statusValue.textContent = "Flying";
-      }
-    } else {
-      player.vy = 0;
-      player.fuel += player.refuelRate * dt;
-      player.fuel = Math.min(player.fuel, player.maxFuel);
+      statusValue.textContent = world.fuelOutFalling ? "Out of fuel" : "Flying";
 
-      statusValue.textContent = "Refuelling";
-
-      if (player.fuel >= player.maxFuel - 0.01) {
-        player.landed = false;
-        targetWorldSpeed = worldSpeed;
-        statusValue.textContent = "Flying";
-      }
-    }
-
-    if (!player.landed) {
       world.nextObstacleSpawn -= effectiveWorldSpeed * dt;
       world.nextPlatformSpawn -= effectiveWorldSpeed * dt;
 
       if (world.nextObstacleSpawn <= 0) {
         spawnObstacle();
-        world.nextObstacleSpawn = 300 + Math.random() * 350;
+        world.nextObstacleSpawn = 320 + Math.random() * 360;
       }
 
       if (world.nextPlatformSpawn <= 0) {
         spawnPlatform();
-        world.nextPlatformSpawn = 1200 + Math.random() * 900;
+        world.nextPlatformSpawn = 1300 + Math.random() * 900;
+      }
+    } else {
+      player.vy = 0;
+
+      if (player.airborneStarted) {
+        player.fuel += player.refuelRate * dt;
+        player.fuel = Math.min(player.fuel, player.maxFuel);
+        statusValue.textContent = "Refuelling";
+      } else {
+        statusValue.textContent = "Ready";
       }
     }
 
     updateBackground(dt, rect);
     updatePlatforms(dt);
     updateObstacles(dt);
+    updatePlayerAngle(dt);
 
     if (player.y < 20) {
       player.y = 20;
       player.vy = 80;
     }
 
-    if (player.y + player.h >= groundY + 40) {
+    if (!player.landed && player.y + player.h >= groundY + 36) {
       gameOver();
       return;
     }
@@ -474,7 +521,7 @@
 
   function updateBackground(dt, rect) {
     world.stars.forEach((s) => {
-      s.x -= s.speed * dt;
+      s.x -= (s.speed + effectiveWorldSpeed * 0.03) * dt;
       if (s.x < -5) {
         s.x = rect.width + 5;
         s.y = Math.random() * rect.height * 0.45;
@@ -486,23 +533,26 @@
     for (let i = world.platforms.length - 1; i >= 0; i--) {
       const p = world.platforms[i];
 
-      if (!player.landed) {
+      if (!(player.landed && p.startPad && !player.airborneStarted)) {
         p.x -= effectiveWorldSpeed * dt;
       }
 
-      if (p.type === "ship") {
+      if (p.type === "ship" && p.motionAmp > 0) {
         p.motionPhase += dt * 1.5;
         p.y = groundY - 24 + Math.sin(p.motionPhase) * p.motionAmp;
+      } else if (p.type === "ship") {
+        p.y = groundY - 24;
+      } else {
+        p.y = groundY - 24;
       }
 
-      p.deckX = p.x + p.w * 0.5 - p.refuelZoneW * 0.5;
-      p.deckY = p.y - 12;
+      updatePlatformDeck(p);
 
       if (!p.passed && p.x + p.w < player.x) {
         p.passed = true;
       }
 
-      if (p.x + p.w < -100) {
+      if (p.x + p.w < -120) {
         world.platforms.splice(i, 1);
       }
     }
@@ -523,18 +573,34 @@
         world.obstaclesCleared += 1;
       }
 
-      if (o.x + o.w < -150) {
+      if (o.x + o.w < -160) {
         world.obstacles.splice(i, 1);
       }
     }
   }
 
+  function updatePlayerAngle(dt) {
+    let targetAngle = 0;
+
+    if (player.landed) {
+      targetAngle = 0;
+    } else if (player.vy < -100) {
+      targetAngle = -0.22;
+    } else if (player.vy > 170) {
+      targetAngle = 0.2;
+    } else {
+      targetAngle = 0.1;
+    }
+
+    player.angle += (targetAngle - player.angle) * Math.min(1, dt * 8);
+  }
+
   function getPlayerBox() {
     return {
-      x: player.x + 6,
-      y: player.y + 4,
-      w: player.w - 12,
-      h: player.h - 8
+      x: player.x + 12,
+      y: player.y + 8,
+      w: player.w - 24,
+      h: player.h - 16
     };
   }
 
@@ -553,13 +619,7 @@
     const pb = getPlayerBox();
 
     for (const o of world.obstacles) {
-      const ob = {
-        x: o.x,
-        y: o.y,
-        w: o.w,
-        h: o.h
-      };
-
+      const ob = { x: o.x, y: o.y, w: o.w, h: o.h };
       if (rectsOverlap(pb, ob)) {
         gameOver();
         return;
@@ -577,18 +637,14 @@
         x: p.deckX,
         y: p.deckY,
         w: p.refuelZoneW,
-        h: 16
+        h: 14
       };
 
-      const overLandingZone =
-        pb.x + pb.w * 0.5 > landingZone.x &&
-        pb.x + pb.w * 0.5 < landingZone.x + landingZone.w;
+      const centreX = pb.x + pb.w * 0.5;
+      const overLandingZone = centreX > landingZone.x && centreX < landingZone.x + landingZone.w;
+      const touchingDeck = pb.y + pb.h >= landingZone.y - 2 && pb.y + pb.h <= landingZone.y + 18;
 
-      const descendingOntoDeck =
-        pb.y + pb.h >= landingZone.y - 4 &&
-        pb.y + pb.h <= landingZone.y + 18;
-
-      if (overLandingZone && descendingOntoDeck && player.vy >= 0) {
+      if (overLandingZone && touchingDeck && player.vy >= 0) {
         const speed = Math.abs(player.vy);
 
         if (speed > 380) {
@@ -599,7 +655,6 @@
         player.y = landingZone.y - player.h + 2;
         player.vy = 0;
         player.landed = true;
-        p.used = true;
         targetWorldSpeed = 28;
 
         let quality = "Safe";
@@ -607,17 +662,11 @@
         else if (speed < 220) quality = "Good";
 
         world.bestLandingQuality = rankLandingQuality(world.bestLandingQuality, quality);
-        world.successfulLandings += 1;
-        return;
-      }
 
-      const bodyHitsSide =
-        rectsOverlap(pb, { x: p.x, y: p.y - p.h, w: p.w, h: p.h + 24 }) &&
-        !overLandingZone &&
-        pb.y + pb.h > p.deckY - 10;
+        if (!p.startPad) {
+          world.successfulLandings += 1;
+        }
 
-      if (bodyHitsSide) {
-        gameOver();
         return;
       }
     }
@@ -632,16 +681,12 @@
     distanceValue.textContent = `${Math.round(world.distance).toLocaleString()} m`;
     scoreValue.textContent = `${Math.round(world.score).toLocaleString()}`;
     fuelFill.style.transform = `scaleX(${Math.max(0, player.fuel / player.maxFuel)})`;
-
-    if (player.fuel < 20) {
-      fuelFill.style.filter = "saturate(1.2) brightness(1.05)";
-    } else {
-      fuelFill.style.filter = "none";
-    }
   }
 
   function draw() {
-    const rect = canvas.getBoundingClientRect();
+    const rect = getRect();
+    if (!rect.width || !rect.height) return;
+
     ctx.clearRect(0, 0, rect.width, rect.height);
 
     drawSky(rect);
@@ -773,8 +818,7 @@
     ctx.fill();
 
     ctx.fillStyle = "#3d4f57";
-    ctx.beginPath();
-    ctx.roundRect(p.deckX - 8, p.deckY - 2, p.refuelZoneW + 16, 18, 8);
+    roundRect(ctx, p.deckX - 8, p.deckY - 2, p.refuelZoneW + 16, 18, 8);
     ctx.fill();
 
     ctx.strokeStyle = "#f4f7fb";
@@ -798,7 +842,7 @@
       else if (o.type === "heli") drawEnemyHeli(o);
       else if (o.type === "jet") drawJet(o);
       else if (o.type === "tree") drawTree(o);
-      else if (o.type === "building") drawBuilding(o);
+      else drawBuilding(o);
     }
   }
 
@@ -922,42 +966,60 @@
     ctx.globalAlpha = 0.22;
     ctx.fillStyle = "#000";
     ctx.beginPath();
-    ctx.ellipse(x + w * 0.42, groundY + 20, w * 0.5, 12, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + w * 0.42, groundY + 18, w * 0.5, 11, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
 
+    ctx.translate(x + w * 0.5, y + h * 0.5);
+    ctx.rotate(player.angle);
+
     ctx.fillStyle = "#e7eef5";
-    ctx.fillRect(x + w * 0.14, y + h * 0.24, w * 0.54, h * 0.48);
-    ctx.fillRect(x + w * 0.64, y + h * 0.36, w * 0.24, h * 0.12);
+    ctx.fillRect(-w * 0.36, -h * 0.26, w * 0.54, h * 0.48);
+    ctx.fillRect(w * 0.14, -h * 0.14, w * 0.24, h * 0.12);
 
     ctx.fillStyle = "#9fd1ff";
-    ctx.fillRect(x + w * 0.22, y + h * 0.3, w * 0.18, h * 0.16);
+    ctx.fillRect(-w * 0.28, -h * 0.2, w * 0.18, h * 0.16);
 
     ctx.fillStyle = "#333";
-    ctx.fillRect(x + w * 0.08, y + h * 0.12, w * 0.72, h * 0.06);
-    ctx.fillRect(x + w * 0.74, y + h * 0.08, w * 0.07, h * 0.28);
+    ctx.fillRect(-w * 0.42, -h * 0.38, w * 0.72, h * 0.06);
+    ctx.fillRect(w * 0.24, -h * 0.42, w * 0.07, h * 0.28);
 
     ctx.strokeStyle = "#333";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.22, y + h * 0.78);
-    ctx.lineTo(x + w * 0.7, y + h * 0.78);
-    ctx.moveTo(x + w * 0.25, y + h * 0.78);
-    ctx.lineTo(x + w * 0.18, y + h * 0.94);
-    ctx.moveTo(x + w * 0.67, y + h * 0.78);
-    ctx.lineTo(x + w * 0.74, y + h * 0.94);
+    ctx.moveTo(-w * 0.28, h * 0.28);
+    ctx.lineTo(w * 0.2, h * 0.28);
+    ctx.moveTo(-w * 0.25, h * 0.28);
+    ctx.lineTo(-w * 0.32, h * 0.44);
+    ctx.moveTo(w * 0.17, h * 0.28);
+    ctx.lineTo(w * 0.24, h * 0.44);
     ctx.stroke();
 
     if (!player.landed) {
       ctx.strokeStyle = "#111";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(x + w * 0.02, y + h * 0.15);
-      ctx.lineTo(x + w * 0.92, y + h * 0.15);
+      ctx.moveTo(-w * 0.48, -h * 0.35);
+      ctx.lineTo(w * 0.42, -h * 0.35);
       ctx.stroke();
     }
 
     ctx.restore();
+  }
+
+  function roundRect(ctx2d, x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx2d.beginPath();
+    ctx2d.moveTo(x + r, y);
+    ctx2d.lineTo(x + width - r, y);
+    ctx2d.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx2d.lineTo(x + width, y + height - r);
+    ctx2d.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx2d.lineTo(x + r, y + height);
+    ctx2d.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx2d.lineTo(x, y + r);
+    ctx2d.quadraticCurveTo(x, y, x + r, y);
+    ctx2d.closePath();
   }
 
   function loop(timestamp) {
@@ -971,39 +1033,20 @@
     requestAnimationFrame(loop);
   }
 
-  function setInput(value) {
-    if (gameState === "playing") {
-      inputHeld = value;
-    }
-  }
-
   function onPointerDown(e) {
-    if (e.target.closest("button")) return;
-    if (gameState === "playing") {
-      setInput(true);
-    }
-  }
-
-  function onPointerUp() {
-    setInput(false);
+    if (e.target && typeof e.target.closest === "function" && e.target.closest("button")) return;
+    flap();
   }
 
   function onKeyDown(e) {
     if (e.code === "Space") {
       e.preventDefault();
-      if (gameState === "playing") setInput(true);
+      flap();
     }
 
     if (e.code === "KeyP" && (gameState === "playing" || gameState === "paused")) {
       e.preventDefault();
       pauseGame();
-    }
-  }
-
-  function onKeyUp(e) {
-    if (e.code === "Space") {
-      e.preventDefault();
-      setInput(false);
     }
   }
 
@@ -1027,10 +1070,7 @@
     });
 
     document.addEventListener("pointerdown", onPointerDown, { passive: false });
-    document.addEventListener("pointerup", onPointerUp, { passive: false });
-    document.addEventListener("pointercancel", onPointerUp, { passive: false });
     document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("keyup", onKeyUp);
 
     resizeCanvas();
     requestAnimationFrame(loop);
