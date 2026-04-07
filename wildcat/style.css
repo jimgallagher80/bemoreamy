@@ -177,21 +177,26 @@ p {
 }
 
 .hud-stack {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
   gap: 6px;
+  align-items: start;
 }
 
 .hud-stack > .fuel-panel {
-  order: 1;
+  grid-column: 1;
+  grid-row: 1 / span 2;
 }
 
 .hud-stack > .hud-pill:nth-of-type(1) {
-  order: 2;
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .hud-stack > .hud-pill:nth-of-type(2) {
-  order: 3;
+  grid-column: 2;
+  grid-row: 2;
 }
 
 .hud-pill,
@@ -206,7 +211,7 @@ p {
 .hud-pill {
   display: flex;
   flex-direction: column;
-  min-width: 58px;
+  min-width: 68px;
   padding: 5px 7px;
 }
 
@@ -221,7 +226,6 @@ p {
 .hud-value {
   font-size: 0.82rem;
   font-weight: 700;
-  line-height: 1;
 }
 
 .fuel-panel {
@@ -235,7 +239,7 @@ p {
 .fuel-vertical {
   position: relative;
   width: 10px;
-  height: 96px;
+  height: 92px;
   border-radius: 999px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.12);
@@ -296,6 +300,38 @@ p {
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
+  #hud {
+    top: max(6px, env(safe-area-inset-top, 0px));
+    left: max(6px, env(safe-area-inset-left, 0px));
+  }
+
+  .hud-stack {
+    gap: 4px;
+  }
+
+  .hud-pill {
+    min-width: 60px;
+    padding: 4px 6px;
+  }
+
+  .hud-label {
+    font-size: 0.56rem;
+  }
+
+  .hud-value {
+    font-size: 0.76rem;
+  }
+
+  .fuel-panel {
+    min-width: 24px;
+    padding: 4px 3px 5px;
+  }
+
+  .fuel-vertical {
+    width: 8px;
+    height: 82px;
+  }
+
   .tiny-card {
     padding: 8px;
   }
@@ -333,38 +369,6 @@ p {
 
   .leaderboard {
     font-size: 0.68rem;
-  }
-
-  #hud {
-    top: max(6px, env(safe-area-inset-top, 0px));
-    left: max(6px, env(safe-area-inset-left, 0px));
-  }
-
-  .hud-stack {
-    gap: 4px;
-  }
-
-  .hud-pill {
-    min-width: 54px;
-    padding: 4px 6px;
-  }
-
-  .hud-label {
-    font-size: 0.56rem;
-  }
-
-  .hud-value {
-    font-size: 0.76rem;
-  }
-
-  .fuel-panel {
-    min-width: 24px;
-    padding: 4px 3px 5px;
-  }
-
-  .fuel-vertical {
-    width: 8px;
-    height: 86px;
   }
 }
 
