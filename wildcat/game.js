@@ -6,6 +6,7 @@
   const startScreen = document.getElementById("startScreen");
   const gameUi = document.getElementById("gameUi");
   const gameOverScreen = document.getElementById("gameOverScreen");
+  const app = document.getElementById("app");
 
   const playBtn = document.getElementById("playBtn");
   const playAgainBtn = document.getElementById("playAgainBtn");
@@ -26,6 +27,19 @@
   const STORAGE_KEYS = {
     personalBest: "wildcatHop:personalBest",
     localTop10: "wildcatHop:localTop10"
+  };
+
+  const ASSET_BASE = "/gamegraphics";
+  const ASSET_FILES = {
+    wildcat: "wildcat-heli.svg",
+    ship: "ship.svg",
+    island: "island.svg",
+    tree: "tree.svg",
+    building: "building.svg",
+    cloud: "cloud.svg",
+    balloon: "balloon.svg",
+    enemyHeli: "enemy-heli.svg",
+    jet: "jet.svg"
   };
 
   let gameState = "menu";
@@ -54,7 +68,9 @@
     airborneStarted: false,
     angle: 0,
     engineOut: false,
-    landedPlatform: null
+    landedPlatform: null,
+    landingCountdown: 0,
+    landingCountdownLimit: 6
   };
 
   const world = {
@@ -67,9 +83,13 @@
     nextPlatformSpawn: 1800,
     obstacles: [],
     platforms: [],
+    terrain: [],
     stars: [],
     seaPhase: 0
   };
+
+  const assets = {};
+  let takeoffTimerEl = null;
 
   function getRect() {
     return canvas.getBoundingClientRect();
@@ -98,7 +118,7 @@
   }
 
   async function tryFullscreen() {
-    const el = document.documentElement;
+    const el = app || document.documentElement;
     try {
       if (document.fullscreenElement) return;
       if (el.requestFullscreen) {
@@ -111,6 +131,16 @@
     }
   }
 
+  function syncAppHeight() {
+    const vv = window.visualViewport;
+    const h = Math.round(vv ? vv.height : window.innerHeight);
+    document.documentElement.style.setProperty("--app-height", `${h}px`);
+    if (app) {
+      app.style.height = `${h}px`;
+    }
+    window.scrollTo(0, 0);
+  }
+
   function resizeCanvas() {
     const rect = getRect();
     if (!rect.width || !rect.height) return false;
@@ -120,8 +150,52 @@
     canvas.height = Math.round(rect.height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    groundY = rect.height * 0.9;
+    groundY = rect.height * 0.88;
     return true;
+  }
+
+  function ensureTakeoffTimer() {
+    if (takeoffTimerEl) return;
+    takeoffTimerEl = document.createElement("div");
+    takeoffTimerEl.id = "takeoffTimer";
+    takeoffTimerEl.className = "hidden";
+    gameUi.appendChild(takeoffTimerEl);
+  }
+
+  function loadImage(key, fileName) {
+    const img = new Image();
+    img.decoding = "async";
+    const entry = { img, loaded: false, failed: false };
+    assets[key] = entry;
+    img.onload = () => {
+      entry.loaded = true;
+    };
+    img.onerror = () => {
+      entry.failed = true;
+    };
+    img.src = `${ASSET_BASE}/${fileName}`;
+  }
+
+  function initAssets() {
+    Object.entries(ASSET_FILES).forEach(([key, fileName]) => loadImage(key, fileName));
+  }
+
+  function drawImageOrFallback(assetKey, drawFallback, x, y, w, h, opts = {}) {
+    const entry = assets[assetKey];
+    if (entry && entry.loaded) {
+      ctx.save();
+      if (opts.center) {
+        ctx.translate(x + w * 0.5, y + h * 0.5);
+        if (opts.rotation) ctx.rotate(opts.rotation);
+        ctx.drawImage(entry.img, -w * 0.5, -h * 0.5, w, h);
+      } else {
+        ctx.drawImage(entry.img, x, y, w, h);
+      }
+      ctx.restore();
+      return;
+    }
+
+    drawFallback();
   }
 
   function resetPlayer() {
@@ -136,6 +210,7 @@
     player.angle = 0;
     player.engineOut = false;
     player.landedPlatform = null;
+    player.landingCountdown = 0;
   }
 
   function resetWorld() {
@@ -144,10 +219,11 @@
     world.successfulLandings = 0;
     world.bestLandingQuality = "None";
     world.obstaclesCleared = 0;
-    world.nextObstacleSpawn = 1000;
-    world.nextPlatformSpawn = 2200;
+    world.nextObstacleSpawn = 900;
+    world.nextPlatformSpawn = 1300;
     world.obstacles = [];
     world.platforms = [];
+    world.terrain = [];
     world.stars = [];
     world.seaPhase = 0;
 
@@ -155,7 +231,9 @@
     effectiveWorldSpeed = 0;
 
     seedStars();
+    seedTerrain();
     seedStartPlatform();
+    seedStartingScenery();
   }
 
   function seedStars() {
@@ -172,30 +250,93 @@
     }
   }
 
+  function nextTerrainWidth(type) {
+    if (type === "water") {
+      return (isTabletMode ? 760 : 620) + Math.random() * (isTabletMode ? 260 : 180);
+    }
+    return (isTabletMode ? 640 : 520) + Math.random() * (isTabletMode ? 220 : 170);
+  }
+
+  function createTerrainSegment(x, type, width) {
+    return {
+      x,
+      w: width,
+      type
+    };
+  }
+
+  function seedTerrain() {
+    const rect = getRect();
+    world.terrain = [];
+    let x = -200;
+    let type = "water";
+
+    while (x < rect.width + 2600) {
+      const width = nextTerrainWidth(type);
+      world.terrain.push(createTerrainSegment(x, type, width));
+      x += width;
+      type = type === "water" ? "land" : "water";
+    }
+  }
+
+  function ensureTerrainCoverage() {
+    const rect = getRect();
+    while (
+      world.terrain.length &&
+      world.terrain[world.terrain.length - 1].x + world.terrain[world.terrain.length - 1].w < rect.width + 1800
+    ) {
+      const last = world.terrain[world.terrain.length - 1];
+      const nextType = last.type === "water" ? "land" : "water";
+      world.terrain.push(createTerrainSegment(last.x + last.w, nextType, nextTerrainWidth(nextType)));
+    }
+  }
+
+  function getTerrainTypeAtX(x) {
+    for (const seg of world.terrain) {
+      if (x >= seg.x && x <= seg.x + seg.w) {
+        return seg.type;
+      }
+    }
+    return "water";
+  }
+
+  function getSpawnX() {
+    const rect = getRect();
+    return rect.width + 180;
+  }
+
   function createPlatform(x, type) {
     const moving = type === "ship";
     const p = {
       type,
       x,
-      y: groundY - 20,
-      w: type === "ship" ? (isTabletMode ? 230 : 195) : (isTabletMode ? 260 : 220),
-      h: type === "ship" ? (isTabletMode ? 70 : 58) : (isTabletMode ? 90 : 74),
+      y: 0,
+      w: type === "ship" ? (isTabletMode ? 230 : 200) : (isTabletMode ? 260 : 220),
+      h: type === "ship" ? (isTabletMode ? 70 : 70) : (isTabletMode ? 90 : 90),
       deckX: 0,
       deckY: 0,
-      refuelZoneW: type === "ship" ? (isTabletMode ? 120 : 102) : (isTabletMode ? 130 : 112),
+      refuelZoneW: type === "ship" ? 102 : 112,
       motionPhase: Math.random() * Math.PI * 2,
       motionAmp: moving ? 5 : 0,
       passed: false,
       startPad: false,
-      used: false
+      used: false,
+      slowRadius: type === "ship" ? (isTabletMode ? 420 : 360) : (isTabletMode ? 440 : 380)
     };
     updatePlatformDeck(p);
     return p;
   }
 
   function updatePlatformDeck(p) {
-    p.deckX = p.x + p.w * 0.5 - p.refuelZoneW * 0.5;
-    p.deckY = p.y - 10;
+    if (p.type === "ship") {
+      p.y = groundY - 20;
+      p.deckX = p.x + Math.round((p.w - p.refuelZoneW) * 0.5);
+      p.deckY = p.y + 40;
+    } else {
+      p.y = groundY - 32;
+      p.deckX = p.x + Math.round((p.w - p.refuelZoneW) * 0.5);
+      p.deckY = p.y + 46;
+    }
   }
 
   function seedStartPlatform() {
@@ -204,6 +345,19 @@
     start.motionAmp = 0;
     updatePlatformDeck(start);
     world.platforms.push(start);
+  }
+
+  function seedStartingScenery() {
+    const rect = getRect();
+    const firstLand = world.terrain.find((seg) => seg.type === "land" && seg.x + seg.w > rect.width * 0.5);
+    if (!firstLand) return;
+
+    const count = isTabletMode ? 3 : 2;
+    for (let i = 0; i < count; i++) {
+      const type = i % 2 === 0 ? "tree" : "building";
+      const baseX = Math.max(firstLand.x + 40, rect.width * 0.72 + i * 120);
+      world.obstacles.push(createObstacle(type, baseX));
+    }
   }
 
   function createObstacle(type, x) {
@@ -267,12 +421,12 @@
     }
 
     if (type === "tree") {
-      const h = isTabletMode ? 120 : 95;
-      const w = isTabletMode ? 48 : 38;
+      const h = isTabletMode ? 120 : 100;
+      const w = isTabletMode ? 48 : 40;
       return {
         type,
         x,
-        y: groundY - h,
+        y: groundY - h - 2,
         w,
         h,
         speedMul: 1,
@@ -280,12 +434,12 @@
       };
     }
 
-    const h = isTabletMode ? 160 : 128;
+    const h = isTabletMode ? 160 : 130;
     const w = isTabletMode ? 74 : 60;
     return {
       type: "building",
       x,
-      y: groundY - h,
+      y: groundY - h - 2,
       w,
       h,
       speedMul: 1,
@@ -294,33 +448,20 @@
   }
 
   function spawnObstacle() {
-    const rect = getRect();
+    const spawnX = getSpawnX();
+    const terrainType = getTerrainTypeAtX(spawnX);
     const airborneWeights = ["cloud", "cloud", "balloon", "balloon", "heli", "jet"];
-    const groundWeights = ["tree", "tree", "tree", "building"];
-
-    const chooseGround = Math.random() < 0.35;
-    const pool = chooseGround ? groundWeights : airborneWeights;
+    const landWeights = ["tree", "tree", "tree", "building", "cloud", "balloon"];
+    const pool = terrainType === "land" ? landWeights : airborneWeights;
     const type = pool[Math.floor(Math.random() * pool.length)];
-
-    const obstacle = createObstacle(type, rect.width + 180);
-
-    if (type === "building") {
-      obstacle.h *= 0.9;
-      obstacle.y = groundY - obstacle.h;
-    }
-
-    if (type === "tree") {
-      obstacle.h *= 0.95;
-      obstacle.y = groundY - obstacle.h;
-    }
-
-    world.obstacles.push(obstacle);
+    world.obstacles.push(createObstacle(type, spawnX));
   }
 
   function spawnPlatform() {
-    const rect = getRect();
-    const type = Math.random() < 0.55 ? "ship" : "island";
-    world.platforms.push(createPlatform(rect.width + 340, type));
+    const spawnX = getSpawnX() + 180;
+    const terrainType = getTerrainTypeAtX(spawnX + 80);
+    const type = terrainType === "land" ? "island" : "ship";
+    world.platforms.push(createPlatform(spawnX, type));
   }
 
   function waitForPlayableArea(maxAttempts = 20) {
@@ -355,7 +496,9 @@
       return;
     }
 
+    syncAppHeight();
     await tryFullscreen();
+    syncAppHeight();
 
     startScreen.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
@@ -375,6 +518,10 @@
     player.y = startPlatform.deckY - player.h + 2;
     player.landedPlatform = startPlatform;
 
+    if (takeoffTimerEl) {
+      takeoffTimerEl.classList.add("hidden");
+    }
+
     gameState = "playing";
     updateHud();
     draw();
@@ -385,6 +532,9 @@
     gameUi.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
+    if (takeoffTimerEl) {
+      takeoffTimerEl.classList.add("hidden");
+    }
     renderStoredScores();
   }
 
@@ -394,10 +544,14 @@
 
     if (player.landed) {
       player.landed = false;
-      player.airborneStarted = true;
       player.landedPlatform = null;
+      player.airborneStarted = true;
+      player.landingCountdown = 0;
       player.vy = player.flapImpulse;
       targetWorldSpeed = cruiseWorldSpeed;
+      if (takeoffTimerEl) {
+        takeoffTimerEl.classList.add("hidden");
+      }
       return;
     }
 
@@ -464,39 +618,58 @@
 
     saveLocalLeaderboard(score, distance, world.successfulLandings);
 
+    if (takeoffTimerEl) {
+      takeoffTimerEl.classList.add("hidden");
+    }
+
     gameUi.classList.add("hidden");
     gameOverScreen.classList.remove("hidden");
     renderStoredScores();
   }
 
-  function getNearestLandingAssistPlatform() {
-    let nearest = null;
-    let nearestDistance = Infinity;
+  function getLandingAssistData() {
+    const playerCentreX = player.x + player.w * 0.5;
+    const playerCentreY = player.y + player.h * 0.5;
+    let best = null;
+    let bestDistance = Infinity;
 
     for (const p of world.platforms) {
       if (p.used) continue;
 
-      const domeCenterX = p.deckX + p.refuelZoneW * 0.5;
-      const domeCenterY = p.deckY + 8;
-      const playerCenterX = player.x + player.w * 0.5;
-      const playerCenterY = player.y + player.h * 0.5;
-
-      const dx = domeCenterX - playerCenterX;
-      const dy = domeCenterY - playerCenterY;
+      const padCentreX = p.deckX + p.refuelZoneW * 0.5;
+      const padCentreY = p.deckY + 6;
+      const dx = padCentreX - playerCentreX;
+      const dy = padCentreY - playerCentreY;
       const distance = Math.hypot(dx, dy);
-      const domeRadius = isTabletMode ? 250 : 210;
 
-      if (distance < domeRadius && distance < nearestDistance) {
-        nearest = {
-          platform: p,
-          distance,
-          domeRadius
-        };
-        nearestDistance = distance;
+      if (dx >= -80 && distance < bestDistance) {
+        bestDistance = distance;
+        best = { platform: p, dx, dy, distance, radius: p.slowRadius };
       }
     }
 
-    return nearest;
+    return best;
+  }
+
+  function updateTakeoffTimer(dt) {
+    if (!takeoffTimerEl) return;
+
+    if (player.landed && player.airborneStarted && player.landedPlatform && !player.landedPlatform.startPad) {
+      if (player.landingCountdown <= 0) {
+        player.landingCountdown = player.landingCountdownLimit;
+      }
+      player.landingCountdown -= dt;
+      takeoffTimerEl.classList.remove("hidden");
+      takeoffTimerEl.textContent = `Take off: ${Math.max(0, player.landingCountdown).toFixed(1)}s`;
+
+      if (player.landingCountdown <= 0) {
+        gameOver();
+      }
+      return;
+    }
+
+    player.landingCountdown = 0;
+    takeoffTimerEl.classList.add("hidden");
   }
 
   function update(dt) {
@@ -505,29 +678,34 @@
     const rect = getRect();
     if (!rect.width || !rect.height || !groundY) return;
 
-    const assist = getNearestLandingAssistPlatform();
+    const assist = getLandingAssistData();
 
     let desiredSpeed = 0;
     if (player.landed && !player.airborneStarted) {
       desiredSpeed = 0;
     } else if (player.landed) {
-      desiredSpeed = 18;
+      desiredSpeed = 12;
     } else {
       desiredSpeed = cruiseWorldSpeed;
 
-      if (assist) {
-        const t = Math.max(0, Math.min(1, assist.distance / assist.domeRadius));
-        desiredSpeed = 85 + (cruiseWorldSpeed - 85) * t;
+      if (assist && assist.distance < assist.radius) {
+        const t = Math.max(0, Math.min(1, assist.distance / assist.radius));
+        desiredSpeed = 45 + (cruiseWorldSpeed - 45) * t;
       }
     }
 
     targetWorldSpeed = desiredSpeed;
-    effectiveWorldSpeed += (targetWorldSpeed - effectiveWorldSpeed) * Math.min(1, dt * 2.8);
+    effectiveWorldSpeed += (targetWorldSpeed - effectiveWorldSpeed) * Math.min(1, dt * 3.2);
     world.seaPhase += dt * 1.6;
 
     if (!player.landed) {
       player.vy += player.gravity * dt;
       player.vy = Math.min(player.vy, player.maxFall);
+
+      if (assist && assist.distance < assist.radius * 0.7 && player.vy > 260) {
+        player.vy = 260;
+      }
+
       player.y += player.vy * dt;
 
       world.distance += effectiveWorldSpeed * dt * 0.1;
@@ -543,12 +721,12 @@
 
       if (world.nextObstacleSpawn <= 0) {
         spawnObstacle();
-        world.nextObstacleSpawn = 430 + Math.random() * 260;
+        world.nextObstacleSpawn = 360 + Math.random() * 240;
       }
 
       if (world.nextPlatformSpawn <= 0) {
         spawnPlatform();
-        world.nextPlatformSpawn = 1600 + Math.random() * 900;
+        world.nextPlatformSpawn = 1200 + Math.random() * 700;
       }
     } else {
       player.vy = 0;
@@ -567,9 +745,11 @@
     }
 
     updateBackground(dt, rect);
+    updateTerrain(dt);
     updatePlatforms(dt);
     updateObstacles(dt);
     updatePlayerAngle(dt);
+    updateTakeoffTimer(dt);
 
     if (player.y < 18) {
       player.y = 18;
@@ -608,30 +788,50 @@
     });
   }
 
+  function updateTerrain(dt) {
+    for (let i = world.terrain.length - 1; i >= 0; i--) {
+      const seg = world.terrain[i];
+      seg.x -= effectiveWorldSpeed * dt;
+      if (seg.x + seg.w < -240) {
+        world.terrain.splice(i, 1);
+      }
+    }
+    ensureTerrainCoverage();
+  }
+
   function updatePlatforms(dt) {
     for (let i = world.platforms.length - 1; i >= 0; i--) {
       const p = world.platforms[i];
+      const activeLandingPad = player.landed && player.landedPlatform === p;
+      const anchoredStartPad = p.startPad && !player.airborneStarted;
 
-      if (player.landed && p === player.landedPlatform) {
-        p.x = player.x + player.w * 0.5 - p.w * 0.5;
-      } else if (!(player.landed && p.startPad && !player.airborneStarted)) {
+      if (!activeLandingPad && !anchoredStartPad) {
         p.x -= effectiveWorldSpeed * dt;
       }
 
       if (p.type === "ship" && p.motionAmp > 0) {
         p.motionPhase += dt * 1.4;
-        p.y = groundY - 20 + Math.sin(p.motionPhase) * p.motionAmp;
-      } else {
-        p.y = groundY - 20;
       }
 
       updatePlatformDeck(p);
+
+      if (p.type === "ship" && p.motionAmp > 0) {
+        p.y = groundY - 20 + Math.sin(p.motionPhase) * p.motionAmp;
+        p.deckY = p.y + 40;
+      }
+
+      if (activeLandingPad) {
+        player.y = p.deckY - player.h + 2;
+      }
 
       if (!p.passed && p.x + p.w < player.x) {
         p.passed = true;
       }
 
-      if (p.x + p.w < -140) {
+      if (p.x + p.w < -180) {
+        if (player.landedPlatform === p) {
+          player.landedPlatform = null;
+        }
         world.platforms.splice(i, 1);
       }
     }
@@ -652,7 +852,7 @@
         world.obstaclesCleared += 1;
       }
 
-      if (o.x + o.w < -160) {
+      if (o.x + o.w < -180) {
         world.obstacles.splice(i, 1);
       }
     }
@@ -711,25 +911,24 @@
   function checkPlatformLanding() {
     if (player.landed) return;
 
-    const pb = getPlayerBox();
+    const skidY = player.y + player.h;
+    const centreX = player.x + player.w * 0.5;
 
     for (const p of world.platforms) {
       const landingZone = {
-        x: p.deckX - 12,
-        y: p.deckY - 8,
-        w: p.refuelZoneW + 24,
-        h: 26
+        x: p.deckX - 18,
+        y: p.deckY - 10,
+        w: p.refuelZoneW + 36,
+        h: 34
       };
 
-      const centreX = pb.x + pb.w * 0.5;
-      const bottomY = pb.y + pb.h;
-      const overLandingZone = centreX > landingZone.x && centreX < landingZone.x + landingZone.w;
-      const descendingIntoDeck = bottomY >= landingZone.y && bottomY <= landingZone.y + landingZone.h;
+      const overLandingZone = centreX >= landingZone.x && centreX <= landingZone.x + landingZone.w;
+      const nearDeck = skidY >= landingZone.y - 4 && skidY <= landingZone.y + landingZone.h;
 
-      if (overLandingZone && descendingIntoDeck && player.vy >= 0) {
-        const landingSpeed = Math.abs(player.vy);
+      if (overLandingZone && nearDeck && player.vy >= 0) {
+        const speed = Math.abs(player.vy);
 
-        if (landingSpeed > 250) {
+        if (speed > 320) {
           gameOver();
           return;
         }
@@ -738,11 +937,12 @@
         player.vy = 0;
         player.landed = true;
         player.landedPlatform = p;
+        player.landingCountdown = p.startPad ? 0 : player.landingCountdownLimit;
         p.used = true;
 
         let quality = "Safe";
-        if (landingSpeed < 80) quality = "Perfect";
-        else if (landingSpeed < 150) quality = "Good";
+        if (speed < 60) quality = "Perfect";
+        else if (speed < 130) quality = "Good";
 
         world.bestLandingQuality = rankLandingQuality(world.bestLandingQuality, quality);
 
@@ -774,7 +974,8 @@
 
     drawSky(rect);
     drawCloudBands(rect);
-    drawSea(rect);
+    drawWater(rect);
+    drawTerrain();
     drawPlatforms();
     drawObstacles();
     drawPlayer();
@@ -813,7 +1014,7 @@
     }
   }
 
-  function drawSea(rect) {
+  function drawWater(rect) {
     const seaTop = groundY;
     const seaGrad = ctx.createLinearGradient(0, seaTop, 0, rect.height);
     seaGrad.addColorStop(0, "#1a6385");
@@ -838,6 +1039,19 @@
     }
   }
 
+  function drawTerrain() {
+    for (const seg of world.terrain) {
+      if (seg.type !== "land") continue;
+
+      ctx.save();
+      ctx.fillStyle = "#8c7555";
+      ctx.fillRect(seg.x, groundY - 4, seg.w, canvas.clientHeight - groundY + 12);
+      ctx.fillStyle = "#5b8d48";
+      ctx.fillRect(seg.x, groundY - 16, seg.w, 16);
+      ctx.restore();
+    }
+  }
+
   function drawPlatforms() {
     for (const p of world.platforms) {
       if (p.type === "ship") drawShip(p);
@@ -846,66 +1060,80 @@
   }
 
   function drawShip(p) {
-    ctx.save();
+    drawImageOrFallback(
+      "ship",
+      () => {
+        ctx.save();
+        ctx.fillStyle = "#6f7f8f";
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y + 20);
+        ctx.lineTo(p.x + p.w * 0.9, p.y + 20);
+        ctx.lineTo(p.x + p.w, p.y + 40);
+        ctx.lineTo(p.x + p.w * 0.18, p.y + 40);
+        ctx.closePath();
+        ctx.fill();
 
-    ctx.fillStyle = "#6f7f8f";
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x + p.w * 0.9, p.y);
-    ctx.lineTo(p.x + p.w, p.y + 20);
-    ctx.lineTo(p.x + p.w * 0.18, p.y + 20);
-    ctx.closePath();
-    ctx.fill();
+        ctx.fillStyle = "#8c9aaa";
+        ctx.fillRect(p.x + p.w * 0.16, p.y + 4, p.w * 0.24, 16);
 
-    ctx.fillStyle = "#8c9aaa";
-    ctx.fillRect(p.x + p.w * 0.16, p.y - 16, p.w * 0.24, 16);
+        ctx.fillStyle = "#36424f";
+        ctx.fillRect(p.deckX, p.deckY, p.refuelZoneW, 10);
 
-    ctx.fillStyle = "#36424f";
-    ctx.fillRect(p.deckX, p.deckY, p.refuelZoneW, 10);
-
-    ctx.strokeStyle = "#f4f7fb";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 5);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 21);
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 5);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 21);
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 13);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 13);
-    ctx.stroke();
-
-    ctx.restore();
+        ctx.strokeStyle = "#f4f7fb";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 2);
+        ctx.lineTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 18);
+        ctx.moveTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 2);
+        ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 18);
+        ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 10);
+        ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 10);
+        ctx.stroke();
+        ctx.restore();
+      },
+      p.x,
+      p.y,
+      p.w,
+      p.h
+    );
   }
 
   function drawIsland(p) {
-    ctx.save();
+    drawImageOrFallback(
+      "island",
+      () => {
+        ctx.save();
+        ctx.fillStyle = "#9f845c";
+        ctx.beginPath();
+        ctx.ellipse(p.x + p.w * 0.5, p.y + 56, p.w * 0.52, 30, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-    ctx.fillStyle = "#9f845c";
-    ctx.beginPath();
-    ctx.ellipse(p.x + p.w * 0.5, p.y + 12, p.w * 0.52, 30, 0, 0, Math.PI * 2);
-    ctx.fill();
+        ctx.fillStyle = "#609653";
+        ctx.beginPath();
+        ctx.ellipse(p.x + p.w * 0.5, p.y + 44, p.w * 0.46, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-    ctx.fillStyle = "#609653";
-    ctx.beginPath();
-    ctx.ellipse(p.x + p.w * 0.5, p.y, p.w * 0.46, 22, 0, 0, Math.PI * 2);
-    ctx.fill();
+        ctx.fillStyle = "#3d4f57";
+        roundRect(ctx, p.deckX - 6, p.deckY, p.refuelZoneW + 12, 14, 7);
+        ctx.fill();
 
-    ctx.fillStyle = "#3d4f57";
-    roundRect(ctx, p.deckX - 6, p.deckY - 2, p.refuelZoneW + 12, 16, 7);
-    ctx.fill();
-
-    ctx.strokeStyle = "#f4f7fb";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 5);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 21);
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 5);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 21);
-    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 13);
-    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 13);
-    ctx.stroke();
-
-    ctx.restore();
+        ctx.strokeStyle = "#f4f7fb";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 2);
+        ctx.lineTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 18);
+        ctx.moveTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 2);
+        ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 18);
+        ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 10);
+        ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 10);
+        ctx.stroke();
+        ctx.restore();
+      },
+      p.x,
+      p.y,
+      p.w,
+      p.h
+    );
   }
 
   function drawObstacles() {
@@ -920,112 +1148,166 @@
   }
 
   function drawStormCloud(o) {
-    ctx.save();
-    ctx.fillStyle = "#2e3640";
-    ctx.beginPath();
-    ctx.ellipse(o.x + o.w * 0.25, o.y + o.h * 0.55, o.w * 0.22, o.h * 0.22, 0, 0, Math.PI * 2);
-    ctx.ellipse(o.x + o.w * 0.5, o.y + o.h * 0.42, o.w * 0.25, o.h * 0.28, 0, 0, Math.PI * 2);
-    ctx.ellipse(o.x + o.w * 0.73, o.y + o.h * 0.55, o.w * 0.22, o.h * 0.22, 0, 0, Math.PI * 2);
-    ctx.fill();
+    drawImageOrFallback(
+      "cloud",
+      () => {
+        ctx.save();
+        ctx.fillStyle = "#2e3640";
+        ctx.beginPath();
+        ctx.ellipse(o.x + o.w * 0.25, o.y + o.h * 0.55, o.w * 0.22, o.h * 0.22, 0, 0, Math.PI * 2);
+        ctx.ellipse(o.x + o.w * 0.5, o.y + o.h * 0.42, o.w * 0.25, o.h * 0.28, 0, 0, Math.PI * 2);
+        ctx.ellipse(o.x + o.w * 0.73, o.y + o.h * 0.55, o.w * 0.22, o.h * 0.22, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-    ctx.fillStyle = "#1f242b";
-    ctx.fillRect(o.x + o.w * 0.14, o.y + o.h * 0.55, o.w * 0.72, o.h * 0.2);
+        ctx.fillStyle = "#1f242b";
+        ctx.fillRect(o.x + o.w * 0.14, o.y + o.h * 0.55, o.w * 0.72, o.h * 0.2);
 
-    ctx.strokeStyle = "#ffd166";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(o.x + o.w * 0.45, o.y + o.h * 0.72);
-    ctx.lineTo(o.x + o.w * 0.4, o.y + o.h * 0.9);
-    ctx.lineTo(o.x + o.w * 0.5, o.y + o.h * 0.9);
-    ctx.lineTo(o.x + o.w * 0.44, o.y + o.h * 1.06);
-    ctx.stroke();
-    ctx.restore();
+        ctx.strokeStyle = "#ffd166";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(o.x + o.w * 0.45, o.y + o.h * 0.72);
+        ctx.lineTo(o.x + o.w * 0.4, o.y + o.h * 0.9);
+        ctx.lineTo(o.x + o.w * 0.5, o.y + o.h * 0.9);
+        ctx.lineTo(o.x + o.w * 0.44, o.y + o.h * 1.06);
+        ctx.stroke();
+        ctx.restore();
+      },
+      o.x,
+      o.y,
+      o.w,
+      o.h
+    );
   }
 
   function drawBalloon(o) {
-    ctx.save();
-    ctx.fillStyle = "#f07d4c";
-    ctx.beginPath();
-    ctx.ellipse(o.x + o.w * 0.5, o.y + o.h * 0.35, o.w * 0.35, o.h * 0.28, 0, 0, Math.PI * 2);
-    ctx.fill();
+    drawImageOrFallback(
+      "balloon",
+      () => {
+        ctx.save();
+        ctx.fillStyle = "#f07d4c";
+        ctx.beginPath();
+        ctx.ellipse(o.x + o.w * 0.5, o.y + o.h * 0.35, o.w * 0.35, o.h * 0.28, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-    ctx.strokeStyle = "#f3f7fb";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(o.x + o.w * 0.4, o.y + o.h * 0.55);
-    ctx.lineTo(o.x + o.w * 0.46, o.y + o.h * 0.78);
-    ctx.moveTo(o.x + o.w * 0.6, o.y + o.h * 0.55);
-    ctx.lineTo(o.x + o.w * 0.54, o.y + o.h * 0.78);
-    ctx.stroke();
+        ctx.strokeStyle = "#f3f7fb";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(o.x + o.w * 0.4, o.y + o.h * 0.55);
+        ctx.lineTo(o.x + o.w * 0.46, o.y + o.h * 0.78);
+        ctx.moveTo(o.x + o.w * 0.6, o.y + o.h * 0.55);
+        ctx.lineTo(o.x + o.w * 0.54, o.y + o.h * 0.78);
+        ctx.stroke();
 
-    ctx.fillStyle = "#60422f";
-    ctx.fillRect(o.x + o.w * 0.42, o.y + o.h * 0.78, o.w * 0.16, o.h * 0.1);
-    ctx.restore();
+        ctx.fillStyle = "#60422f";
+        ctx.fillRect(o.x + o.w * 0.42, o.y + o.h * 0.78, o.w * 0.16, o.h * 0.1);
+        ctx.restore();
+      },
+      o.x,
+      o.y,
+      o.w,
+      o.h
+    );
   }
 
   function drawEnemyHeli(o) {
-    ctx.save();
-    ctx.fillStyle = "#d9e2ea";
-    ctx.fillRect(o.x + o.w * 0.18, o.y + o.h * 0.3, o.w * 0.52, o.h * 0.4);
-    ctx.fillRect(o.x + o.w * 0.66, o.y + o.h * 0.4, o.w * 0.22, o.h * 0.12);
-    ctx.fillRect(o.x + o.w * 0.1, o.y + o.h * 0.18, o.w * 0.72, o.h * 0.06);
-    ctx.fillRect(o.x + o.w * 0.76, o.y + o.h * 0.12, o.w * 0.08, o.h * 0.28);
-    ctx.restore();
+    drawImageOrFallback(
+      "enemyHeli",
+      () => {
+        ctx.save();
+        ctx.fillStyle = "#d9e2ea";
+        ctx.fillRect(o.x + o.w * 0.18, o.y + o.h * 0.3, o.w * 0.52, o.h * 0.4);
+        ctx.fillRect(o.x + o.w * 0.66, o.y + o.h * 0.4, o.w * 0.22, o.h * 0.12);
+        ctx.fillRect(o.x + o.w * 0.1, o.y + o.h * 0.18, o.w * 0.72, o.h * 0.06);
+        ctx.fillRect(o.x + o.w * 0.76, o.y + o.h * 0.12, o.w * 0.08, o.h * 0.28);
+        ctx.restore();
+      },
+      o.x,
+      o.y,
+      o.w,
+      o.h
+    );
   }
 
   function drawJet(o) {
-    ctx.save();
-    ctx.fillStyle = "#c6ccd4";
-    ctx.beginPath();
-    ctx.moveTo(o.x, o.y + o.h * 0.55);
-    ctx.lineTo(o.x + o.w * 0.62, o.y + o.h * 0.35);
-    ctx.lineTo(o.x + o.w, o.y + o.h * 0.5);
-    ctx.lineTo(o.x + o.w * 0.62, o.y + o.h * 0.65);
-    ctx.closePath();
-    ctx.fill();
+    drawImageOrFallback(
+      "jet",
+      () => {
+        ctx.save();
+        ctx.fillStyle = "#c6ccd4";
+        ctx.beginPath();
+        ctx.moveTo(o.x, o.y + o.h * 0.55);
+        ctx.lineTo(o.x + o.w * 0.62, o.y + o.h * 0.35);
+        ctx.lineTo(o.x + o.w, o.y + o.h * 0.5);
+        ctx.lineTo(o.x + o.w * 0.62, o.y + o.h * 0.65);
+        ctx.closePath();
+        ctx.fill();
 
-    ctx.fillRect(o.x + o.w * 0.35, o.y + o.h * 0.18, o.w * 0.12, o.h * 0.64);
-    ctx.restore();
+        ctx.fillRect(o.x + o.w * 0.35, o.y + o.h * 0.18, o.w * 0.12, o.h * 0.64);
+        ctx.restore();
+      },
+      o.x,
+      o.y,
+      o.w,
+      o.h
+    );
   }
 
   function drawTree(o) {
-    ctx.save();
-    ctx.fillStyle = "#6f4a2d";
-    ctx.fillRect(o.x + o.w * 0.42, o.y + o.h * 0.64, o.w * 0.16, o.h * 0.36);
+    drawImageOrFallback(
+      "tree",
+      () => {
+        ctx.save();
+        ctx.fillStyle = "#6f4a2d";
+        ctx.fillRect(o.x + o.w * 0.42, o.y + o.h * 0.64, o.w * 0.16, o.h * 0.36);
 
-    ctx.fillStyle = "#2f7b44";
-    ctx.beginPath();
-    ctx.moveTo(o.x + o.w * 0.5, o.y);
-    ctx.lineTo(o.x + o.w * 0.1, o.y + o.h * 0.62);
-    ctx.lineTo(o.x + o.w * 0.9, o.y + o.h * 0.62);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
+        ctx.fillStyle = "#2f7b44";
+        ctx.beginPath();
+        ctx.moveTo(o.x + o.w * 0.5, o.y);
+        ctx.lineTo(o.x + o.w * 0.1, o.y + o.h * 0.62);
+        ctx.lineTo(o.x + o.w * 0.9, o.y + o.h * 0.62);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      },
+      o.x,
+      o.y,
+      o.w,
+      o.h
+    );
   }
 
   function drawBuilding(o) {
-    ctx.save();
-    ctx.fillStyle = "#6c7784";
-    ctx.fillRect(o.x, o.y, o.w, o.h);
+    drawImageOrFallback(
+      "building",
+      () => {
+        ctx.save();
+        ctx.fillStyle = "#6c7784";
+        ctx.fillRect(o.x, o.y, o.w, o.h);
 
-    ctx.fillStyle = "#9fb4c6";
-    const cols = 2;
-    const rows = 5;
-    const winW = o.w / 7;
-    const winH = o.h / 14;
+        ctx.fillStyle = "#9fb4c6";
+        const cols = 2;
+        const rows = 5;
+        const winW = o.w / 7;
+        const winH = o.h / 14;
 
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        ctx.fillRect(
-          o.x + 10 + c * (winW + 10),
-          o.y + 10 + r * (winH + 10),
-          winW,
-          winH
-        );
-      }
-    }
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            ctx.fillRect(
+              o.x + 10 + c * (winW + 10),
+              o.y + 10 + r * (winH + 10),
+              winW,
+              winH
+            );
+          }
+        }
 
-    ctx.restore();
+        ctx.restore();
+      },
+      o.x,
+      o.y,
+      o.w,
+      o.h
+    );
   }
 
   function drawPlayer() {
@@ -1035,49 +1317,60 @@
     const h = player.h;
 
     ctx.save();
-
     ctx.globalAlpha = 0.18;
     ctx.fillStyle = "#000";
     ctx.beginPath();
     ctx.ellipse(x + w * 0.42, groundY + 14, w * 0.42, 8, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
-
-    ctx.translate(x + w * 0.5, y + h * 0.5);
-    ctx.rotate(player.angle);
-
-    ctx.fillStyle = "#e7eef5";
-    ctx.fillRect(-w * 0.36, -h * 0.24, w * 0.54, h * 0.46);
-    ctx.fillRect(w * 0.14, -h * 0.12, w * 0.22, h * 0.1);
-
-    ctx.fillStyle = "#9fd1ff";
-    ctx.fillRect(-w * 0.28, -h * 0.18, w * 0.18, h * 0.14);
-
-    ctx.fillStyle = "#333";
-    ctx.fillRect(-w * 0.42, -h * 0.36, w * 0.72, h * 0.06);
-    ctx.fillRect(w * 0.24, -h * 0.4, w * 0.07, h * 0.26);
-
-    ctx.strokeStyle = "#333";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-w * 0.28, h * 0.26);
-    ctx.lineTo(w * 0.18, h * 0.26);
-    ctx.moveTo(-w * 0.24, h * 0.26);
-    ctx.lineTo(-w * 0.3, h * 0.4);
-    ctx.moveTo(w * 0.15, h * 0.26);
-    ctx.lineTo(w * 0.22, h * 0.4);
-    ctx.stroke();
-
-    if (!player.landed) {
-      ctx.strokeStyle = "#111";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-w * 0.48, -h * 0.34);
-      ctx.lineTo(w * 0.42, -h * 0.34);
-      ctx.stroke();
-    }
-
     ctx.restore();
+
+    drawImageOrFallback(
+      "wildcat",
+      () => {
+        ctx.save();
+        ctx.translate(x + w * 0.5, y + h * 0.5);
+        ctx.rotate(player.angle);
+
+        ctx.fillStyle = "#e7eef5";
+        ctx.fillRect(-w * 0.36, -h * 0.24, w * 0.54, h * 0.46);
+        ctx.fillRect(w * 0.14, -h * 0.12, w * 0.22, h * 0.1);
+
+        ctx.fillStyle = "#9fd1ff";
+        ctx.fillRect(-w * 0.28, -h * 0.18, w * 0.18, h * 0.14);
+
+        ctx.fillStyle = "#333";
+        ctx.fillRect(-w * 0.42, -h * 0.36, w * 0.72, h * 0.06);
+        ctx.fillRect(w * 0.24, -h * 0.4, w * 0.07, h * 0.26);
+
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.28, h * 0.26);
+        ctx.lineTo(w * 0.18, h * 0.26);
+        ctx.moveTo(-w * 0.24, h * 0.26);
+        ctx.lineTo(-w * 0.3, h * 0.4);
+        ctx.moveTo(w * 0.15, h * 0.26);
+        ctx.lineTo(w * 0.22, h * 0.4);
+        ctx.stroke();
+
+        if (!player.landed) {
+          ctx.strokeStyle = "#111";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-w * 0.48, -h * 0.34);
+          ctx.lineTo(w * 0.42, -h * 0.34);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      },
+      x,
+      y,
+      w,
+      h,
+      { center: true, rotation: player.angle }
+    );
   }
 
   function roundRect(ctx2d, x, y, width, height, radius) {
@@ -1119,6 +1412,9 @@
   }
 
   function init() {
+    syncAppHeight();
+    ensureTakeoffTimer();
+    initAssets();
     renderStoredScores();
     updateOrientationOverlay();
 
@@ -1127,14 +1423,23 @@
     backToMenuBtn.addEventListener("click", showMenu);
 
     window.addEventListener("resize", () => {
+      syncAppHeight();
       updateOrientationOverlay();
       resizeCanvas();
     });
 
     window.addEventListener("orientationchange", () => {
+      syncAppHeight();
       updateOrientationOverlay();
       resizeCanvas();
     });
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", () => {
+        syncAppHeight();
+        resizeCanvas();
+      });
+    }
 
     document.addEventListener("pointerdown", onPointerDown, { passive: false });
     document.addEventListener("keydown", onKeyDown);
