@@ -31,7 +31,7 @@
 
   const ASSET_BASE = "/gamegraphics";
   const ASSET_FILES = {
-    wildcat: "wildcat-heli.svg",
+    wildcat: "wildcat-heli.png",
     ship: "ship.svg",
     island: "island.svg",
     tree: "tree.svg",
