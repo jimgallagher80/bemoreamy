@@ -6,6 +6,8 @@
   const startScreen = document.getElementById("startScreen");
   const gameUi = document.getElementById("gameUi");
   const gameOverScreen = document.getElementById("gameOverScreen");
+  const app = document.getElementById("app");
+  const gameShell = document.getElementById("gameShell");
 
   const playBtn = document.getElementById("playBtn");
   const playAgainBtn = document.getElementById("playAgainBtn");
@@ -35,6 +37,7 @@
   let targetWorldSpeed = 0;
   let effectiveWorldSpeed = 0;
   let isTabletMode = false;
+  let appHeight = window.innerHeight;
 
   const player = {
     x: 0,
@@ -53,7 +56,8 @@
     crashed: false,
     airborneStarted: false,
     angle: 0,
-    engineOut: false
+    engineOut: false,
+    landedPlatform: null
   };
 
   const world = {
@@ -97,7 +101,7 @@
   }
 
   async function tryFullscreen() {
-    const el = document.documentElement;
+    const el = gameShell || document.documentElement;
     try {
       if (document.fullscreenElement) return;
       if (el.requestFullscreen) {
@@ -110,6 +114,21 @@
     }
   }
 
+  function syncAppHeight() {
+    const vv = window.visualViewport;
+    const nextHeight = Math.round(vv ? vv.height : window.innerHeight);
+
+    if (nextHeight > 0) {
+      appHeight = nextHeight;
+      document.documentElement.style.setProperty("--app-height", `${nextHeight}px`);
+      if (app) {
+        app.style.height = `${nextHeight}px`;
+      }
+    }
+
+    window.scrollTo(0, 0);
+  }
+
   function resizeCanvas() {
     const rect = getRect();
     if (!rect.width || !rect.height) return false;
@@ -119,7 +138,7 @@
     canvas.height = Math.round(rect.height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    groundY = rect.height * 0.9;
+    groundY = rect.height * 0.84;
     return true;
   }
 
@@ -134,6 +153,7 @@
     player.airborneStarted = false;
     player.angle = 0;
     player.engineOut = false;
+    player.landedPlatform = null;
   }
 
   function resetWorld() {
@@ -353,7 +373,9 @@
       return;
     }
 
+    syncAppHeight();
     await tryFullscreen();
+    syncAppHeight();
 
     startScreen.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
@@ -371,6 +393,7 @@
 
     const startPlatform = world.platforms[0];
     player.y = startPlatform.deckY - player.h + 2;
+    player.landedPlatform = startPlatform;
 
     gameState = "playing";
     updateHud();
@@ -392,6 +415,7 @@
     if (player.landed) {
       player.landed = false;
       player.airborneStarted = true;
+      player.landedPlatform = null;
       player.vy = player.flapImpulse;
       targetWorldSpeed = cruiseWorldSpeed;
       return;
@@ -467,20 +491,31 @@
 
   function getNearestLandingAssistPlatform() {
     let nearest = null;
-    let nearestDx = Infinity;
+    let nearestDistance = Infinity;
 
     for (const p of world.platforms) {
       if (p.used) continue;
-      const padCentre = p.deckX + p.refuelZoneW * 0.5;
-      const dx = padCentre - (player.x + player.w * 0.5);
 
-      if (dx >= -40 && dx < nearestDx) {
-        nearestDx = dx;
-        nearest = p;
+      const domeCenterX = p.deckX + p.refuelZoneW * 0.5;
+      const domeCenterY = p.deckY + 8;
+      const playerCenterX = player.x + player.w * 0.5;
+      const playerCenterY = player.y + player.h * 0.5;
+      const dx = domeCenterX - playerCenterX;
+      const dy = domeCenterY - playerCenterY;
+      const distance = Math.hypot(dx, dy);
+      const domeRadius = isTabletMode ? 250 : 210;
+
+      if (distance < domeRadius && distance < nearestDistance) {
+        nearest = {
+          platform: p,
+          distance,
+          domeRadius
+        };
+        nearestDistance = distance;
       }
     }
 
-    return { platform: nearest, dx: nearestDx };
+    return nearest;
   }
 
   function update(dt) {
@@ -490,8 +525,6 @@
     if (!rect.width || !rect.height || !groundY) return;
 
     const assist = getNearestLandingAssistPlatform();
-    const assistPlatform = assist.platform;
-    const assistDx = assist.dx;
 
     let desiredSpeed = 0;
     if (player.landed && !player.airborneStarted) {
@@ -501,8 +534,8 @@
     } else {
       desiredSpeed = cruiseWorldSpeed;
 
-      if (assistPlatform && assistDx < 260) {
-        const t = Math.max(0, Math.min(1, assistDx / 260));
+      if (assist) {
+        const t = Math.max(0, Math.min(1, assist.distance / assist.domeRadius));
         desiredSpeed = 85 + (cruiseWorldSpeed - 85) * t;
       }
     }
@@ -538,6 +571,10 @@
       }
     } else {
       player.vy = 0;
+
+      if (player.landedPlatform) {
+        player.y = player.landedPlatform.deckY - player.h + 2;
+      }
 
       if (player.airborneStarted) {
         player.fuel += player.refuelRate * dt;
@@ -594,7 +631,9 @@
     for (let i = world.platforms.length - 1; i >= 0; i--) {
       const p = world.platforms[i];
 
-      if (!(player.landed && p.startPad && !player.airborneStarted)) {
+      if (player.landed && p === player.landedPlatform) {
+        p.x = player.x + player.w * 0.5 - p.w * 0.5;
+      } else if (!(player.landed && p.startPad && !player.airborneStarted)) {
         p.x -= effectiveWorldSpeed * dt;
       }
 
@@ -695,17 +734,18 @@
 
     for (const p of world.platforms) {
       const landingZone = {
-        x: p.deckX - 8,
-        y: p.deckY - 2,
-        w: p.refuelZoneW + 16,
-        h: 18
+        x: p.deckX - 12,
+        y: p.deckY - 8,
+        w: p.refuelZoneW + 24,
+        h: 26
       };
 
       const centreX = pb.x + pb.w * 0.5;
+      const bottomY = pb.y + pb.h;
       const overLandingZone = centreX > landingZone.x && centreX < landingZone.x + landingZone.w;
-      const touchingDeck = pb.y + pb.h >= landingZone.y - 2 && pb.y + pb.h <= landingZone.y + 20;
+      const descendingIntoDeck = bottomY >= landingZone.y && bottomY <= landingZone.y + landingZone.h;
 
-      if (overLandingZone && touchingDeck && player.vy >= 0) {
+      if (overLandingZone && descendingIntoDeck && player.vy >= 0) {
         const speed = Math.abs(player.vy);
 
         if (speed > 250) {
@@ -716,6 +756,7 @@
         player.y = p.deckY - player.h + 2;
         player.vy = 0;
         player.landed = true;
+        player.landedPlatform = p;
         p.used = true;
 
         let quality = "Safe";
@@ -1097,6 +1138,7 @@
   }
 
   function init() {
+    syncAppHeight();
     renderStoredScores();
     updateOrientationOverlay();
 
@@ -1105,14 +1147,23 @@
     backToMenuBtn.addEventListener("click", showMenu);
 
     window.addEventListener("resize", () => {
+      syncAppHeight();
       updateOrientationOverlay();
       resizeCanvas();
     });
 
     window.addEventListener("orientationchange", () => {
+      syncAppHeight();
       updateOrientationOverlay();
       resizeCanvas();
     });
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", () => {
+        syncAppHeight();
+        resizeCanvas();
+      });
+    }
 
     document.addEventListener("pointerdown", onPointerDown, { passive: false });
     document.addEventListener("keydown", onKeyDown);
