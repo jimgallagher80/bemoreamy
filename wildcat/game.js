@@ -6,8 +6,6 @@
   const startScreen = document.getElementById("startScreen");
   const gameUi = document.getElementById("gameUi");
   const gameOverScreen = document.getElementById("gameOverScreen");
-  const app = document.getElementById("app");
-  const gameShell = document.getElementById("gameShell");
 
   const playBtn = document.getElementById("playBtn");
   const playAgainBtn = document.getElementById("playAgainBtn");
@@ -37,7 +35,6 @@
   let targetWorldSpeed = 0;
   let effectiveWorldSpeed = 0;
   let isTabletMode = false;
-  let appHeight = window.innerHeight;
 
   const player = {
     x: 0,
@@ -101,7 +98,7 @@
   }
 
   async function tryFullscreen() {
-    const el = gameShell || document.documentElement;
+    const el = document.documentElement;
     try {
       if (document.fullscreenElement) return;
       if (el.requestFullscreen) {
@@ -114,21 +111,6 @@
     }
   }
 
-  function syncAppHeight() {
-    const vv = window.visualViewport;
-    const nextHeight = Math.round(vv ? vv.height : window.innerHeight);
-
-    if (nextHeight > 0) {
-      appHeight = nextHeight;
-      document.documentElement.style.setProperty("--app-height", `${nextHeight}px`);
-      if (app) {
-        app.style.height = `${nextHeight}px`;
-      }
-    }
-
-    window.scrollTo(0, 0);
-  }
-
   function resizeCanvas() {
     const rect = getRect();
     if (!rect.width || !rect.height) return false;
@@ -138,7 +120,7 @@
     canvas.height = Math.round(rect.height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    groundY = rect.height * 0.84;
+    groundY = rect.height * 0.9;
     return true;
   }
 
@@ -373,9 +355,7 @@
       return;
     }
 
-    syncAppHeight();
     await tryFullscreen();
-    syncAppHeight();
 
     startScreen.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
@@ -500,6 +480,7 @@
       const domeCenterY = p.deckY + 8;
       const playerCenterX = player.x + player.w * 0.5;
       const playerCenterY = player.y + player.h * 0.5;
+
       const dx = domeCenterX - playerCenterX;
       const dy = domeCenterY - playerCenterY;
       const distance = Math.hypot(dx, dy);
@@ -587,12 +568,6 @@
 
     updateBackground(dt, rect);
     updatePlatforms(dt);
-
-    if (player.landed && player.landedPlatform) {
-      player.y = player.landedPlatform.deckY - player.h + 2;
-      player.vy = 0;
-    }
-
     updateObstacles(dt);
     updatePlayerAngle(dt);
 
@@ -1144,7 +1119,6 @@
   }
 
   function init() {
-    syncAppHeight();
     renderStoredScores();
     updateOrientationOverlay();
 
@@ -1153,23 +1127,14 @@
     backToMenuBtn.addEventListener("click", showMenu);
 
     window.addEventListener("resize", () => {
-      syncAppHeight();
       updateOrientationOverlay();
       resizeCanvas();
     });
 
     window.addEventListener("orientationchange", () => {
-      syncAppHeight();
       updateOrientationOverlay();
       resizeCanvas();
     });
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", () => {
-        syncAppHeight();
-        resizeCanvas();
-      });
-    }
 
     document.addEventListener("pointerdown", onPointerDown, { passive: false });
     document.addEventListener("keydown", onKeyDown);
