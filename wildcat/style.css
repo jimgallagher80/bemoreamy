@@ -10,6 +10,7 @@
   --ok: #95e26f;
   --shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
   --radius: 14px;
+  --app-height: 100vh;
 }
 
 * {
@@ -21,7 +22,7 @@ html,
 body {
   margin: 0;
   width: 100%;
-  height: 100%;
+  height: var(--app-height);
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
   background: linear-gradient(to bottom, var(--bg1), var(--bg2));
@@ -30,12 +31,14 @@ body {
 
 body {
   touch-action: manipulation;
+  position: fixed;
+  inset: 0;
 }
 
 #app {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: var(--app-height);
   overflow: hidden;
 }
 
@@ -71,7 +74,7 @@ body {
 
 .tiny-card {
   padding: 12px;
-  max-height: calc(100vh - 20px);
+  max-height: calc(var(--app-height) - 20px);
   overflow: auto;
 }
 
@@ -167,8 +170,8 @@ p {
 
 #hud {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
   z-index: 5;
   pointer-events: none;
 }
@@ -179,45 +182,59 @@ p {
   gap: 6px;
 }
 
-.hud-pill,
-.fuel-panel {
-  background: rgba(7, 16, 28, 0.54);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.fuel-panel,
+.hud-pair {
+  background: rgba(7, 16, 28, 0.64);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 6px 8px;
-  pointer-events: auto;
-}
-
-.hud-pill {
-  display: flex;
-  flex-direction: column;
-  min-width: 72px;
-}
-
-.hud-label {
-  color: var(--muted);
-  font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 2px;
-}
-
-.hud-value {
-  font-size: 0.82rem;
-  font-weight: 700;
 }
 
 .fuel-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 34px;
+  gap: 4px;
+  padding: 4px 5px 5px;
+  width: 22px;
+}
+
+.hud-pair {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.hud-pill {
+  min-width: 58px;
+  padding: 4px 7px 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hud-pill + .hud-pill {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hud-label {
+  color: var(--muted);
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+  line-height: 1;
+}
+
+.hud-value {
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.05;
 }
 
 .fuel-vertical {
   position: relative;
-  width: 12px;
-  height: 72px;
+  width: 9px;
+  height: 82px;
   border-radius: 999px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.12);
@@ -315,5 +332,37 @@ p {
 
   .leaderboard {
     font-size: 0.68rem;
+  }
+
+  #hud {
+    top: max(6px, env(safe-area-inset-top));
+    left: max(6px, env(safe-area-inset-left));
+  }
+
+  .hud-stack {
+    gap: 5px;
+  }
+
+  .fuel-panel {
+    width: 20px;
+    padding: 3px 4px 4px;
+  }
+
+  .fuel-vertical {
+    width: 8px;
+    height: 74px;
+  }
+
+  .hud-pill {
+    min-width: 54px;
+    padding: 4px 6px;
+  }
+
+  .hud-label {
+    font-size: 0.52rem;
+  }
+
+  .hud-value {
+    font-size: 0.72rem;
   }
 }
