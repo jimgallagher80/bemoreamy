@@ -29,17 +29,15 @@
     localTop10: "wildcatHop:localTop10"
   };
 
-  const ASSET_BASE = "/gamegraphics";
-  const ASSET_FILES = {
-    wildcat: "wildcat-heli.png",
-    ship: "ship.svg",
-    island: "island.svg",
-    tree: "tree.svg",
-    building: "building.svg",
-    cloud: "cloud.svg",
-    balloon: "balloon.svg",
-    enemyHeli: "enemy-heli.svg",
-    jet: "jet.svg"
+  const ASSET_BASE = "gamegraphics";
+  const ASSET_CANDIDATES = {
+    wildcat: ["wildcat-heli.svg", "wildcat-heli.png"],
+    ship: ["ship.svg", "ship.png"],
+    tree: ["tree.svg"],
+    building: ["building.svg"],
+    cloud: ["cloud.svg"],
+    enemyHeli: ["enemy-heli.png"],
+    jet: ["jet.png"]
   };
 
   let gameState = "menu";
@@ -162,27 +160,36 @@
     gameUi.appendChild(takeoffTimerEl);
   }
 
-  function loadImage(key, fileName) {
+  function tryLoadCandidate(key, fileNames, index = 0) {
+    if (!fileNames || index >= fileNames.length) {
+      assets[key] = { loaded: false, failed: true, img: null };
+      return;
+    }
+
     const img = new Image();
-    img.decoding = "async";
     const entry = { img, loaded: false, failed: false };
     assets[key] = entry;
+
     img.onload = () => {
       entry.loaded = true;
     };
+
     img.onerror = () => {
-      entry.failed = true;
+      tryLoadCandidate(key, fileNames, index + 1);
     };
-    img.src = `${ASSET_BASE}/${fileName}`;
+
+    img.src = `${ASSET_BASE}/${fileNames[index]}`;
   }
 
   function initAssets() {
-    Object.entries(ASSET_FILES).forEach(([key, fileName]) => loadImage(key, fileName));
+    Object.entries(ASSET_CANDIDATES).forEach(([key, fileNames]) => {
+      tryLoadCandidate(key, fileNames);
+    });
   }
 
   function drawImageOrFallback(assetKey, drawFallback, x, y, w, h, opts = {}) {
     const entry = assets[assetKey];
-    if (entry && entry.loaded) {
+    if (entry && entry.loaded && entry.img) {
       ctx.save();
       if (opts.center) {
         ctx.translate(x + w * 0.5, y + h * 0.5);
@@ -1099,41 +1106,34 @@
   }
 
   function drawIsland(p) {
-    drawImageOrFallback(
-      "island",
-      () => {
-        ctx.save();
-        ctx.fillStyle = "#9f845c";
-        ctx.beginPath();
-        ctx.ellipse(p.x + p.w * 0.5, p.y + 56, p.w * 0.52, 30, 0, 0, Math.PI * 2);
-        ctx.fill();
+    ctx.save();
 
-        ctx.fillStyle = "#609653";
-        ctx.beginPath();
-        ctx.ellipse(p.x + p.w * 0.5, p.y + 44, p.w * 0.46, 22, 0, 0, Math.PI * 2);
-        ctx.fill();
+    ctx.fillStyle = "#9f845c";
+    ctx.beginPath();
+    ctx.ellipse(p.x + p.w * 0.5, p.y + 56, p.w * 0.52, 30, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-        ctx.fillStyle = "#3d4f57";
-        roundRect(ctx, p.deckX - 6, p.deckY, p.refuelZoneW + 12, 14, 7);
-        ctx.fill();
+    ctx.fillStyle = "#609653";
+    ctx.beginPath();
+    ctx.ellipse(p.x + p.w * 0.5, p.y + 44, p.w * 0.46, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-        ctx.strokeStyle = "#f4f7fb";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 2);
-        ctx.lineTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 18);
-        ctx.moveTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 2);
-        ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 18);
-        ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 10);
-        ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 10);
-        ctx.stroke();
-        ctx.restore();
-      },
-      p.x,
-      p.y,
-      p.w,
-      p.h
-    );
+    ctx.fillStyle = "#3d4f57";
+    roundRect(ctx, p.deckX - 6, p.deckY, p.refuelZoneW + 12, 14, 7);
+    ctx.fill();
+
+    ctx.strokeStyle = "#f4f7fb";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 2);
+    ctx.lineTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 18);
+    ctx.moveTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 2);
+    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 18);
+    ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 10);
+    ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 10);
+    ctx.stroke();
+
+    ctx.restore();
   }
 
   function drawObstacles() {
@@ -1180,33 +1180,24 @@
   }
 
   function drawBalloon(o) {
-    drawImageOrFallback(
-      "balloon",
-      () => {
-        ctx.save();
-        ctx.fillStyle = "#f07d4c";
-        ctx.beginPath();
-        ctx.ellipse(o.x + o.w * 0.5, o.y + o.h * 0.35, o.w * 0.35, o.h * 0.28, 0, 0, Math.PI * 2);
-        ctx.fill();
+    ctx.save();
+    ctx.fillStyle = "#f07d4c";
+    ctx.beginPath();
+    ctx.ellipse(o.x + o.w * 0.5, o.y + o.h * 0.35, o.w * 0.35, o.h * 0.28, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-        ctx.strokeStyle = "#f3f7fb";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(o.x + o.w * 0.4, o.y + o.h * 0.55);
-        ctx.lineTo(o.x + o.w * 0.46, o.y + o.h * 0.78);
-        ctx.moveTo(o.x + o.w * 0.6, o.y + o.h * 0.55);
-        ctx.lineTo(o.x + o.w * 0.54, o.y + o.h * 0.78);
-        ctx.stroke();
+    ctx.strokeStyle = "#f3f7fb";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(o.x + o.w * 0.4, o.y + o.h * 0.55);
+    ctx.lineTo(o.x + o.w * 0.46, o.y + o.h * 0.78);
+    ctx.moveTo(o.x + o.w * 0.6, o.y + o.h * 0.55);
+    ctx.lineTo(o.x + o.w * 0.54, o.y + o.h * 0.78);
+    ctx.stroke();
 
-        ctx.fillStyle = "#60422f";
-        ctx.fillRect(o.x + o.w * 0.42, o.y + o.h * 0.78, o.w * 0.16, o.h * 0.1);
-        ctx.restore();
-      },
-      o.x,
-      o.y,
-      o.w,
-      o.h
-    );
+    ctx.fillStyle = "#60422f";
+    ctx.fillRect(o.x + o.w * 0.42, o.y + o.h * 0.78, o.w * 0.16, o.h * 0.1);
+    ctx.restore();
   }
 
   function drawEnemyHeli(o) {
