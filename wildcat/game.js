@@ -52,6 +52,7 @@
   let effectiveWorldSpeed = 0;
   let isTabletMode = false;
   let lastSharedScore = 0;
+
   let pendingStartAfterRotate = false;
   let hasAttemptedPlay = false;
   let isStartingGame = false;
@@ -133,7 +134,7 @@
         el.webkitRequestFullscreen();
       }
     } catch {
-      // Best effort only.
+      // Best effort only. iPhone Safari may refuse.
     }
   }
 
@@ -525,7 +526,6 @@
       if (maxY <= minY + 4) return null;
 
       obstacle.y = minY + Math.random() * (maxY - minY);
-
       if (type === "cloud") obstacle.y = Math.min(obstacle.y, rect.height * 0.36);
     }
 
@@ -909,7 +909,7 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
       }
     }
 
-    updateBackground(dt, rect);
+    updateBackground(dt);
     updateTerrain(dt);
     updatePlatforms(dt);
     updateObstacles(dt);
@@ -943,7 +943,8 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
     updateHud();
   }
 
-  function updateBackground(dt, rect) {
+  function updateBackground(dt) {
+    const rect = getRect();
     world.stars.forEach((s) => {
       s.x -= (s.speed + effectiveWorldSpeed * 0.03) * dt;
       if (s.x < -5) {
@@ -957,9 +958,7 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
     for (let i = world.terrain.length - 1; i >= 0; i--) {
       const seg = world.terrain[i];
       seg.x -= effectiveWorldSpeed * dt;
-      if (seg.x + seg.w < -300) {
-        world.terrain.splice(i, 1);
-      }
+      if (seg.x + seg.w < -300) world.terrain.splice(i, 1);
     }
     ensureTerrainCoverage();
   }
@@ -1019,7 +1018,6 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
 
   function updatePlayerAngle(dt) {
     let targetAngle = 0;
-
     if (player.landed) targetAngle = 0;
     else if (player.engineOut) targetAngle = 0.24;
     else if (player.vy < -80) targetAngle = -0.2;
@@ -1049,7 +1047,6 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
 
   function checkCollisions() {
     if (player.landed) return;
-
     const pb = getPlayerBox();
 
     for (const o of world.obstacles) {
@@ -1508,33 +1505,16 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
     );
   }
 
-  function roundRect(ctx2d, x, y, width, height, radius) {
-    const r = Math.min(radius, width / 2, height / 2);
-    ctx2d.beginPath();
-    ctx2d.moveTo(x + r, y);
-    ctx2d.lineTo(x + width - r, y);
-    ctx2d.quadraticCurveTo(x + width, y, x + width, y + r);
-    ctx2d.lineTo(x + width, y + height - r);
-    ctx2d.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
-    ctx2d.lineTo(x + r, y + height);
-    ctx2d.quadraticCurveTo(x, y + height, x, y + height - r);
-    ctx2d.lineTo(x, y + r);
-    ctx2d.quadraticCurveTo(x, y, x + r, y);
-    ctx2d.closePath();
-  }
-
-  function loop(timestamp) {
-    const dt = Math.min(0.033, (timestamp - lastTime) / 1000 || 0);
-    lastTime = timestamp;
-
-    update(dt);
-    draw();
-
-    requestAnimationFrame(loop);
+  function bindInput(target) {
+    if (!target) return;
+    target.addEventListener("pointerdown", onPointerDown, { passive: false });
+    target.addEventListener("touchstart", onPointerDown, { passive: false });
+    target.addEventListener("mousedown", onPointerDown, { passive: false });
   }
 
   function onPointerDown(e) {
     if (e.target && typeof e.target.closest === "function" && e.target.closest("button,a")) return;
+    e.preventDefault();
     flap();
   }
 
@@ -1580,8 +1560,12 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
       window.visualViewport.addEventListener("resize", handleOrientationMaybeStart);
     }
 
-    document.addEventListener("pointerdown", onPointerDown, { passive: false });
+    bindInput(document);
+    bindInput(window);
+    bindInput(canvas);
+
     document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
 
     resizeCanvas();
     requestAnimationFrame(loop);
