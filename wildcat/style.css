@@ -48,6 +48,10 @@ body {
   display: none !important;
 }
 
+.hidden-meta {
+  display: none !important;
+}
+
 .screen,
 .overlay {
   position: absolute;
@@ -65,7 +69,7 @@ body {
 
 .menu-card,
 .overlay-card {
-  width: min(520px, 100%);
+  width: min(560px, 100%);
   background: var(--panel);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius);
@@ -94,6 +98,33 @@ p {
   margin: 0;
 }
 
+.title-row {
+  display: grid;
+  grid-template-columns: 64px 1fr 64px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.title-art {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  display: block;
+}
+
+.title-text-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.game-title {
+  line-height: 0.94;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
 .subtitle {
   color: var(--muted);
   margin-bottom: 8px;
@@ -115,6 +146,10 @@ p {
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-primary {
@@ -125,6 +160,11 @@ p {
 .btn-secondary {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text);
+}
+
+.btn-donate {
+  width: 100%;
+  max-width: 320px;
 }
 
 .mini-scores {
@@ -184,20 +224,6 @@ p {
   grid-template-rows: auto auto;
   gap: 6px;
   align-items: start;
-}
-
-.hud-stack > .hud-pill:nth-of-type(1) {
-  display: none;
-}
-
-.hud-stack > .fuel-panel {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.hud-stack > .hud-pill:nth-of-type(2) {
-  grid-column: 1;
-  grid-row: 2;
 }
 
 .hud-pill,
@@ -289,10 +315,13 @@ p {
 
 .results-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
   text-align: left;
   margin: 10px 0;
+}
+
+.results-grid-two {
+  grid-template-columns: 1fr 1fr;
 }
 
 .notice {
@@ -314,8 +343,27 @@ p {
   flex-wrap: wrap;
 }
 
+.donate-row {
+  margin-top: 8px;
+}
+
+.gameover-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.gameover-logo {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  display: block;
+}
+
 @media (max-width: 900px) {
-  .results-grid {
+  .results-grid-two {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -323,6 +371,17 @@ p {
 @media (max-height: 500px) and (orientation: landscape) {
   .tiny-card {
     padding: 8px;
+  }
+
+  .title-row {
+    grid-template-columns: 50px 1fr 50px;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .title-art {
+    width: 50px;
+    height: 50px;
   }
 
   h1 {
@@ -365,10 +424,6 @@ p {
     right: max(8px, env(safe-area-inset-right, 0px));
   }
 
-  .hud-stack {
-    gap: 4px;
-  }
-
   .hud-pill {
     min-width: 56px;
     max-width: 66px;
@@ -399,6 +454,11 @@ p {
     left: max(8px, env(safe-area-inset-left, 0px));
     font-size: 0.72rem;
     padding: 6px 8px;
+  }
+
+  .gameover-logo {
+    width: 46px;
+    height: 46px;
   }
 }
 
