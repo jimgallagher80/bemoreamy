@@ -52,6 +52,9 @@
   let effectiveWorldSpeed = 0;
   let isTabletMode = false;
   let lastSharedScore = 0;
+  let pendingStartAfterRotate = false;
+  let hasAttemptedPlay = false;
+  let isStartingGame = false;
 
   const player = {
     x: 0,
@@ -113,7 +116,7 @@
 
   function updateOrientationOverlay() {
     const { landscape } = getDeviceMode();
-    if (shouldRequireLandscape() && !landscape) {
+    if (hasAttemptedPlay && pendingStartAfterRotate && shouldRequireLandscape() && !landscape) {
       rotateOverlay.classList.remove("hidden");
     } else {
       rotateOverlay.classList.add("hidden");
@@ -130,7 +133,7 @@
         el.webkitRequestFullscreen();
       }
     } catch {
-      // Best effort only. iPhone Safari may refuse.
+      // Best effort only.
     }
   }
 
@@ -275,11 +278,7 @@
   }
 
   function createTerrainSegment(x, type, width) {
-    return {
-      x,
-      w: width,
-      type
-    };
+    return { x, w: width, type };
   }
 
   function seedTerrain() {
@@ -310,9 +309,7 @@
 
   function getTerrainTypeAtX(x) {
     for (const seg of world.terrain) {
-      if (x >= seg.x && x <= seg.x + seg.w) {
-        return seg.type;
-      }
+      if (x >= seg.x && x <= seg.x + seg.w) return seg.type;
     }
     return "water";
   }
@@ -427,15 +424,7 @@
     if (type === "cloud") {
       const w = isTabletMode ? 150 : 124;
       const h = isTabletMode ? 74 : 60;
-      return {
-        type,
-        x,
-        y: rect.height * (0.12 + Math.random() * 0.22),
-        w,
-        h,
-        speedMul: 1,
-        passed: false
-      };
+      return { type, x, y: rect.height * (0.12 + Math.random() * 0.22), w, h, speedMul: 1, passed: false };
     }
 
     if (type === "balloon") {
@@ -505,9 +494,7 @@
     for (const o of world.obstacles) {
       if (o.type !== "tree" && o.type !== "building") continue;
       const centre = o.x + o.w * 0.5;
-      if (Math.abs(centre - x) <= spread) {
-        top = Math.min(top, o.y);
-      }
+      if (Math.abs(centre - x) <= spread) top = Math.min(top, o.y);
     }
     return top;
   }
@@ -527,8 +514,7 @@
     const minGap = player.h * 2.5;
     const groundTop = getGroundObstacleTopNearX(x, 160);
 
-    let obstacle = createObstacle(type, x);
-
+    const obstacle = createObstacle(type, x);
     const maxBottomFromGround = groundTop - minGap;
     const minTopFromScreen = 18;
 
@@ -536,15 +522,11 @@
       const maxY = Math.max(minTopFromScreen, maxBottomFromGround - obstacle.h);
       const minY = minTopFromScreen;
 
-      if (maxY <= minY + 4) {
-        return null;
-      }
+      if (maxY <= minY + 4) return null;
 
       obstacle.y = minY + Math.random() * (maxY - minY);
 
-      if (type === "cloud") {
-        obstacle.y = Math.min(obstacle.y, rect.height * 0.36);
-      }
+      if (type === "cloud") obstacle.y = Math.min(obstacle.y, rect.height * 0.36);
     }
 
     return obstacle;
@@ -558,9 +540,7 @@
       const landSeg = findFutureTerrainSegment("land", spawnX, 340, 60);
       if (landSeg) {
         let x = Math.min(Math.max(spawnX, landSeg.x + 35), landSeg.x + landSeg.w - 80);
-        if (isNearLandPadExclusion(x, 70)) {
-          x = Math.min(landSeg.x + landSeg.w - 80, x + 360);
-        }
+        if (isNearLandPadExclusion(x, 70)) x = Math.min(landSeg.x + landSeg.w - 80, x + 360);
 
         if (!isNearLandPadExclusion(x, 40)) {
           const type = Math.random() < 0.58 ? "tree" : "building";
@@ -579,17 +559,10 @@
       }
     }
 
-    const airborneWeights = [
-      "jet", "jet", "jet",
-      "heli", "heli", "heli",
-      "cloud", "cloud",
-      "balloon"
-    ];
+    const airborneWeights = ["jet", "jet", "jet", "heli", "heli", "heli", "cloud", "cloud", "balloon"];
     const type = airborneWeights[Math.floor(Math.random() * airborneWeights.length)];
     const obstacle = createSafeAirObstacle(type, spawnX);
-    if (obstacle) {
-      world.obstacles.push(obstacle);
-    }
+    if (obstacle) world.obstacles.push(obstacle);
   }
 
   function clearLandPadArea(platform) {
@@ -656,11 +629,9 @@
     });
   }
 
-  async function startGame() {
-    if (shouldRequireLandscape() && window.innerWidth <= window.innerHeight) {
-      updateOrientationOverlay();
-      return;
-    }
+  async function actuallyStartGame() {
+    if (isStartingGame) return;
+    isStartingGame = true;
 
     syncAppHeight();
     await tryFullscreen();
@@ -669,10 +640,12 @@
     startScreen.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
     gameUi.classList.remove("hidden");
+    rotateOverlay.classList.add("hidden");
 
     try {
       await waitForPlayableArea();
     } catch {
+      isStartingGame = false;
       showMenu();
       return;
     }
@@ -685,23 +658,40 @@
     player.y = startPlatform.deckY - player.h + 2;
     player.landedPlatform = startPlatform;
 
-    if (takeoffTimerEl) {
-      takeoffTimerEl.classList.add("hidden");
-    }
+    if (takeoffTimerEl) takeoffTimerEl.classList.add("hidden");
 
     gameState = "playing";
+    pendingStartAfterRotate = false;
     updateHud();
     draw();
+    isStartingGame = false;
+  }
+
+  async function startGame() {
+    hasAttemptedPlay = true;
+
+    const { landscape } = getDeviceMode();
+    if (shouldRequireLandscape() && !landscape) {
+      pendingStartAfterRotate = true;
+      updateOrientationOverlay();
+      return;
+    }
+
+    pendingStartAfterRotate = false;
+    updateOrientationOverlay();
+    await actuallyStartGame();
   }
 
   function showMenu() {
     gameState = "menu";
+    pendingStartAfterRotate = false;
+    hasAttemptedPlay = false;
+    isStartingGame = false;
     gameUi.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
-    if (takeoffTimerEl) {
-      takeoffTimerEl.classList.add("hidden");
-    }
+    rotateOverlay.classList.add("hidden");
+    if (takeoffTimerEl) takeoffTimerEl.classList.add("hidden");
     renderStoredScores();
   }
 
@@ -716,9 +706,7 @@
       player.landingCountdown = 0;
       player.vy = player.flapImpulse;
       targetWorldSpeed = cruiseWorldSpeed;
-      if (takeoffTimerEl) {
-        takeoffTimerEl.classList.add("hidden");
-      }
+      if (takeoffTimerEl) takeoffTimerEl.classList.add("hidden");
       return;
     }
 
@@ -741,24 +729,9 @@
   }
 
   function renderStoredScores() {
+    if (!personalBestEl || !localLeaderboardEl) return;
     const pb = Number(localStorage.getItem(STORAGE_KEYS.personalBest) || 0);
     personalBestEl.textContent = pb.toLocaleString();
-
-    const entries = getLocalLeaderboard();
-    localLeaderboardEl.innerHTML = "";
-
-    if (!entries.length) {
-      const li = document.createElement("li");
-      li.textContent = "No scores yet";
-      localLeaderboardEl.appendChild(li);
-      return;
-    }
-
-    entries.forEach((entry) => {
-      const li = document.createElement("li");
-      li.textContent = `${entry.name} — ${entry.score.toLocaleString()}`;
-      localLeaderboardEl.appendChild(li);
-    });
   }
 
   function getShareText() {
@@ -817,9 +790,7 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
 
     saveLocalLeaderboard(score, distance, world.successfulLandings);
 
-    if (takeoffTimerEl) {
-      takeoffTimerEl.classList.add("hidden");
-    }
+    if (takeoffTimerEl) takeoffTimerEl.classList.add("hidden");
 
     gameUi.classList.add("hidden");
     gameOverScreen.classList.remove("hidden");
@@ -854,16 +825,12 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
     if (!takeoffTimerEl) return;
 
     if (player.landed && player.airborneStarted && player.landedPlatform && !player.landedPlatform.startPad) {
-      if (player.landingCountdown <= 0) {
-        player.landingCountdown = player.landingCountdownLimit;
-      }
+      if (player.landingCountdown <= 0) player.landingCountdown = player.landingCountdownLimit;
       player.landingCountdown -= dt;
       takeoffTimerEl.classList.remove("hidden");
       takeoffTimerEl.textContent = `Take off: ${Math.max(0, player.landingCountdown).toFixed(1)}s`;
 
-      if (player.landingCountdown <= 0) {
-        gameOver();
-      }
+      if (player.landingCountdown <= 0) gameOver();
       return;
     }
 
@@ -921,9 +888,7 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
       if (world.nextObstacleSpawn <= 0) {
         spawnObstacle();
         const aheadType = getTerrainTypeAtX(getSpawnX());
-        world.nextObstacleSpawn = aheadType === "land"
-          ? 120 + Math.random() * 90
-          : 260 + Math.random() * 180;
+        world.nextObstacleSpawn = aheadType === "land" ? 120 + Math.random() * 90 : 260 + Math.random() * 180;
       }
 
       if (world.nextPlatformSpawn <= 0) {
@@ -940,9 +905,7 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
       if (player.airborneStarted) {
         player.fuel += player.refuelRate * dt;
         player.fuel = Math.min(player.fuel, player.maxFuel);
-        if (player.fuel > 8) {
-          player.engineOut = false;
-        }
+        if (player.fuel > 8) player.engineOut = false;
       }
     }
 
@@ -1007,9 +970,7 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
       const activeLandingPad = player.landed && player.landedPlatform === p;
       const anchoredStartPad = p.startPad && !player.airborneStarted;
 
-      if (!activeLandingPad && !anchoredStartPad) {
-        p.x -= effectiveWorldSpeed * dt;
-      }
+      if (!activeLandingPad && !anchoredStartPad) p.x -= effectiveWorldSpeed * dt;
 
       if ((p.type === "ship" || p.type === "carrier") && p.motionAmp > 0) {
         p.motionPhase += dt * (p.type === "carrier" ? 1.1 : 1.4);
@@ -1020,25 +981,16 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
       if ((p.type === "ship" || p.type === "carrier") && p.motionAmp > 0) {
         const bob = Math.sin(p.motionPhase) * p.motionAmp;
         p.y = groundY - p.h + bob;
-        if (p.type === "ship") {
-          p.deckY = p.y + p.h * 0.90;
-        } else {
-          p.deckY = p.y + p.h * 0.85;
-        }
+        if (p.type === "ship") p.deckY = p.y + p.h * 0.90;
+        else p.deckY = p.y + p.h * 0.85;
       }
 
-      if (activeLandingPad) {
-        player.y = p.deckY - player.h + 2;
-      }
+      if (activeLandingPad) player.y = p.deckY - player.h + 2;
 
-      if (!p.passed && p.x + p.w < player.x) {
-        p.passed = true;
-      }
+      if (!p.passed && p.x + p.w < player.x) p.passed = true;
 
       if (p.x + p.w < -220) {
-        if (player.landedPlatform === p) {
-          player.landedPlatform = null;
-        }
+        if (player.landedPlatform === p) player.landedPlatform = null;
         world.platforms.splice(i, 1);
       }
     }
@@ -1048,11 +1000,8 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
     for (let i = world.obstacles.length - 1; i >= 0; i--) {
       const o = world.obstacles[i];
 
-      if (o.type === "heli" || o.type === "jet") {
-        o.x -= (o.ownSpeed || 300) * dt;
-      } else {
-        o.x -= effectiveWorldSpeed * o.speedMul * dt;
-      }
+      if (o.type === "heli" || o.type === "jet") o.x -= (o.ownSpeed || 300) * dt;
+      else o.x -= effectiveWorldSpeed * o.speedMul * dt;
 
       if (o.type === "balloon") {
         o.bob += dt * 2;
@@ -1064,26 +1013,18 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
         world.obstaclesCleared += 1;
       }
 
-      if (o.x + o.w < -220) {
-        world.obstacles.splice(i, 1);
-      }
+      if (o.x + o.w < -220) world.obstacles.splice(i, 1);
     }
   }
 
   function updatePlayerAngle(dt) {
     let targetAngle = 0;
 
-    if (player.landed) {
-      targetAngle = 0;
-    } else if (player.engineOut) {
-      targetAngle = 0.24;
-    } else if (player.vy < -80) {
-      targetAngle = -0.2;
-    } else if (player.vy > 130) {
-      targetAngle = 0.16;
-    } else {
-      targetAngle = 0.08;
-    }
+    if (player.landed) targetAngle = 0;
+    else if (player.engineOut) targetAngle = 0.24;
+    else if (player.vy < -80) targetAngle = -0.2;
+    else if (player.vy > 130) targetAngle = 0.16;
+    else targetAngle = 0.08;
 
     player.angle += (targetAngle - player.angle) * Math.min(1, dt * 8);
   }
@@ -1159,10 +1100,7 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
 
         world.bestLandingQuality = rankLandingQuality(world.bestLandingQuality, quality);
 
-        if (!p.startPad) {
-          world.successfulLandings += 1;
-        }
-
+        if (!p.startPad) world.successfulLandings += 1;
         return;
       }
     }
@@ -1325,7 +1263,6 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
 
   function drawIsland(p) {
     ctx.save();
-
     ctx.fillStyle = "#9f845c";
     ctx.beginPath();
     ctx.ellipse(p.x + p.w * 0.5, p.y + 56, p.w * 0.52, 30, 0, 0, Math.PI * 2);
@@ -1350,7 +1287,6 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
     ctx.moveTo(p.deckX + p.refuelZoneW * 0.35, p.deckY + 10);
     ctx.lineTo(p.deckX + p.refuelZoneW * 0.65, p.deckY + 10);
     ctx.stroke();
-
     ctx.restore();
   }
 
@@ -1591,7 +1527,6 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
     const dt = Math.min(0.033, (timestamp - lastTime) / 1000 || 0);
     lastTime = timestamp;
 
-    updateOrientationOverlay();
     update(dt);
     draw();
 
@@ -1599,7 +1534,7 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
   }
 
   function onPointerDown(e) {
-    if (e.target && typeof e.target.closest === "function" && e.target.closest("button")) return;
+    if (e.target && typeof e.target.closest === "function" && e.target.closest("button,a")) return;
     flap();
   }
 
@@ -1610,35 +1545,39 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
     }
   }
 
+  async function handleOrientationMaybeStart() {
+    syncAppHeight();
+    resizeCanvas();
+
+    if (pendingStartAfterRotate) {
+      const { landscape } = getDeviceMode();
+      if (landscape) {
+        rotateOverlay.classList.add("hidden");
+        await actuallyStartGame();
+        return;
+      }
+    }
+
+    updateOrientationOverlay();
+  }
+
   function init() {
     syncAppHeight();
     ensureTakeoffTimer();
     initAssets();
     renderStoredScores();
-    updateOrientationOverlay();
+    rotateOverlay.classList.add("hidden");
 
-    playBtn.addEventListener("click", startGame);
-    playAgainBtn.addEventListener("click", startGame);
-    backToMenuBtn.addEventListener("click", showMenu);
+    if (playBtn) playBtn.addEventListener("click", startGame);
+    if (playAgainBtn) playAgainBtn.addEventListener("click", startGame);
+    if (backToMenuBtn) backToMenuBtn.addEventListener("click", showMenu);
     if (shareBtn) shareBtn.addEventListener("click", shareScore);
 
-    window.addEventListener("resize", () => {
-      syncAppHeight();
-      updateOrientationOverlay();
-      resizeCanvas();
-    });
-
-    window.addEventListener("orientationchange", () => {
-      syncAppHeight();
-      updateOrientationOverlay();
-      resizeCanvas();
-    });
+    window.addEventListener("resize", handleOrientationMaybeStart);
+    window.addEventListener("orientationchange", handleOrientationMaybeStart);
 
     if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", () => {
-        syncAppHeight();
-        resizeCanvas();
-      });
+      window.visualViewport.addEventListener("resize", handleOrientationMaybeStart);
     }
 
     document.addEventListener("pointerdown", onPointerDown, { passive: false });
@@ -1649,4 +1588,4 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
   }
 
   init();
-})(); 
+})();
