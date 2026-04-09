@@ -11,6 +11,7 @@
   const playBtn = document.getElementById("playBtn");
   const playAgainBtn = document.getElementById("playAgainBtn");
   const backToMenuBtn = document.getElementById("backToMenuBtn");
+  const shareBtn = document.getElementById("shareBtn");
 
   const distanceValue = document.getElementById("distanceValue");
   const scoreValue = document.getElementById("scoreValue");
@@ -38,7 +39,7 @@
     tree2: ["tree2.svg"],
     tree3: ["tree3.svg"],
     building: ["building.svg"],
-    cloud: ["cloud.svg"],
+    cloud: ["cloud.svg", "L cloud.svg"],
     enemyHeli: ["enemy-heli.svg", "enemy-heli.png"],
     jet: ["jet.svg", "jet.png"]
   };
@@ -50,6 +51,7 @@
   let targetWorldSpeed = 0;
   let effectiveWorldSpeed = 0;
   let isTabletMode = false;
+  let lastSharedScore = 0;
 
   const player = {
     x: 0,
@@ -80,8 +82,8 @@
     successfulLandings: 0,
     bestLandingQuality: "None",
     obstaclesCleared: 0,
-    nextObstacleSpawn: 900,
-    nextPlatformSpawn: 1800,
+    nextObstacleSpawn: 640,
+    nextPlatformSpawn: 1250,
     obstacles: [],
     platforms: [],
     terrain: [],
@@ -128,7 +130,7 @@
         el.webkitRequestFullscreen();
       }
     } catch {
-      // iPhone Safari may refuse; best-effort only.
+      // Best effort only. iPhone Safari may refuse.
     }
   }
 
@@ -366,7 +368,7 @@
     } else if (p.type === "carrier") {
       p.y = groundY - p.h;
       p.deckX = p.x + p.w * 0.12;
-      p.deckY = p.y + p.h * 0.25;
+      p.deckY = p.y + p.h * 0.85;
     } else {
       p.y = groundY - p.h + 8;
       p.deckX = p.x + (p.w - p.refuelZoneW) * 0.5;
@@ -375,7 +377,7 @@
   }
 
   function seedStartPlatform() {
-    const start = createPlatform(player.x - 45, "ship");
+    const start = createPlatform(player.x - 8, "ship");
     start.startPad = true;
     start.motionAmp = 0;
     updatePlatformDeck(start);
@@ -442,7 +444,7 @@
       return {
         type,
         x,
-        y: rect.height * (0.16 + Math.random() * 0.34),
+        y: rect.height * (0.20 + Math.random() * 0.22),
         w,
         h,
         speedMul: 1,
@@ -457,7 +459,7 @@
       return {
         type,
         x,
-        y: rect.height * (0.18 + Math.random() * 0.36),
+        y: rect.height * (0.18 + Math.random() * 0.34),
         w,
         h,
         speedMul: 1,
@@ -472,7 +474,7 @@
       return {
         type,
         x,
-        y: rect.height * (0.1 + Math.random() * 0.28),
+        y: rect.height * (0.1 + Math.random() * 0.26),
         w,
         h,
         speedMul: 1,
@@ -486,16 +488,66 @@
 
   function seedStartingScenery() {
     const rect = getRect();
-    const firstLand = world.terrain.find((seg) => seg.type === "land" && seg.x + seg.w > rect.width * 0.52);
+    const firstLand = world.terrain.find((seg) => seg.type === "land" && seg.x + seg.w > rect.width * 0.60);
     if (!firstLand) return;
 
-    let x = Math.max(firstLand.x + 40, rect.width * 0.68);
+    let x = Math.max(firstLand.x + 120, rect.width * 0.78);
     for (let i = 0; i < 6; i++) {
       const type = Math.random() < 0.55 ? "tree" : "building";
       world.obstacles.push(createGroundObstacle(type, x));
-      x += type === "building" ? 60 + Math.random() * 40 : 44 + Math.random() * 34;
-      if (x > firstLand.x + firstLand.w - 80) break;
+      x += type === "building" ? 62 + Math.random() * 42 : 46 + Math.random() * 32;
+      if (x > firstLand.x + firstLand.w - 120) break;
     }
+  }
+
+  function getGroundObstacleTopNearX(x, spread = 140) {
+    let top = groundY;
+    for (const o of world.obstacles) {
+      if (o.type !== "tree" && o.type !== "building") continue;
+      const centre = o.x + o.w * 0.5;
+      if (Math.abs(centre - x) <= spread) {
+        top = Math.min(top, o.y);
+      }
+    }
+    return top;
+  }
+
+  function isNearLandPadExclusion(x, extra = 0) {
+    for (const p of world.platforms) {
+      if (p.type !== "island") continue;
+      const left = p.x - 300 - extra;
+      const right = p.x + p.w + 300 + extra;
+      if (x >= left && x <= right) return true;
+    }
+    return false;
+  }
+
+  function createSafeAirObstacle(type, x) {
+    const rect = getRect();
+    const minGap = player.h * 2.5;
+    const groundTop = getGroundObstacleTopNearX(x, 160);
+
+    let obstacle = createObstacle(type, x);
+
+    const maxBottomFromGround = groundTop - minGap;
+    const minTopFromScreen = 18;
+
+    if (type === "jet" || type === "heli" || type === "balloon" || type === "cloud") {
+      const maxY = Math.max(minTopFromScreen, maxBottomFromGround - obstacle.h);
+      const minY = minTopFromScreen;
+
+      if (maxY <= minY + 4) {
+        return null;
+      }
+
+      obstacle.y = minY + Math.random() * (maxY - minY);
+
+      if (type === "cloud") {
+        obstacle.y = Math.min(obstacle.y, rect.height * 0.36);
+      }
+    }
+
+    return obstacle;
   }
 
   function spawnObstacle() {
@@ -503,47 +555,78 @@
     const terrainType = getTerrainTypeAtX(spawnX);
 
     if (terrainType === "land" && Math.random() < 0.7) {
-      const landSeg = findFutureTerrainSegment("land", spawnX, 220, 40);
+      const landSeg = findFutureTerrainSegment("land", spawnX, 340, 60);
       if (landSeg) {
-        const type = Math.random() < 0.58 ? "tree" : "building";
-        const maxX = Math.max(landSeg.x + 40, landSeg.x + landSeg.w - 120);
-        const x = Math.min(Math.max(spawnX, landSeg.x + 35), maxX);
-        world.obstacles.push(createGroundObstacle(type, x));
-
-        if (Math.random() < 0.55) {
-          const gap = type === "building" ? 48 + Math.random() * 38 : 38 + Math.random() * 28;
-          const x2 = x + gap;
-          if (x2 < landSeg.x + landSeg.w - 40) {
-            const type2 = Math.random() < 0.55 ? "building" : "tree";
-            world.obstacles.push(createGroundObstacle(type2, x2));
-          }
+        let x = Math.min(Math.max(spawnX, landSeg.x + 35), landSeg.x + landSeg.w - 80);
+        if (isNearLandPadExclusion(x, 70)) {
+          x = Math.min(landSeg.x + landSeg.w - 80, x + 360);
         }
-        return;
+
+        if (!isNearLandPadExclusion(x, 40)) {
+          const type = Math.random() < 0.58 ? "tree" : "building";
+          world.obstacles.push(createGroundObstacle(type, x));
+
+          if (Math.random() < 0.65) {
+            const gap = type === "building" ? 44 + Math.random() * 34 : 34 + Math.random() * 28;
+            const x2 = x + gap;
+            if (x2 < landSeg.x + landSeg.w - 40 && !isNearLandPadExclusion(x2, 30)) {
+              const type2 = Math.random() < 0.55 ? "building" : "tree";
+              world.obstacles.push(createGroundObstacle(type2, x2));
+            }
+          }
+          return;
+        }
       }
     }
 
-    const airborneWeights = ["cloud", "cloud", "balloon", "heli", "jet", "cloud"];
+    const airborneWeights = [
+      "jet", "jet", "jet",
+      "heli", "heli", "heli",
+      "cloud", "cloud",
+      "balloon"
+    ];
     const type = airborneWeights[Math.floor(Math.random() * airborneWeights.length)];
-    world.obstacles.push(createObstacle(type, spawnX));
+    const obstacle = createSafeAirObstacle(type, spawnX);
+    if (obstacle) {
+      world.obstacles.push(obstacle);
+    }
+  }
+
+  function clearLandPadArea(platform) {
+    const left = platform.x - 300;
+    const right = platform.x + platform.w + 300;
+    world.obstacles = world.obstacles.filter((o) => {
+      if (o.type !== "tree" && o.type !== "building") return true;
+      return o.x + o.w < left || o.x > right;
+    });
   }
 
   function spawnPlatform() {
     const minX = getSpawnX() + 220;
 
-    if (Math.random() < 0.56) {
-      const waterSeg = findFutureTerrainSegment("water", minX, 380, 120);
+    if (Math.random() < 0.52) {
+      const waterSeg = findFutureTerrainSegment("water", minX, 520, 180);
       if (waterSeg) {
-        const type = Math.random() < 0.36 ? "carrier" : "ship";
-        const p = createPlatform(waterSeg.x + 120 + Math.random() * Math.max(20, waterSeg.w - 280), type);
-        world.platforms.push(p);
-        return;
+        const type = Math.random() < 0.34 ? "carrier" : "ship";
+        const usableLeft = waterSeg.x + 160;
+        const usableRight = waterSeg.x + waterSeg.w - 380;
+        if (usableRight > usableLeft) {
+          const p = createPlatform(usableLeft + Math.random() * (usableRight - usableLeft), type);
+          world.platforms.push(p);
+          return;
+        }
       }
     }
 
-    const landSeg = findFutureTerrainSegment("land", minX, 340, 90);
+    const landSeg = findFutureTerrainSegment("land", minX, 760, 340);
     if (landSeg) {
-      const p = createPlatform(landSeg.x + 90 + Math.random() * Math.max(20, landSeg.w - 240), "island");
-      world.platforms.push(p);
+      const usableLeft = landSeg.x + 360;
+      const usableRight = landSeg.x + landSeg.w - 360 - 220;
+      if (usableRight > usableLeft) {
+        const p = createPlatform(usableLeft + Math.random() * (usableRight - usableLeft), "island");
+        clearLandPadArea(p);
+        world.platforms.push(p);
+      }
     }
   }
 
@@ -598,6 +681,7 @@
     resetWorld();
 
     const startPlatform = world.platforms[0];
+    player.x = startPlatform.x + 4;
     player.y = startPlatform.deckY - player.h + 2;
     player.landedPlatform = startPlatform;
 
@@ -677,6 +761,36 @@
     });
   }
 
+  function getShareText() {
+    return `I just scored ${lastSharedScore} on Wildcat Hop 🚁
+
+To play visit www.bemoreamy.com/wildcat
+
+To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
+  }
+
+  async function shareScore() {
+    const text = getShareText();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          text,
+          url: "https://www.bemoreamy.com/wildcat"
+        });
+        return;
+      } catch {
+        return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Share text copied to clipboard.");
+    } catch {
+      alert(text);
+    }
+  }
+
   function gameOver() {
     if (gameState === "gameover") return;
 
@@ -686,6 +800,8 @@
     const score = Math.round(world.score);
     const distance = Math.round(world.distance);
     const personalBest = Number(localStorage.getItem(STORAGE_KEYS.personalBest) || 0);
+
+    lastSharedScore = score;
 
     finalScore.textContent = score.toLocaleString();
     finalDistance.textContent = `${distance.toLocaleString()} m`;
@@ -907,7 +1023,7 @@
         if (p.type === "ship") {
           p.deckY = p.y + p.h * 0.90;
         } else {
-          p.deckY = p.y + p.h * 0.25;
+          p.deckY = p.y + p.h * 0.85;
         }
       }
 
@@ -1195,7 +1311,7 @@
       () => {
         ctx.save();
         ctx.fillStyle = "#7b858f";
-        ctx.fillRect(p.x, p.y + p.h * 0.25, p.w, p.h * 0.75);
+        ctx.fillRect(p.x, p.y + p.h * 0.12, p.w, p.h * 0.88);
         ctx.fillStyle = "#4d5964";
         ctx.fillRect(p.deckX, p.deckY - 4, p.refuelZoneW, 10);
         ctx.restore();
@@ -1504,6 +1620,7 @@
     playBtn.addEventListener("click", startGame);
     playAgainBtn.addEventListener("click", startGame);
     backToMenuBtn.addEventListener("click", showMenu);
+    if (shareBtn) shareBtn.addEventListener("click", shareScore);
 
     window.addEventListener("resize", () => {
       syncAppHeight();
