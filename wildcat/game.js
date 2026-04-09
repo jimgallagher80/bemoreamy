@@ -661,9 +661,12 @@
     if (takeoffTimerEl) takeoffTimerEl.classList.add("hidden");
 
     gameState = "playing";
-    pendingStartAfterRotate = false;
+    targetWorldSpeed = 0;
+    effectiveWorldSpeed = 0;
+
     updateHud();
     draw();
+
     isStartingGame = false;
   }
 
@@ -1505,11 +1508,19 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
     );
   }
 
-  function bindInput(target) {
-    if (!target) return;
-    target.addEventListener("pointerdown", onPointerDown, { passive: false });
-    target.addEventListener("touchstart", onPointerDown, { passive: false });
-    target.addEventListener("mousedown", onPointerDown, { passive: false });
+  function roundRect(ctx2d, x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx2d.beginPath();
+    ctx2d.moveTo(x + r, y);
+    ctx2d.lineTo(x + width - r, y);
+    ctx2d.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx2d.lineTo(x + width, y + height - r);
+    ctx2d.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx2d.lineTo(x + r, y + height);
+    ctx2d.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx2d.lineTo(x, y + r);
+    ctx2d.quadraticCurveTo(x, y, x + r, y);
+    ctx2d.closePath();
   }
 
   function onPointerDown(e) {
@@ -1529,16 +1540,39 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
     syncAppHeight();
     resizeCanvas();
 
+    if (isStartingGame || gameState === "playing") {
+      updateOrientationOverlay();
+      return;
+    }
+
     if (pendingStartAfterRotate) {
       const { landscape } = getDeviceMode();
       if (landscape) {
         rotateOverlay.classList.add("hidden");
+        pendingStartAfterRotate = false;
         await actuallyStartGame();
         return;
       }
     }
 
     updateOrientationOverlay();
+  }
+
+  function loop(timestamp) {
+    const dt = Math.min(0.033, (timestamp - lastTime) / 1000 || 0);
+    lastTime = timestamp;
+
+    update(dt);
+    draw();
+
+    requestAnimationFrame(loop);
+  }
+
+  function bindInput(target) {
+    if (!target) return;
+    target.addEventListener("pointerdown", onPointerDown, { passive: false });
+    target.addEventListener("touchstart", onPointerDown, { passive: false });
+    target.addEventListener("mousedown", onPointerDown, { passive: false });
   }
 
   function init() {
