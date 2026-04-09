@@ -38,9 +38,16 @@
 
         <button id="playBtn" class="btn btn-primary" type="button">Play</button>
 
-        <div class="hidden-meta">
-          <div id="personalBest">0</div>
-          <ol id="localLeaderboard"></ol>
+        <div class="mini-scores">
+          <div class="mini-box">
+            <div class="mini-label">Best</div>
+            <div id="personalBest" class="mini-value">0</div>
+          </div>
+
+          <div class="mini-box">
+            <div class="mini-label">Top 10</div>
+            <ol id="localLeaderboard" class="leaderboard"></ol>
+          </div>
         </div>
       </div>
     </section>
@@ -110,7 +117,6 @@
         </div>
 
         <div class="hidden-meta">
-          <button id="backToMenuBtn" type="button">Menu</button>
           <span id="finalDistance">0 m</span>
           <span id="finalLandingQuality">None</span>
         </div>
