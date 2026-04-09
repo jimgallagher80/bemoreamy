@@ -21,7 +21,14 @@
 
     <section id="startScreen" class="screen">
       <div class="menu-card tiny-card">
-        <h1>Wildcat Hop</h1>
+        <div class="title-row">
+          <img class="title-art" src="gamegraphics/BMAlogo.svg" alt="Be More Amy logo" />
+          <div class="title-text-block">
+            <h1 class="game-title">WILDCAT<br />HOP</h1>
+          </div>
+          <img class="title-art" src="gamegraphics/wildcat-heli.svg" alt="Wildcat helicopter" />
+        </div>
+
         <p class="subtitle">Tap to fly. Land to refuel.</p>
 
         <div class="controls-row">
@@ -48,7 +55,14 @@
     <section id="gameUi" class="hidden">
       <div id="hud">
         <div class="hud-stack">
-          <div class="hud-pill">
+          <div class="fuel-panel">
+            <div class="hud-label">Fuel</div>
+            <div class="fuel-vertical">
+              <div id="fuelFill" class="fuel-fill-vertical"></div>
+            </div>
+          </div>
+
+          <div class="hud-pill hidden">
             <span class="hud-label">Distance</span>
             <span id="distanceValue" class="hud-value">0 m</span>
           </div>
@@ -56,13 +70,6 @@
           <div class="hud-pill">
             <span class="hud-label">Score</span>
             <span id="scoreValue" class="hud-value">0</span>
-          </div>
-
-          <div class="fuel-panel">
-            <div class="hud-label">Fuel</div>
-            <div class="fuel-vertical">
-              <div id="fuelFill" class="fuel-fill-vertical"></div>
-            </div>
           </div>
         </div>
       </div>
@@ -74,24 +81,19 @@
 
     <section id="gameOverScreen" class="screen hidden">
       <div class="menu-card tiny-card">
-        <h1>Game Over</h1>
+        <div class="gameover-header">
+          <img class="gameover-logo" src="gamegraphics/BMAlogo.svg" alt="Be More Amy logo" />
+          <h1>Game Over</h1>
+        </div>
 
-        <div class="results-grid">
+        <div class="results-grid results-grid-two">
           <div class="result-card">
             <div class="result-label">Score</div>
             <div id="finalScore" class="result-value">0</div>
           </div>
           <div class="result-card">
-            <div class="result-label">Distance</div>
-            <div id="finalDistance" class="result-value">0 m</div>
-          </div>
-          <div class="result-card">
             <div class="result-label">Landings</div>
             <div id="finalLandings" class="result-value">0</div>
-          </div>
-          <div class="result-card">
-            <div class="result-label">Best landing</div>
-            <div id="finalLandingQuality" class="result-value">None</div>
           </div>
         </div>
 
@@ -99,7 +101,24 @@
 
         <div class="button-row">
           <button id="playAgainBtn" class="btn btn-primary" type="button">Play Again</button>
-          <button id="backToMenuBtn" class="btn btn-secondary" type="button">Menu</button>
+          <button id="shareBtn" class="btn btn-secondary" type="button">Share</button>
+        </div>
+
+        <div class="button-row donate-row">
+          <a
+            id="donateBtn"
+            class="btn btn-primary btn-donate"
+            href="https://www.justgiving.com/team/bemoreamy"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Donate to Be More Amy
+          </a>
+        </div>
+
+        <div class="hidden-meta">
+          <span id="finalDistance">0 m</span>
+          <span id="finalLandingQuality">None</span>
         </div>
       </div>
     </section>
