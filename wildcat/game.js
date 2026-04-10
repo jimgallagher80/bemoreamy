@@ -891,9 +891,10 @@
   }
 
   function renderStoredScores() {
-    if (!personalBestEl || !localLeaderboardEl) return;
-    const pb = Number(localStorage.getItem(STORAGE_KEYS.personalBest) || 0);
-    personalBestEl.textContent = pb.toLocaleString();
+    if (personalBestEl) {
+      const pb = Number(localStorage.getItem(STORAGE_KEYS.personalBest) || 0);
+      personalBestEl.textContent = pb.toLocaleString();
+    }
   }
 
   function getShareText() {
