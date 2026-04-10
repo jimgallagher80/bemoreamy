@@ -383,12 +383,18 @@
   }
 
   function createGroundObstacle(type, x) {
+    const rect = getRect();
+    const minPlayableGap = Math.max(Math.round(player.h * 2.8), isTabletMode ? 96 : 88);
+    const maxAllowedHeight = Math.max(44, Math.round(groundY - minPlayableGap - 6));
+
     if (type === "tree") {
       const scale = 0.82 + Math.random() * 0.55;
       const baseW = isTabletMode ? 52 : 40;
       const baseH = isTabletMode ? 128 : 100;
       const w = Math.round(baseW * scale);
-      const h = Math.round(baseH * scale);
+      const rawH = Math.round(baseH * scale);
+      const screenCap = Math.round(rect.height * (isTabletMode ? 0.30 : 0.34));
+      const h = Math.max(48, Math.min(rawH, maxAllowedHeight, screenCap));
       return {
         type,
         x,
@@ -406,7 +412,9 @@
     const baseW = isTabletMode ? 74 : 60;
     const baseH = isTabletMode ? 180 : 150;
     const w = Math.round(baseW * scale);
-    const h = Math.round(baseH * scale);
+    const rawH = Math.round(baseH * scale);
+    const screenCap = Math.round(rect.height * (isTabletMode ? 0.34 : 0.40));
+    const h = Math.max(72, Math.min(rawH, maxAllowedHeight, screenCap));
     return {
       type: "building",
       x,
@@ -494,8 +502,9 @@
     let top = groundY;
     for (const o of world.obstacles) {
       if (o.type !== "tree" && o.type !== "building") continue;
-      const centre = o.x + o.w * 0.5;
-      if (Math.abs(centre - x) <= spread) top = Math.min(top, o.y);
+      const left = o.x - spread;
+      const right = o.x + o.w + spread;
+      if (x >= left && x <= right) top = Math.min(top, o.y);
     }
     return top;
   }
@@ -512,8 +521,8 @@
 
   function createSafeAirObstacle(type, x) {
     const rect = getRect();
-    const minGap = player.h * 2.5;
-    const groundTop = getGroundObstacleTopNearX(x, 160);
+    const minGap = Math.max(player.h * 2.8, isTabletMode ? 96 : 88);
+    const groundTop = getGroundObstacleTopNearX(x, isTabletMode ? 240 : 210);
 
     const obstacle = createObstacle(type, x);
     const maxBottomFromGround = groundTop - minGap;
@@ -526,7 +535,7 @@
       if (maxY <= minY + 4) return null;
 
       obstacle.y = minY + Math.random() * (maxY - minY);
-      if (type === "cloud") obstacle.y = Math.min(obstacle.y, rect.height * 0.36);
+      if (type === "cloud") obstacle.y = Math.min(obstacle.y, rect.height * 0.32);
     }
 
     return obstacle;
