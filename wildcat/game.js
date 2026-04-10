@@ -68,7 +68,7 @@
     maxFall: 720,
     fuel: 100,
     maxFuel: 100,
-    fuelBurnRate: 2.3,
+    fuelBurnRate: 2.1,
     refuelRate: 26,
     landed: true,
     crashed: false,
@@ -87,7 +87,7 @@
     bestLandingQuality: "None",
     obstaclesCleared: 0,
     nextObstacleSpawn: 640,
-    nextPlatformSpawn: 1250,
+    nextPlatformSpawn: 980,
     obstacles: [],
     platforms: [],
     terrain: [],
@@ -134,7 +134,7 @@
         el.webkitRequestFullscreen();
       }
     } catch {
-      // Best effort only. iPhone Safari may refuse.
+      // Best effort only.
     }
   }
 
@@ -142,9 +142,7 @@
     const vv = window.visualViewport;
     const h = Math.round(vv ? vv.height : window.innerHeight);
     document.documentElement.style.setProperty("--app-height", `${h}px`);
-    if (app) {
-      app.style.height = `${h}px`;
-    }
+    if (app) app.style.height = `${h}px`;
     window.scrollTo(0, 0);
   }
 
@@ -241,7 +239,7 @@
     world.bestLandingQuality = "None";
     world.obstaclesCleared = 0;
     world.nextObstacleSpawn = 640;
-    world.nextPlatformSpawn = 1250;
+    world.nextPlatformSpawn = 980;
     world.obstacles = [];
     world.platforms = [];
     world.terrain = [];
@@ -273,9 +271,9 @@
 
   function nextTerrainWidth(type) {
     if (type === "water") {
-      return (isTabletMode ? 820 : 680) + Math.random() * (isTabletMode ? 260 : 220);
+      return (isTabletMode ? 860 : 720) + Math.random() * (isTabletMode ? 260 : 240);
     }
-    return (isTabletMode ? 1150 : 900) + Math.random() * (isTabletMode ? 300 : 260);
+    return (isTabletMode ? 1200 : 960) + Math.random() * (isTabletMode ? 320 : 280);
   }
 
   function createTerrainSegment(x, type, width) {
@@ -366,7 +364,7 @@
     } else if (p.type === "carrier") {
       p.y = groundY - p.h;
       p.deckX = p.x + p.w * 0.12;
-      p.deckY = p.y + p.h * 0.85;
+      p.deckY = p.y + p.h * 0.80;
     } else {
       p.y = groundY - p.h + 8;
       p.deckX = p.x + (p.w - p.refuelZoneW) * 0.5;
@@ -382,10 +380,21 @@
     world.platforms.push(start);
   }
 
-  function createGroundObstacle(type, x) {
+  function getMinPlayableGap() {
+    return Math.max(Math.round(player.h * 3.15), isTabletMode ? 116 : 106);
+  }
+
+  function getMaxGroundObstacleHeight() {
     const rect = getRect();
-    const minPlayableGap = Math.max(Math.round(player.h * 2.8), isTabletMode ? 96 : 88);
-    const maxAllowedHeight = Math.max(44, Math.round(groundY - minPlayableGap - 6));
+    const minPlayableGap = getMinPlayableGap();
+    const maxByGap = Math.max(44, Math.round(groundY - minPlayableGap - 8));
+    const maxByScreen = Math.round(rect.height * (isTabletMode ? 0.27 : 0.31));
+    return Math.max(44, Math.min(maxByGap, maxByScreen));
+  }
+
+  function createGroundObstacle(type, x, prevBuildingHeight = null) {
+    const rect = getRect();
+    const maxAllowedHeight = getMaxGroundObstacleHeight();
 
     if (type === "tree") {
       const scale = 0.82 + Math.random() * 0.55;
@@ -393,7 +402,7 @@
       const baseH = isTabletMode ? 128 : 100;
       const w = Math.round(baseW * scale);
       const rawH = Math.round(baseH * scale);
-      const screenCap = Math.round(rect.height * (isTabletMode ? 0.30 : 0.34));
+      const screenCap = Math.round(rect.height * (isTabletMode ? 0.28 : 0.32));
       const h = Math.max(48, Math.min(rawH, maxAllowedHeight, screenCap));
       return {
         type,
@@ -408,13 +417,21 @@
       };
     }
 
-    const scale = 0.8 + Math.random() * 0.9;
     const baseW = isTabletMode ? 74 : 60;
-    const baseH = isTabletMode ? 180 : 150;
+    const baseH = isTabletMode ? 170 : 140;
+    let tries = 0;
+    let h = 0;
+    let scale = 1;
+    do {
+      scale = 0.78 + Math.random() * 0.78;
+      const rawH = Math.round(baseH * scale);
+      const screenCap = Math.round(rect.height * (isTabletMode ? 0.30 : 0.35));
+      h = Math.max(68, Math.min(rawH, maxAllowedHeight, screenCap));
+      tries += 1;
+    } while (prevBuildingHeight !== null && h === prevBuildingHeight && tries < 12);
+
     const w = Math.round(baseW * scale);
-    const rawH = Math.round(baseH * scale);
-    const screenCap = Math.round(rect.height * (isTabletMode ? 0.34 : 0.40));
-    const h = Math.max(72, Math.min(rawH, maxAllowedHeight, screenCap));
+
     return {
       type: "building",
       x,
@@ -490,15 +507,23 @@
     if (!firstLand) return;
 
     let x = Math.max(firstLand.x + 120, rect.width * 0.78);
+    let prevBuildingHeight = null;
+
     for (let i = 0; i < 6; i++) {
+      const usableRight = firstLand.x + firstLand.w - 80;
+      if (x > usableRight) break;
+
       const type = Math.random() < 0.55 ? "tree" : "building";
-      world.obstacles.push(createGroundObstacle(type, x));
-      x += type === "building" ? 62 + Math.random() * 42 : 46 + Math.random() * 32;
-      if (x > firstLand.x + firstLand.w - 120) break;
+      const obstacle = createGroundObstacle(type, x, prevBuildingHeight);
+      if (type === "building") prevBuildingHeight = obstacle.h;
+      world.obstacles.push(obstacle);
+
+      const gap = type === "building" ? 10 + Math.random() * 36 : Math.random() * 16;
+      x += obstacle.w + gap;
     }
   }
 
-  function getGroundObstacleTopNearX(x, spread = 140) {
+  function getGroundObstacleTopNearX(x, spread = 160) {
     let top = groundY;
     for (const o of world.obstacles) {
       if (o.type !== "tree" && o.type !== "building") continue;
@@ -521,8 +546,9 @@
 
   function createSafeAirObstacle(type, x) {
     const rect = getRect();
-    const minGap = Math.max(player.h * 2.8, isTabletMode ? 96 : 88);
-    const groundTop = getGroundObstacleTopNearX(x, isTabletMode ? 240 : 210);
+    const minGap = getMinPlayableGap();
+    const spread = isTabletMode ? 280 : 240;
+    const groundTop = getGroundObstacleTopNearX(x, spread);
 
     const obstacle = createObstacle(type, x);
     const maxBottomFromGround = groundTop - minGap;
@@ -532,46 +558,74 @@
       const maxY = Math.max(minTopFromScreen, maxBottomFromGround - obstacle.h);
       const minY = minTopFromScreen;
 
-      if (maxY <= minY + 4) return null;
+      if (maxY <= minY + 8) return null;
 
       obstacle.y = minY + Math.random() * (maxY - minY);
-      if (type === "cloud") obstacle.y = Math.min(obstacle.y, rect.height * 0.32);
+      if (type === "cloud") obstacle.y = Math.min(obstacle.y, rect.height * 0.30);
     }
 
     return obstacle;
+  }
+
+  function spawnLandCluster() {
+    const spawnX = getSpawnX();
+    const landSeg = findFutureTerrainSegment("land", spawnX, 380, 50);
+    if (!landSeg) return false;
+
+    let x = Math.max(spawnX, landSeg.x + 50);
+    const usableRight = landSeg.x + landSeg.w - 50;
+    if (x >= usableRight) return false;
+
+    if (isNearLandPadExclusion(x, 80)) x += 340;
+    if (x >= usableRight || isNearLandPadExclusion(x, 40)) return false;
+
+    const count = Math.random() < 0.5 ? 1 : 2;
+    let prevBuildingHeight = null;
+    let placed = 0;
+
+    for (let i = 0; i < count; i++) {
+      if (x >= usableRight) break;
+      if (isNearLandPadExclusion(x, 30)) break;
+
+      const type = Math.random() < 0.58 ? "tree" : "building";
+      const obstacle = createGroundObstacle(type, x, prevBuildingHeight);
+
+      if (x + obstacle.w > usableRight) break;
+
+      world.obstacles.push(obstacle);
+      placed += 1;
+
+      if (type === "building") {
+        prevBuildingHeight = obstacle.h;
+        x += obstacle.w + 10 + Math.random() * 36;
+      } else {
+        x += obstacle.w + Math.random() * 14;
+      }
+    }
+
+    return placed > 0;
   }
 
   function spawnObstacle() {
     const spawnX = getSpawnX();
     const terrainType = getTerrainTypeAtX(spawnX);
 
-    if (terrainType === "land" && Math.random() < 0.7) {
-      const landSeg = findFutureTerrainSegment("land", spawnX, 340, 60);
-      if (landSeg) {
-        let x = Math.min(Math.max(spawnX, landSeg.x + 35), landSeg.x + landSeg.w - 80);
-        if (isNearLandPadExclusion(x, 70)) x = Math.min(landSeg.x + landSeg.w - 80, x + 360);
-
-        if (!isNearLandPadExclusion(x, 40)) {
-          const type = Math.random() < 0.58 ? "tree" : "building";
-          world.obstacles.push(createGroundObstacle(type, x));
-
-          if (Math.random() < 0.65) {
-            const gap = type === "building" ? 44 + Math.random() * 34 : 34 + Math.random() * 28;
-            const x2 = x + gap;
-            if (x2 < landSeg.x + landSeg.w - 40 && !isNearLandPadExclusion(x2, 30)) {
-              const type2 = Math.random() < 0.55 ? "building" : "tree";
-              world.obstacles.push(createGroundObstacle(type2, x2));
-            }
-          }
-          return;
-        }
-      }
+    if (terrainType === "land" && Math.random() < 0.72) {
+      if (spawnLandCluster()) return;
     }
 
     const airborneWeights = ["jet", "jet", "jet", "heli", "heli", "heli", "cloud", "cloud", "balloon"];
-    const type = airborneWeights[Math.floor(Math.random() * airborneWeights.length)];
-    const obstacle = createSafeAirObstacle(type, spawnX);
-    if (obstacle) world.obstacles.push(obstacle);
+    let attempts = 0;
+
+    while (attempts < 6) {
+      const type = airborneWeights[Math.floor(Math.random() * airborneWeights.length)];
+      const obstacle = createSafeAirObstacle(type, spawnX + attempts * 14);
+      if (obstacle) {
+        world.obstacles.push(obstacle);
+        return;
+      }
+      attempts += 1;
+    }
   }
 
   function clearLandPadArea(platform) {
@@ -583,33 +637,88 @@
     });
   }
 
+  function getLastWaterPlatformEnd() {
+    let lastEnd = -Infinity;
+    for (const p of world.platforms) {
+      if (p.type === "ship" || p.type === "carrier") {
+        lastEnd = Math.max(lastEnd, p.x + p.w);
+      }
+    }
+    return lastEnd;
+  }
+
+  function spawnWaterPlatformGuaranteed(minX) {
+    const waterSeg = findFutureTerrainSegment("water", minX, 620, 220);
+    if (!waterSeg) return false;
+
+    const lastWaterEnd = getLastWaterPlatformEnd();
+    const leftBound = Math.max(waterSeg.x + 120, minX, lastWaterEnd + 180);
+    const rightBound = waterSeg.x + waterSeg.w - 380;
+
+    if (rightBound <= leftBound) return false;
+
+    const type = Math.random() < 0.34 ? "carrier" : "ship";
+    const p = createPlatform(leftBound + Math.random() * (rightBound - leftBound), type);
+    world.platforms.push(p);
+    return true;
+  }
+
+  function spawnLandPlatformOptional(minX) {
+    const landSeg = findFutureTerrainSegment("land", minX, 760, 340);
+    if (!landSeg) return false;
+
+    const usableLeft = landSeg.x + 360;
+    const usableRight = landSeg.x + landSeg.w - 360 - 220;
+    if (usableRight <= usableLeft) return false;
+
+    const p = createPlatform(usableLeft + Math.random() * (usableRight - usableLeft), "island");
+    clearLandPadArea(p);
+    world.platforms.push(p);
+    return true;
+  }
+
+  function getDistanceToNextWaterPlatformAhead() {
+    let best = Infinity;
+    const playerX = player.x;
+    for (const p of world.platforms) {
+      if (p.type !== "ship" && p.type !== "carrier") continue;
+      const dx = p.x - playerX;
+      if (dx >= -40 && dx < best) best = dx;
+    }
+    return best;
+  }
+
+  function maybeForceFuelPlatform() {
+    if (player.landed) return;
+
+    const distanceToNext = getDistanceToNextWaterPlatformAhead();
+    const fuelPct = player.fuel / player.maxFuel;
+
+    if (fuelPct < 0.55 && distanceToNext > 650) {
+      spawnWaterPlatformGuaranteed(player.x + 520);
+      if (world.nextPlatformSpawn > 520) world.nextPlatformSpawn = 520;
+    }
+
+    if (fuelPct < 0.35 && distanceToNext > 430) {
+      spawnWaterPlatformGuaranteed(player.x + 360);
+      if (world.nextPlatformSpawn > 380) world.nextPlatformSpawn = 380;
+    }
+  }
+
   function spawnPlatform() {
     const minX = getSpawnX() + 220;
+    const distanceToNext = getDistanceToNextWaterPlatformAhead();
+    const lowFuel = player.fuel / player.maxFuel < 0.55;
 
-    if (Math.random() < 0.52) {
-      const waterSeg = findFutureTerrainSegment("water", minX, 520, 180);
-      if (waterSeg) {
-        const type = Math.random() < 0.34 ? "carrier" : "ship";
-        const usableLeft = waterSeg.x + 160;
-        const usableRight = waterSeg.x + waterSeg.w - 380;
-        if (usableRight > usableLeft) {
-          const p = createPlatform(usableLeft + Math.random() * (usableRight - usableLeft), type);
-          world.platforms.push(p);
-          return;
-        }
-      }
+    if (lowFuel || distanceToNext > 900 || Math.random() < 0.62) {
+      if (spawnWaterPlatformGuaranteed(minX)) return;
     }
 
-    const landSeg = findFutureTerrainSegment("land", minX, 760, 340);
-    if (landSeg) {
-      const usableLeft = landSeg.x + 360;
-      const usableRight = landSeg.x + landSeg.w - 360 - 220;
-      if (usableRight > usableLeft) {
-        const p = createPlatform(usableLeft + Math.random() * (usableRight - usableLeft), "island");
-        clearLandPadArea(p);
-        world.platforms.push(p);
-      }
+    if (Math.random() < 0.5) {
+      if (spawnLandPlatformOptional(minX)) return;
     }
+
+    spawnWaterPlatformGuaranteed(minX);
   }
 
   function waitForPlayableArea(maxAttempts = 20) {
@@ -900,12 +1009,14 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
       if (world.nextObstacleSpawn <= 0) {
         spawnObstacle();
         const aheadType = getTerrainTypeAtX(getSpawnX());
-        world.nextObstacleSpawn = aheadType === "land" ? 120 + Math.random() * 90 : 260 + Math.random() * 180;
+        world.nextObstacleSpawn = aheadType === "land" ? 128 + Math.random() * 92 : 270 + Math.random() * 190;
       }
+
+      maybeForceFuelPlatform();
 
       if (world.nextPlatformSpawn <= 0) {
         spawnPlatform();
-        world.nextPlatformSpawn = 1200 + Math.random() * 650;
+        world.nextPlatformSpawn = 780 + Math.random() * 380;
       }
     } else {
       player.vy = 0;
@@ -993,7 +1104,7 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
         const bob = Math.sin(p.motionPhase) * p.motionAmp;
         p.y = groundY - p.h + bob;
         if (p.type === "ship") p.deckY = p.y + p.h * 0.90;
-        else p.deckY = p.y + p.h * 0.85;
+        else p.deckY = p.y + p.h * 0.80;
       }
 
       if (activeLandingPad) player.y = p.deckY - player.h + 2;
