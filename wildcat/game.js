@@ -52,6 +52,7 @@
   let effectiveWorldSpeed = 0;
   let isTabletMode = false;
   let lastSharedScore = 0;
+  let terrainIdCounter = 1;
 
   let pendingStartAfterRotate = false;
   let hasAttemptedPlay = false;
@@ -245,6 +246,7 @@
     world.terrain = [];
     world.stars = [];
     world.seaPhase = 0;
+    terrainIdCounter = 1;
 
     targetWorldSpeed = 0;
     effectiveWorldSpeed = 0;
@@ -277,7 +279,7 @@
   }
 
   function createTerrainSegment(x, type, width) {
-    return { x, w: width, type };
+    return { id: terrainIdCounter++, x, w: width, type };
   }
 
   function seedTerrain() {
@@ -323,6 +325,17 @@
     return null;
   }
 
+  function getEligibleWaterSegment(minX, minWidth = 560) {
+    for (const seg of world.terrain) {
+      if (seg.type !== "water") continue;
+      if (seg.x + seg.w < minX) continue;
+      if (seg.w < minWidth) continue;
+      if (hasWaterPlatformInSegment(seg.id)) continue;
+      return seg;
+    }
+    return null;
+  }
+
   function getSpawnX() {
     const rect = getRect();
     return rect.width + 180;
@@ -350,7 +363,8 @@
       passed: false,
       startPad: false,
       used: false,
-      slowRadius: dims.slowRadius
+      slowRadius: dims.slowRadius,
+      segmentId: null
     };
     updatePlatformDeck(p);
     return p;
@@ -364,7 +378,7 @@
     } else if (p.type === "carrier") {
       p.y = groundY - p.h;
       p.deckX = p.x + p.w * 0.12;
-      p.deckY = p.y + p.h * 0.80;
+      p.deckY = p.y + p.h * 0.78;
     } else {
       p.y = groundY - p.h + 8;
       p.deckX = p.x + (p.w - p.refuelZoneW) * 0.5;
@@ -376,6 +390,8 @@
     const start = createPlatform(player.x - 8, "ship");
     start.startPad = true;
     start.motionAmp = 0;
+    const firstWater = world.terrain.find((seg) => seg.type === "water" && start.x >= seg.x && start.x <= seg.x + seg.w);
+    if (firstWater) start.segmentId = firstWater.id;
     updatePlatformDeck(start);
     world.platforms.push(start);
   }
@@ -637,30 +653,66 @@
     });
   }
 
-  function getLastWaterPlatformEnd() {
-    let lastEnd = -Infinity;
+  function hasWaterPlatformInSegment(segmentId) {
     for (const p of world.platforms) {
-      if (p.type === "ship" || p.type === "carrier") {
-        lastEnd = Math.max(lastEnd, p.x + p.w);
+      if (p.segmentId === segmentId && (p.type === "ship" || p.type === "carrier")) {
+        return true;
       }
     }
-    return lastEnd;
+    return false;
   }
 
-  function spawnWaterPlatformGuaranteed(minX) {
-    const waterSeg = findFutureTerrainSegment("water", minX, 620, 220);
-    if (!waterSeg) return false;
+  function getDistanceToNextWaterPlatformAhead() {
+    let best = Infinity;
+    const playerX = player.x;
+    for (const p of world.platforms) {
+      if (p.type !== "ship" && p.type !== "carrier") continue;
+      const dx = p.x - playerX;
+      if (dx >= -40 && dx < best) best = dx;
+    }
+    return best;
+  }
 
-    const lastWaterEnd = getLastWaterPlatformEnd();
-    const leftBound = Math.max(waterSeg.x + 120, minX, lastWaterEnd + 180);
-    const rightBound = waterSeg.x + waterSeg.w - 380;
+  function spawnWaterPlatformInSegment(seg, preferNearLeft = false) {
+    if (!seg || hasWaterPlatformInSegment(seg.id)) return false;
+
+    const type = Math.random() < 0.34 ? "carrier" : "ship";
+    const probe = createPlatform(0, type);
+
+    const marginLeft = 80;
+    const marginRight = 80;
+
+    const leftBound = seg.x + marginLeft;
+    const rightBound = seg.x + seg.w - probe.w - marginRight;
 
     if (rightBound <= leftBound) return false;
 
-    const type = Math.random() < 0.34 ? "carrier" : "ship";
-    const p = createPlatform(leftBound + Math.random() * (rightBound - leftBound), type);
+    let x;
+    if (preferNearLeft) {
+      const nearLeftMax = Math.min(rightBound, leftBound + 120);
+      x = leftBound + Math.random() * Math.max(1, nearLeftMax - leftBound);
+    } else {
+      x = leftBound + Math.random() * (rightBound - leftBound);
+    }
+
+    const p = createPlatform(x, type);
+    p.segmentId = seg.id;
     world.platforms.push(p);
     return true;
+  }
+
+  function spawnWaterPlatformGuaranteed(minX) {
+    const nearSeg = getEligibleWaterSegment(minX, 520);
+    if (nearSeg) {
+      return spawnWaterPlatformInSegment(nearSeg, true);
+    }
+
+    const fallbackSeg = getEligibleWaterSegment(player.x + 220, 480);
+    if (fallbackSeg) {
+      return spawnWaterPlatformInSegment(fallbackSeg, true);
+    }
+
+    return false;
   }
 
   function spawnLandPlatformOptional(minX) {
@@ -677,17 +729,6 @@
     return true;
   }
 
-  function getDistanceToNextWaterPlatformAhead() {
-    let best = Infinity;
-    const playerX = player.x;
-    for (const p of world.platforms) {
-      if (p.type !== "ship" && p.type !== "carrier") continue;
-      const dx = p.x - playerX;
-      if (dx >= -40 && dx < best) best = dx;
-    }
-    return best;
-  }
-
   function maybeForceFuelPlatform() {
     if (player.landed) return;
 
@@ -695,26 +736,26 @@
     const fuelPct = player.fuel / player.maxFuel;
 
     if (fuelPct < 0.55 && distanceToNext > 650) {
-      spawnWaterPlatformGuaranteed(player.x + 520);
-      if (world.nextPlatformSpawn > 520) world.nextPlatformSpawn = 520;
+      spawnWaterPlatformGuaranteed(player.x + 420);
+      if (world.nextPlatformSpawn > 420) world.nextPlatformSpawn = 420;
     }
 
     if (fuelPct < 0.35 && distanceToNext > 430) {
-      spawnWaterPlatformGuaranteed(player.x + 360);
-      if (world.nextPlatformSpawn > 380) world.nextPlatformSpawn = 380;
+      spawnWaterPlatformGuaranteed(player.x + 260);
+      if (world.nextPlatformSpawn > 260) world.nextPlatformSpawn = 260;
     }
   }
 
   function spawnPlatform() {
-    const minX = getSpawnX() + 220;
+    const minX = getSpawnX() + 120;
     const distanceToNext = getDistanceToNextWaterPlatformAhead();
     const lowFuel = player.fuel / player.maxFuel < 0.55;
 
-    if (lowFuel || distanceToNext > 900 || Math.random() < 0.62) {
+    if (lowFuel || distanceToNext > 900 || Math.random() < 0.7) {
       if (spawnWaterPlatformGuaranteed(minX)) return;
     }
 
-    if (Math.random() < 0.5) {
+    if (Math.random() < 0.4) {
       if (spawnLandPlatformOptional(minX)) return;
     }
 
@@ -1104,7 +1145,7 @@ To donate to this great cause, visit https://www.justgiving.com/team/bemoreamy`;
         const bob = Math.sin(p.motionPhase) * p.motionAmp;
         p.y = groundY - p.h + bob;
         if (p.type === "ship") p.deckY = p.y + p.h * 0.90;
-        else p.deckY = p.y + p.h * 0.80;
+        else p.deckY = p.y + p.h * 0.78;
       }
 
       if (activeLandingPad) player.y = p.deckY - player.h + 2;
