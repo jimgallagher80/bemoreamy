@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Image to 50x50 Grid</title>
+  <title>100x100 Image Grid</title>
   <style>
     body {
       margin: 0;
@@ -17,18 +17,13 @@
       margin: 20px;
     }
 
-    #grid {
-      display: grid;
-      grid-template-columns: repeat(50, 1fr);
-      grid-template-rows: repeat(50, 1fr);
+    canvas {
       width: 90vmin;
       height: 90vmin;
+      image-rendering: pixelated; /* keeps sharp blocks */
+      display: block;
       margin: 0 auto;
-    }
-
-    .cell {
-      width: 100%;
-      height: 100%;
+      background: #222;
     }
   </style>
 </head>
@@ -37,22 +32,14 @@
 <h2>Upload an Image</h2>
 <input type="file" id="upload" accept="image/*">
 
-<div id="grid"></div>
+<canvas id="canvas" width="100" height="100"></canvas>
 
 <script>
   const upload = document.getElementById('upload');
-  const grid = document.getElementById('grid');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
 
-  const size = 50;
-
-  // Create grid cells
-  const cells = [];
-  for (let i = 0; i < size * size; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    grid.appendChild(cell);
-    cells.push(cell);
-  }
+  const size = 100;
 
   upload.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -66,33 +53,27 @@
     };
 
     img.onload = function() {
-      // Create off-screen canvas
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      canvas.width = size;
-      canvas.height = size;
-
-      // Draw and scale image to 50x50
+      // Draw scaled image
       ctx.drawImage(img, 0, 0, size, size);
 
       const imageData = ctx.getImageData(0, 0, size, size);
       const data = imageData.data;
 
-      // Convert each pixel
-      for (let i = 0; i < size * size; i++) {
-        const r = data[i * 4];
-        const g = data[i * 4 + 1];
-        const b = data[i * 4 + 2];
+      // Convert to black & white
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
 
-        // Convert to grayscale
         const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+        const value = brightness > 128 ? 255 : 0;
 
-        // Threshold to black or white
-        const colour = brightness > 128 ? 'white' : 'black';
-
-        cells[i].style.backgroundColor = colour;
+        data[i] = value;     // R
+        data[i + 1] = value; // G
+        data[i + 2] = value; // B
       }
+
+      ctx.putImageData(imageData, 0, 0);
     };
 
     reader.readAsDataURL(file);
