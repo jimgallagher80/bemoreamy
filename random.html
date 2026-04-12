@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>6x6 Random Grid</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #111;
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(6, 50px);
+      grid-template-rows: repeat(6, 50px);
+      gap: 4px;
+    }
+
+    .cell {
+      width: 50px;
+      height: 50px;
+      background: white;
+    }
+  </style>
+</head>
+<body>
+
+<div class="grid" id="grid"></div>
+
+<script>
+  const grid = document.getElementById("grid");
+  const size = 6;
+  const cells = [];
+
+  // Create grid
+  for (let i = 0; i < size * size; i++) {
+    const cell = document.createElement("div");
+    cell.classList.add("cell");
+    grid.appendChild(cell);
+    cells.push(cell);
+  }
+
+  // Function to randomise grid
+  function updateGrid() {
+    cells.forEach(cell => {
+      const isBlack = Math.random() < 0.5;
+      cell.style.backgroundColor = isBlack ? "black" : "white";
+    });
+  }
+
+  // Initial draw
+  updateGrid();
+
+  // Update every second
+  setInterval(updateGrid, 1000);
+</script>
+
+</body>
+</html>
