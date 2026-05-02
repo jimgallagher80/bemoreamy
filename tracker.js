@@ -62,7 +62,7 @@
 
   function batonIcon(size = 34) {
     return L.icon({
-      iconUrl: "baton.png",
+      iconUrl: "baton.PNG",
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2],
       popupAnchor: [0, -size / 2]
