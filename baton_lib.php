@@ -158,5 +158,5 @@ function baton_team_name($signup) {
     $first = baton_clean($signup['team_leader_first_name'] ?? '');
     $last = baton_clean($signup['team_leader_surname'] ?? '');
     $name = trim($first . ' ' . $last);
-    return $name !== '' ? $name . "'s Team" : 'Unnamed team';
+    return $name !== '' ? $name . "’s Team" : 'Unnamed team';
 }
