@@ -33,6 +33,14 @@ try {
     $eventsStmt->execute([$signupId]);
     $events = $eventsStmt->fetchAll(PDO::FETCH_ASSOC);
 
+    $finishedStmt = $pdo->query("
+        SELECT DISTINCT leg_number
+        FROM baton_events
+        WHERE event_type = 'finish' AND is_hidden = 0
+    ");
+    $finishedLegs = array_map('intval', $finishedStmt->fetchAll(PDO::FETCH_COLUMN));
+    $finishedSet = array_fill_keys($finishedLegs, true);
+
     $eventsByLeg = [];
     foreach ($events as $e) {
         $leg = (string)(int)$e['leg_number'];
@@ -54,6 +62,8 @@ try {
             'start' => $meta['start'] ?? '',
             'end' => $meta['end'] ?? '',
             'distance_km' => isset($meta['distance_km']) ? (float)$meta['distance_km'] : null,
+            'previous_leg_number' => $legNum > 1 ? $legNum - 1 : null,
+            'previous_leg_finished' => $legNum <= 1 ? true : isset($finishedSet[$legNum - 1]),
             'events' => $eventsByLeg[(string)$legNum] ?? []
         ];
     }

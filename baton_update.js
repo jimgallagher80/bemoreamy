@@ -10,6 +10,8 @@
   const legsEl = document.getElementById("legs");
   const statusEl = document.getElementById("status");
 
+  let currentTeamData = null;
+
   function esc(s) {
     return String(s ?? "")
       .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
@@ -49,6 +51,7 @@
   }
 
   function renderTeam(data) {
+    currentTeamData = data;
     teamTitle.textContent = data.team_name || "Team baton link";
     teamIntro.textContent = "Use the buttons below to record your team’s progress. Anyone with this link can update the baton for this team.";
     legsEl.innerHTML = data.legs.map(renderLeg).join("");
@@ -88,6 +91,11 @@
     return "Updated";
   }
 
+  function findLeg(legNumber) {
+    const legs = currentTeamData && Array.isArray(currentTeamData.legs) ? currentTeamData.legs : [];
+    return legs.find(l => Number(l.leg_number) === Number(legNumber)) || null;
+  }
+
   function getLocation() {
     return new Promise(resolve => {
       if (!navigator.geolocation) return resolve(null);
@@ -104,6 +112,16 @@
   }
 
   async function submitEvent(legNumber, eventType, btn) {
+    const leg = findLeg(legNumber);
+
+    if (eventType === "start" && leg && leg.previous_leg_finished === false) {
+      const prev = leg.previous_leg_number || (Number(legNumber) - 1);
+      const ok = window.confirm(
+        `Leg ${prev} has not yet been marked as finished. Are you sure your team is ready to start Leg ${legNumber}?`
+      );
+      if (!ok) return;
+    }
+
     const original = btn.textContent;
     btn.disabled = true;
     btn.textContent = eventType === "update" ? "Getting GPS…" : "Recording…";

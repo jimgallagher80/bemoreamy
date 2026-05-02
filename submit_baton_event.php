@@ -60,6 +60,33 @@ try {
         }
     }
 
+    if ($eventType === 'update' && ($displayLat === null || $displayLng === null || $fraction === null)) {
+        $lastStmt = $pdo->prepare("
+            SELECT display_lat, display_lng, route_fraction
+            FROM baton_events
+            WHERE signup_id = ? AND leg_number = ? AND is_hidden = 0
+              AND display_lat IS NOT NULL AND display_lng IS NOT NULL AND route_fraction IS NOT NULL
+            ORDER BY event_time DESC, id DESC
+            LIMIT 1
+        ");
+        $lastStmt->execute([$signupId, $legNumber]);
+        $last = $lastStmt->fetch(PDO::FETCH_ASSOC);
+        if ($last) {
+            $displayLat = (float)$last['display_lat'];
+            $displayLng = (float)$last['display_lng'];
+            $fraction = (float)$last['route_fraction'];
+            $positionSource = 'last_known_no_gps';
+        } else {
+            $p = baton_point_at_leg_fraction($legNumber, 0);
+            if ($p) {
+                $displayLat = $p['lat'];
+                $displayLng = $p['lng'];
+                $fraction = 0.0;
+                $positionSource = 'planned_start_no_gps';
+            }
+        }
+    }
+
     $ins = $pdo->prepare("
         INSERT INTO baton_events
           (signup_id, leg_number, event_type, event_time, gps_lat, gps_lng, display_lat, display_lng, route_fraction, accuracy_m, note)

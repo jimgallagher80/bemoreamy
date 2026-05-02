@@ -12,6 +12,7 @@
   let geojson;
   let routeLayer;
   let batonMarker;
+  let eventMarkersLayer;
   let selectedLayer;
   const legLayers = new Map();
 
@@ -59,13 +60,12 @@
     return { color: GREY, weight: 4, opacity: 0.55 };
   }
 
-  function batonIcon() {
-    return L.divIcon({
-      className: "",
-      html: `<div class="baton-icon" aria-hidden="true">📍</div>`,
-      iconSize: [30, 30],
-      iconAnchor: [15, 28],
-      popupAnchor: [0, -28]
+  function batonIcon(size = 34) {
+    return L.icon({
+      iconUrl: "baton.png",
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -size / 2]
     });
   }
 
@@ -88,6 +88,8 @@
 
     const res = await fetch(GEOJSON_URL, { cache: "no-store" });
     geojson = await res.json();
+    eventMarkersLayer = L.layerGroup().addTo(map);
+
     routeLayer = L.geoJSON(geojson, {
       style: styleFeature,
       onEachFeature: (feature, layer) => {
@@ -124,6 +126,7 @@
       trackerStatus.innerHTML = "The relay has not recorded a baton update yet.";
       trackerSubStatus.textContent = "Once a team starts a leg, the baton will appear here.";
       renderHistory(data.history || []);
+      renderEventMarkers([], null);
       return;
     }
 
@@ -148,6 +151,35 @@
 
     setSelectedLeg(baton.leg_number);
     renderHistory(data.history || []);
+    renderEventMarkers(data.history || [], baton);
+  }
+
+  function renderEventMarkers(history, baton) {
+    if (!eventMarkersLayer) return;
+    eventMarkersLayer.clearLayers();
+
+    const latestId = baton ? Number(baton.id) : null;
+    const allEvents = [];
+    (history || []).forEach(h => {
+      (h.events || []).forEach(e => allEvents.push(e));
+    });
+
+    allEvents.forEach(e => {
+      if (e.display_lat === null || e.display_lng === null || e.display_lat === undefined || e.display_lng === undefined) return;
+      if (latestId !== null && Number(e.id) === latestId) return;
+
+      L.marker([Number(e.display_lat), Number(e.display_lng)], {
+        icon: batonIcon(22),
+        zIndexOffset: 500
+      })
+        .bindPopup(`
+          <strong>${esc(labelForEvent(e.event_type))}</strong><br>
+          Leg ${esc(e.leg_number)}<br>
+          ${esc(e.team_name)}<br>
+          ${esc(formatTime(e.event_time))}
+        `)
+        .addTo(eventMarkersLayer);
+    });
   }
 
   function labelForEvent(type) {
