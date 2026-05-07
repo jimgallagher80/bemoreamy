@@ -16,7 +16,17 @@
 .signup-entry {
     border-bottom:1px solid #ccc;
     padding:10px 0;
-}.status-approved { color:green; font-weight:700; }
+}
+.w3w-line {
+    margin-top:4px;
+    font-size:0.95rem;
+    line-height:1.4;
+}
+.w3w-line a {
+    color:#000;
+    text-decoration:underline;
+}
+.status-approved { color:green; font-weight:700; }
 </style>
 </head>
 <body>
@@ -116,6 +126,77 @@ const LEG_TIMES = {
     "68":{"setoff":"Sat 23 May 2026 12:11","finish":"Sat 23 May 2026 14:00"}
 };
 
+const LEG_W3W = {
+    "1":{"start":"couches.toys.bride","finish":"skunks.winks.stretcher"},
+    "2":{"start":"apart.puzzle.removes","finish":"focal.burying.wove"},
+    "3":{"start":"focal.burying.wove","finish":"headsets.hosts.smirks"},
+    "4":{"start":"headsets.hosts.smirks","finish":"clutches.nimbly.bars"},
+    "5":{"start":"clutches.nimbly.bars","finish":"leaflet.wreck.steep"},
+    "6":{"start":"leaflet.wreck.steep","finish":"stutter.chain.fermented"},
+    "7":{"start":"stutter.chain.fermented","finish":"puppy.barks.prices"},
+    "8":{"start":"puppy.barks.prices","finish":"dilute.resettle.pilots"},
+    "9":{"start":"dilute.resettle.pilots","finish":"visitors.shook.shows"},
+    "10":{"start":"visitors.shook.shows","finish":"conquest.patting.overgrown"},
+    "11":{"start":"conquest.patting.overgrown","finish":"pricier.warp.butchers"},
+    "12":{"start":"pricier.warp.butchers","finish":"horns.normal.orbit"},
+    "13":{"start":"horns.normal.orbit","finish":"emulated.formless.restored"},
+    "14":{"start":"cobbled.strictest.released","finish":"glassware.pulsing.kite"},
+    "15":{"start":"miss.commander.domestic","finish":"lace.award.length"},
+    "16":{"start":"lace.award.length","finish":"grumble.wildfires.scripted"},
+    "17":{"start":"grumble.wildfires.scripted","finish":"dealings.timidly.badminton"},
+    "18":{"start":"dealings.timidly.badminton","finish":"husbands.lemmings.fidgeting"},
+    "19":{"start":"vocal.inflates.takes","finish":"unimpeded.scooped.tags"},
+    "20":{"start":"unimpeded.scooped.tags","finish":"dugouts.owls.sprinkle"},
+    "21":{"start":"flank.path.pushover","finish":"slimming.grew.ample"},
+    "22":{"start":"young.diverged.bangle","finish":"shelter.making.hobbyists"},
+    "23":{"start":"leaned.cobras.regal","finish":"blessing.petrified.craziest"},
+    "24":{"start":"width.exacted.steaming","finish":"snacks.take.echo"},
+    "25":{"start":"snacks.take.echo","finish":"sports.stays.crazy"},
+    "26":{"start":"cubes.excuse.brave","finish":"broadcast.misted.carbonate"},
+    "27":{"start":"broadcast.misted.carbonate","finish":"skis.bristle.direction"},
+    "28":{"start":"skis.bristle.direction","finish":"towers.glassware.sleepy"},
+    "29":{"start":"plausible.frost.intervals","finish":"distracts.beaks.strength"},
+    "30":{"start":"distracts.beaks.strength","finish":"fists.asking.vocals"},
+    "31":{"start":"fists.asking.vocals","finish":"text.beaks.flirts"},
+    "32":{"start":"text.beaks.flirts","finish":"disco.little.jotting"},
+    "33":{"start":"disco.little.jotting","finish":"community.geek.repair"},
+    "34":{"start":"bank.forum.organs","finish":"mildest.ghosts.workflow"},
+    "35":{"start":"pioneered.scar.amounting","finish":"relegate.universe.busy"},
+    "36":{"start":"relegate.universe.busy","finish":"shifting.foot.jubilant"},
+    "37":{"start":"shifting.foot.jubilant","finish":"interlude.ordinary.edits"},
+    "38":{"start":"interlude.ordinary.edits","finish":"dynamic.officials.index"},
+    "39":{"start":"dynamic.officials.index","finish":"trying.buns.crunching"},
+    "40":{"start":"trying.buns.crunching","finish":"bronze.theory.plugged"},
+    "41":{"start":"bronze.theory.plugged","finish":"stones.shameless.promotes"},
+    "42":{"start":"stones.shameless.promotes","finish":"threaded.using.securing"},
+    "43":{"start":"threaded.using.securing","finish":"manual.blanked.insurance"},
+    "44":{"start":"manual.blanked.insurance","finish":"princely.entitles.reserves"},
+    "45":{"start":"princely.entitles.reserves","finish":"sues.reputable.loitering"},
+    "46":{"start":"sues.reputable.loitering","finish":"briefing.wrong.explained"},
+    "47":{"start":"briefing.wrong.explained","finish":"asking.conceals.penny"},
+    "48":{"start":"asking.conceals.penny","finish":"healers.hiked.boats"},
+    "49":{"start":"healers.hiked.boats","finish":"extremely.disco.exam"},
+    "50":{"start":"extremely.disco.exam","finish":"digits.mammal.indulgent"},
+    "51":{"start":"titles.video.inert","finish":"backhand.families.pity"},
+    "52":{"start":"backhand.families.pity","finish":"tones.retaliate.throw"},
+    "53":{"start":"tones.retaliate.throw","finish":"begun.fountain.joked"},
+    "54":{"start":"begun.fountain.joked","finish":"dumplings.circle.sugars"},
+    "55":{"start":"dumplings.circle.sugars","finish":"elevate.bulk.attic"},
+    "56":{"start":"elevate.bulk.attic","finish":"replying.inhabited.hidden"},
+    "57":{"start":"replying.inhabited.hidden","finish":"enigma.rungs.telephone"},
+    "58":{"start":"enigma.rungs.telephone","finish":"regretted.jukebox.habit"},
+    "59":{"start":"regretted.jukebox.habit","finish":"lake.cello.cleanest"},
+    "60":{"start":"lake.cello.cleanest","finish":"lake.cello.cleanest"},
+    "61":{"start":"lake.cello.cleanest","finish":"jets.node.cups"},
+    "62":{"start":"jets.node.cups","finish":"rolled.fetching.sponge"},
+    "63":{"start":"rolled.fetching.sponge","finish":"community.frightens.reviews"},
+    "64":{"start":"community.frightens.reviews","finish":"sideboard.should.sling"},
+    "65":{"start":"sideboard.should.sling","finish":"comfort.strides.hindering"},
+    "66":{"start":"comfort.strides.hindering","finish":"pelted.sponge.inflating"},
+    "67":{"start":"pelted.sponge.inflating","finish":"fools.culminate.takeovers"},
+    "68":{"start":"fools.culminate.takeovers","finish":"festivity.campsites.crossing"},
+};
+
 function formatLegTimeShort(dateTimeStr) {
     if (!dateTimeStr) return '—';
     const parts = String(dateTimeStr).trim().split(/\s+/);
@@ -161,6 +242,23 @@ function getLegSummary(legNumber, legMeta) {
     return `Leg ${legNumber}, ${timing.setoff} to ${timing.finish}, ${start} to ${end}`;
 }
 
+function renderW3WLine(legNumber) {
+    const w3w = LEG_W3W[String(legNumber)] || {};
+    const start = w3w.start || '';
+    const finish = w3w.finish || '';
+
+    if (!start && !finish) return '';
+
+    const startHtml = start
+        ? `<a href="https://w3w.co/${start}" target="_blank" rel="noopener">///${start}</a>`
+        : '—';
+    const finishHtml = finish
+        ? `<a href="https://w3w.co/${finish}" target="_blank" rel="noopener">///${finish}</a>`
+        : '—';
+
+    return `<div class="w3w-line"><strong>Start W3W:</strong> ${startHtml}<br><strong>Finish W3W:</strong> ${finishHtml}</div>`;
+}
+
 async function loadSignups() {
     const [signupsRes, legMeta] = await Promise.all([
         fetch('get_signups.php'),
@@ -181,6 +279,7 @@ async function loadSignups() {
         const div = document.createElement('div');
         div.className = 'signup-entry';
         const legSummary = getLegSummary(entry.leg_number, legMeta);
+        const w3wLine = renderW3WLine(entry.leg_number);
 
         if (entry.has_team_details) {
             const membersText = (entry.members || []).map(m => {
@@ -190,12 +289,14 @@ async function loadSignups() {
 
             div.innerHTML = `
                 <strong>${legSummary}</strong><br>
+                ${w3wLine}
                 <strong>${entry.display_team_name}</strong><br>
                 ${membersText}
             `;
         } else {
             div.innerHTML = `
                 <strong>${legSummary}</strong><br>
+                ${w3wLine}
                 <strong>${entry.team_leader_first_name} ${entry.team_leader_surname}’s Team</strong><br>
                 Awaiting team name and team members details
             `;
