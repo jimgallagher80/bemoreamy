@@ -6,15 +6,14 @@
   const REFRESH_MS = 60000;
   const ORANGE = "#ff7a00";
   const GREY = "#6a6a6a";
-  const GREEN = "#2fbf71";
 
   let map;
   let geojson;
   let routeLayer;
-  let batonMarker;
+  let batonMarkersLayer;
   let eventMarkersLayer;
-  let selectedLayer;
   const legLayers = new Map();
+  const highlightedLegs = new Set();
 
   const trackerTitle = document.getElementById("trackerTitle");
   const trackerStatus = document.getElementById("trackerStatus");
@@ -56,7 +55,7 @@
     return hrs === 1 ? "1 hour ago" : `${hrs} hours ago`;
   }
 
-  function styleFeature(feature) {
+  function styleFeature() {
     return { color: GREY, weight: 4, opacity: 0.55 };
   }
 
@@ -69,14 +68,32 @@
     });
   }
 
-  function setSelectedLeg(legNum) {
-    if (selectedLayer) selectedLayer.setStyle({ color: GREY, weight: 4, opacity: 0.55 });
-    selectedLayer = legLayers.get(String(legNum)) || null;
-    if (selectedLayer) {
-      selectedLayer.setStyle({ color: ORANGE, weight: 6, opacity: 0.95 });
-      selectedLayer.bringToFront();
-      map.fitBounds(selectedLayer.getBounds(), { padding: [24, 24] });
+  function resetLegStyles() {
+    legLayers.forEach(layer => layer.setStyle({ color: GREY, weight: 4, opacity: 0.55 }));
+    highlightedLegs.clear();
+  }
+
+  function highlightLegs(legs, fit = false) {
+    resetLegStyles();
+    const bounds = [];
+
+    (legs || []).forEach(legNum => {
+      const layer = legLayers.get(String(legNum));
+      if (!layer) return;
+      highlightedLegs.add(String(legNum));
+      layer.setStyle({ color: ORANGE, weight: 6, opacity: 0.95 });
+      layer.bringToFront();
+      bounds.push(layer.getBounds());
+    });
+
+    if (fit && bounds.length) {
+      const combined = bounds.reduce((acc, b) => acc ? acc.extend(b) : b, null);
+      if (combined) map.fitBounds(combined, { padding: [24, 24] });
     }
+  }
+
+  function setSelectedLeg(legNum) {
+    highlightLegs([legNum], true);
   }
 
   async function init() {
@@ -89,6 +106,7 @@
     const res = await fetch(GEOJSON_URL, { cache: "no-store" });
     geojson = await res.json();
     eventMarkersLayer = L.layerGroup().addTo(map);
+    batonMarkersLayer = L.layerGroup().addTo(map);
 
     routeLayer = L.geoJSON(geojson, {
       style: styleFeature,
@@ -118,47 +136,65 @@
   }
 
   function renderState(data) {
-    const baton = data.baton;
-    const latest = data.latest_event;
+    const batons = Array.isArray(data.batons) ? data.batons : (data.baton ? [data.baton] : []);
 
-    if (!baton) {
+    if (!batons.length) {
       trackerTitle.textContent = "Baton tracker";
       trackerStatus.innerHTML = "The relay has not recorded a baton update yet.";
       trackerSubStatus.textContent = "Once a team starts a leg, the baton will appear here.";
       renderHistory(data.history || []);
-      renderEventMarkers([], null);
+      renderEventMarkers(data.history || [], []);
+      renderBatonMarkers([]);
+      resetLegStyles();
       return;
     }
 
-    const latlng = [baton.display_lat, baton.display_lng];
-    if (!batonMarker) {
-      batonMarker = L.marker(latlng, { icon: batonIcon(), zIndexOffset: 1000 }).addTo(map);
-    } else {
-      batonMarker.setLatLng(latlng);
-    }
-
-    const heldText = latest && latest.id !== baton.id ? " Position held at the latest valid point to avoid moving backwards." : "";
-    batonMarker.bindPopup(`
-      <strong>Virtual baton</strong><br>
-      Leg ${esc(baton.leg_number)}<br>
-      ${esc(baton.team_name)}<br>
-      ${esc(labelForEvent(baton.event_type))}: ${esc(formatTime(baton.event_time))}
-    `);
-
-    trackerTitle.textContent = `Virtual baton — Leg ${baton.leg_number}`;
-    trackerStatus.innerHTML = `<strong>${esc(baton.team_name)}</strong> — ${esc(labelForEvent(baton.event_type))} at ${esc(formatTime(baton.event_time))}.`;
-    trackerSubStatus.textContent = `Last position update: ${minutesAgo(baton.event_time)}.${heldText}`;
-
-    setSelectedLeg(baton.leg_number);
+    renderBatonMarkers(batons);
+    renderEventMarkers(data.history || [], batons);
     renderHistory(data.history || []);
-    renderEventMarkers(data.history || [], baton);
+
+    const legNums = batons.map(b => b.leg_number);
+    highlightLegs(legNums, true);
+
+    if (batons.length === 1) {
+      const b = batons[0];
+      trackerTitle.textContent = `Virtual baton — Leg ${b.leg_number}`;
+      trackerStatus.innerHTML = `<strong>${esc(b.team_name)}</strong> — ${esc(labelForEvent(b.event_type))} at ${esc(formatTime(b.event_time))}.`;
+      trackerSubStatus.textContent = `Last position update: ${minutesAgo(b.event_time)}.`;
+    } else {
+      trackerTitle.textContent = `Virtual batons — ${batons.length} teams underway`;
+      trackerStatus.innerHTML = batons.map(b => `
+        <div><strong>${esc(b.team_name)}</strong> — Leg ${esc(b.leg_number)}, ${esc(labelForEvent(b.event_type).toLowerCase())} at ${esc(formatTime(b.event_time))}</div>
+      `).join("");
+      const latest = batons.slice().sort((a, b) => String(b.event_time).localeCompare(String(a.event_time)) || Number(b.id) - Number(a.id))[0];
+      trackerSubStatus.textContent = `Most recent position update: ${minutesAgo(latest.event_time)}.`;
+    }
   }
 
-  function renderEventMarkers(history, baton) {
+  function renderBatonMarkers(batons) {
+    if (!batonMarkersLayer) return;
+    batonMarkersLayer.clearLayers();
+
+    batons.forEach(b => {
+      if (b.display_lat === null || b.display_lng === null || b.display_lat === undefined || b.display_lng === undefined) return;
+      L.marker([Number(b.display_lat), Number(b.display_lng)], {
+        icon: batonIcon(40),
+        zIndexOffset: 1200
+      })
+        .bindPopup(`
+          <strong>${esc(b.team_name)}</strong><br>
+          Leg ${esc(b.leg_number)}<br>
+          ${esc(labelForEvent(b.event_type))}: ${esc(formatTime(b.event_time))}
+        `)
+        .addTo(batonMarkersLayer);
+    });
+  }
+
+  function renderEventMarkers(history, batons) {
     if (!eventMarkersLayer) return;
     eventMarkersLayer.clearLayers();
 
-    const latestId = baton ? Number(baton.id) : null;
+    const activeIds = new Set((batons || []).map(b => Number(b.id)));
     const allEvents = [];
     (history || []).forEach(h => {
       (h.events || []).forEach(e => allEvents.push(e));
@@ -166,7 +202,7 @@
 
     allEvents.forEach(e => {
       if (e.display_lat === null || e.display_lng === null || e.display_lat === undefined || e.display_lng === undefined) return;
-      if (latestId !== null && Number(e.id) === latestId) return;
+      if (activeIds.has(Number(e.id))) return;
 
       L.marker([Number(e.display_lat), Number(e.display_lng)], {
         icon: batonIcon(22),

@@ -19,16 +19,16 @@ try {
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $latestRaw = null;
-    $accepted = null;
     $history = [];
-    $currentLeg = 0;
-    $currentFraction = 0.0;
+    $latestByLeg = [];
+    $latestPositionByLeg = [];
 
     foreach ($rows as $row) {
         $leg = (int)$row['leg_number'];
         $team = baton_team_name($row);
         $event = [
             'id' => (int)$row['id'],
+            'signup_id' => (int)$row['signup_id'],
             'leg_number' => $leg,
             'event_type' => $row['event_type'],
             'event_time' => $row['event_time'],
@@ -69,36 +69,56 @@ try {
         }
         $history[$key]['events'][] = $event;
 
-        if ($event['display_lat'] !== null && $event['display_lng'] !== null && $event['route_fraction'] !== null) {
-            $fraction = (float)$event['route_fraction'];
-            $accept = false;
-            if ($accepted === null) {
-                $accept = true;
-            } elseif ($leg > $currentLeg) {
-                $accept = true;
-            } elseif ($leg === $currentLeg && $fraction >= $currentFraction) {
-                $accept = true;
-            }
-            if ($accept) {
-                $accepted = $event;
-                $currentLeg = $leg;
-                $currentFraction = $fraction;
-            }
+        // The live baton for each leg follows the most recent recorded position for that leg.
+        // This allows two teams to be shown at once when overlapping scheduled legs are underway.
+        $latestByLeg[$key] = $event;
+        if ($event['display_lat'] !== null && $event['display_lng'] !== null) {
+            $latestPositionByLeg[$key] = $event;
         }
     }
 
     foreach ($history as &$h) {
-        if ($h['finished_at']) $h['status'] = 'Completed';
-        elseif ($h['started_at']) $h['status'] = 'Underway';
-        else $h['status'] = 'Update recorded';
+        $latest = $latestByLeg[(string)$h['leg_number']] ?? null;
+        if ($latest && $latest['event_type'] === 'finish') {
+            $h['status'] = 'Completed';
+        } elseif ($h['started_at']) {
+            $h['status'] = 'Underway';
+        } else {
+            $h['status'] = 'Update recorded';
+        }
     }
     unset($h);
 
     usort($history, function($a, $b) { return $a['leg_number'] <=> $b['leg_number']; });
 
+    $activeBatons = [];
+    foreach ($latestByLeg as $key => $latest) {
+        if (($latest['event_type'] ?? '') === 'finish') {
+            continue;
+        }
+        if (!isset($latestPositionByLeg[$key])) {
+            continue;
+        }
+        $activeBatons[] = $latestPositionByLeg[$key];
+    }
+
+    usort($activeBatons, function($a, $b) {
+        if ((int)$a['leg_number'] === (int)$b['leg_number']) {
+            return (int)$a['id'] <=> (int)$b['id'];
+        }
+        return (int)$a['leg_number'] <=> (int)$b['leg_number'];
+    });
+
+    // If no leg is currently underway, keep showing the most recent baton position
+    // so the map does not go blank between legs or after a finish.
+    if (count($activeBatons) === 0 && $latestRaw && $latestRaw['display_lat'] !== null && $latestRaw['display_lng'] !== null) {
+        $activeBatons[] = $latestRaw;
+    }
+
     baton_json([
         'success' => true,
-        'baton' => $accepted,
+        'batons' => $activeBatons,
+        'baton' => count($activeBatons) ? $activeBatons[count($activeBatons) - 1] : null,
         'latest_event' => $latestRaw,
         'history' => $history,
         'generated_at' => gmdate('Y-m-d H:i:s')
