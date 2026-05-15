@@ -109,11 +109,6 @@ try {
         return (int)$a['leg_number'] <=> (int)$b['leg_number'];
     });
 
-    // If no leg is currently underway, keep showing the most recent baton position
-    // so the map does not go blank between legs or after a finish.
-    if (count($activeBatons) === 0 && $latestRaw && $latestRaw['display_lat'] !== null && $latestRaw['display_lng'] !== null) {
-        $activeBatons[] = $latestRaw;
-    }
 
     baton_json([
         'success' => true,
